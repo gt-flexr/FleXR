@@ -1,12 +1,23 @@
+# https://cmake.org/cmake/help/v3.10/module/FindOpenGL.html
 macro(use_opengl)
-  find_package(OpenGL REQUIRED)
+  include(FindOpenGL)
   find_package(GLUT REQUIRED)
 
-  if(OPENGL_FOUND AND GLUT_FOUND)
-    message(STATUS "[OpenGL Details]")
-    message(STATUS "\t OPENGL_LIBRARIES: ${OPENGL_LIBRARIES}")
-    message(STATUS "\t GLUT_LIBRARIES: ${GLUT_LIBRARIES}")
+  message(STATUS "[OpenGL Details]")
+  if (OPENGL_FOUND)
+    message("\t OPENGL_INCLUDE_DIR: ${OPENGL_INCLUDE_DIR}")
+    message("\t OPENGL_LIBRARY: ${OPENGL_LIBRARY}")
+    message("\t OPENGL_EGL_INCLUDE_DIR: ${OPENGL_EGL_INCLUDE_DIR}")
+    message("\t OPENGL_egl_LIBRARY: ${OPENGL_egl_LIBRARY}")
 
-    list(APPEND MXRE_LINKER_LIBS ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
-  endif(OPENGL_FOUND AND GLUT_FOUND)
+    include_directories(${OPENGL_INCLUDE_DIR})
+    include_directories(${OPENGL_EGL_INCLUDE_DIR})
+    list(APPEND MXRE_LINKER_LIBS ${OPENGL_LIBRARY} ${OPENGL_egl_LIBRARY})
+  endif ()
+
+  if(GLUT_FOUND)
+    message("\t GLUT_LIBRARIES: ${GLUT_LIBRARIES}")
+    list(APPEND MXRE_LINKER_LIBS ${GLUT_LIBRARIES})
+  endif()
+
 endmacro()
