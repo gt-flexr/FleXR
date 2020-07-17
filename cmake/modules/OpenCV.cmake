@@ -1,5 +1,5 @@
 macro(use_opencv)
-  pkg_search_module(OPENCV REQUIRED opencv4)
+  pkg_search_module(OPENCV REQUIRED opencv)
   if(OPENCV_FOUND)
     message(STATUS "[OpenCV Details]")
     message("\t OPENCV_INCLUDE_DIRS: ${OPENCV_INCLUDE_DIRS}")

@@ -1,7 +1,7 @@
 #include <iostream>
-#include <opencv4/opencv2/opencv.hpp>
-#include <opencv4/opencv2/video.hpp>
-#include <opencv4/opencv2/highgui.hpp>
+#include <opencv2/opencv.hpp>
+#include <opencv2/video.hpp>
+#include <opencv2/highgui.hpp>
 
 using namespace cv;
 using namespace std;
