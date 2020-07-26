@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project(MXRE CXX)
 set(CMAKE_CXX_COMPILER g++)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 find_package(PkgConfig REQUIRED)
 
 if (UNIX)
@@ -13,17 +14,12 @@ if (UNIX)
 endif()
 
 # Source codes & headers
-file(GLOB_RECURSE MXRE_SRCS src/*.cc)
-file(GLOB_RECURSE TEST_SRCS tests/*.cc)
 include_directories("include")
 
 # MXRE compile info
 set(MXRE_CXX_FLAGS "")
 set(MXRE_LINKER_FLAGS "")
 set(MXRE_LINKER_LIBS "")
-
-# Include cmake utils
-include(cmake/utils/AddTestExecutables.cmake)
 
 # Include cmake modules
 include(cmake/modules/OpenGL.cmake)
@@ -40,5 +36,6 @@ message("\t MXRE_LINKER_FLAGS: ${MXRE_LINKER_FLAGS}")
 message("\t MXRE_LINKER_LIBS: ${MXRE_LINKER_LIBS}")
 message("\t MXRE_SRCS: ${MXRE_SRCS}")
 
-add_test_executables("${TEST_SRCS}")
+add_subdirectory(src)
+add_subdirectory(tests)
 
