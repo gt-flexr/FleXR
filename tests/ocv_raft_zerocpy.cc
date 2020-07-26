@@ -1,6 +1,7 @@
 #include <raft>
 #include <cstdio>
 #include <iostream>
+#include <chrono>
 #include <opencv2/opencv.hpp>
 #include <opencv2/video.hpp>
 #include <opencv2/highgui.hpp>
@@ -34,14 +35,14 @@ class Camera: public raft::kernel {
 
   virtual raft::kstatus run() {
     while(frame_idx++ < 1000) {
-      auto &data(output["out1"].template allocate<frame_with_timestamp>());
-      cam.read(data.frame);
-      if(data.frame.empty()) {
+      auto data(output["out1"].template allocate_s<frame_with_timestamp>());
+      cam.read((*data).frame);
+      if((*data).frame.empty()) {
         cerr << "ERROR: blank frame grabbed" << endl;
         break;
       }
-      data.time_stamp = chrono::high_resolution_clock::now();
-      output["out1"].push(data);
+      (*data).time_stamp = chrono::high_resolution_clock::now();
+      output["out1"].send(); // zero copy
       return raft::proceed;
     }
 
@@ -57,7 +58,10 @@ class processor: public raft::kernel {
   }
 
   virtual raft::kstatus run() {
-    output["out1"].push( input["in1"].peek<frame_with_timestamp>() );
+    output["out1"].template allocate_s<frame_with_timestamp>(
+        input["in1"].peek<frame_with_timestamp>());
+    output["out1"].send();
+
     input["in1"].recycle();
     return raft::proceed;
   }
@@ -85,6 +89,8 @@ class consumer: public raft::kernel {
 };
 
 int main(int argc, char **argv) {
+  // Tell GLUT that whenever the main window needs to be repainted that it
+  // should call the function display().
   Camera c;
   processor b1;
   processor b2;

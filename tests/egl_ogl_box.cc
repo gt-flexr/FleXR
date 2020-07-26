@@ -1,3 +1,5 @@
+#include <mxre.h>
+
 #include <opencv2/opencv.hpp>
 #include <EGL/egl.h>
 #include <GL/glut.h>
@@ -17,11 +19,8 @@ GLint faces[6][4] = {  /* Vertex indices for the 6 faces of a cube. */
   {4, 5, 1, 0}, {5, 6, 2, 1}, {7, 4, 0, 3} };
 GLfloat v[8][3];  /* Will be filled in with X,Y,Z vertexes. */
 
-void
-drawBox(void) {
-  int i;
-
-  for (i = 0; i < 6; i++) {
+void drawBox(void) {
+  for (int i = 0; i < 6; i++) {
     glBegin(GL_QUADS);
     glNormal3fv(&n[i][0]);
     glVertex3fv(&v[faces[i][0]][0]);
@@ -32,15 +31,13 @@ drawBox(void) {
   }
 }
 
-void
-display(void) {
+void display(void) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   drawBox();
   glFlush();
 }
 
-void
-init(void)
+void init(void)
 {
   /* Setup cube vertex data. */
   v[0][0] = v[1][0] = v[2][0] = v[3][0] = -1;
@@ -76,67 +73,12 @@ init(void)
 }
 
 
-
-static const EGLint configAttribs[] = {
-    EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
-    EGL_BLUE_SIZE, 8,
-    EGL_GREEN_SIZE, 8,
-    EGL_RED_SIZE, 8,
-    EGL_DEPTH_SIZE, 8,
-    EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
-    EGL_NONE};
-
-static const int pbufferWidth = 1280;
-static const int pbufferHeight = 640;
-static const EGLint pbufferAttribs[] = {
-    EGL_WIDTH, pbufferWidth,
-    EGL_HEIGHT, pbufferHeight,
-    EGL_NONE,
-};
-
-cv::Mat capture()
-{
-  glReadBuffer(GL_FRONT);
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-  unsigned char *pixels = new unsigned char[3 * pbufferWidth * pbufferHeight];
-  glReadPixels(0, 0, pbufferWidth, pbufferHeight, GL_BGR, GL_UNSIGNED_BYTE, pixels);
-
-  return cv::Mat(pbufferHeight, pbufferWidth, CV_8UC3, pixels);
-}
-
 int main(int argc, char *argv[])
 {
-  // 1. Initialize EGL
-  EGLDisplay eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  mxre::eglutils::EGLPbuffer pbuf;
+  mxre::eglutils::initEGLPbuffer(pbuf);
+  mxre::eglutils::setCurrentPbuffer(pbuf);
 
-  EGLint major, minor;
-  EGLint test;
-  GLubyte *data = (GLubyte*)malloc(pbufferWidth * pbufferHeight * 3);
-  //GLubyte *data = new GLubyte[pbufferWidth*pbufferHeight*3];
-
-  eglInitialize(eglDpy, &major, &minor);
-
-  // 2. Select an appropriate configuration
-  EGLint numConfigs;
-  EGLConfig eglCfg;
-
-  eglChooseConfig(eglDpy, configAttribs, &eglCfg, 1, &numConfigs);
-
-  // 3. Create a surface
-  EGLSurface eglSurf = eglCreatePbufferSurface(eglDpy, eglCfg,
-                                               pbufferAttribs);
-
-  // 4. Bind the API
-  eglBindAPI(EGL_OPENGL_API);
-
-  // 5. Create a context and make it current
-  EGLContext eglCtx = eglCreateContext(eglDpy, eglCfg, EGL_NO_CONTEXT,
-                                       NULL);
-
-  eglMakeCurrent(eglDpy, eglSurf, eglSurf, eglCtx);
-
-  // from now on use your OpenGL context
   init();
   chrono::system_clock::time_point st = chrono::high_resolution_clock::now();
   int iteration = 100000;
@@ -149,15 +91,9 @@ int main(int argc, char *argv[])
   cout << "Total Frame Time: " << et_ms << " ms" << endl;
   cout << "Each Frame Time: " << et_ms / iteration << " ms" << endl;
 
-  cv::Mat cv_data = capture();
+  cv::Mat cv_data = mxre::glutils::exportGLBufferToCV();
   cv::imwrite("result.jpg", cv_data);
 
-  eglQuerySurface(eglDpy, eglSurf, EGL_WIDTH, &test);
-  cout << "Surface WIDTH: " << test << endl;
-  eglQuerySurface(eglDpy, eglSurf, EGL_HEIGHT, &test);
-  cout << "Surface HEIGHT: " << test << endl;
-
-  // 6. Terminate EGL when finished
-  eglTerminate(eglDpy);
+  mxre::eglutils::terminatePbuffer(pbuf);
   return 0;
 }

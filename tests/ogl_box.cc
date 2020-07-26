@@ -15,11 +15,8 @@ GLint faces[6][4] = {  /* Vertex indices for the 6 faces of a cube. */
   {4, 5, 1, 0}, {5, 6, 2, 1}, {7, 4, 0, 3} };
 GLfloat v[8][3];  /* Will be filled in with X,Y,Z vertexes. */
 
-void
-drawBox(void) {
-  int i;
-
-  for (i = 0; i < 6; i++) {
+void drawBox(void) {
+  for (int i = 0; i < 6; i++) {
     glBegin(GL_QUADS);
     glNormal3fv(&n[i][0]);
     glVertex3fv(&v[faces[i][0]][0]);
@@ -30,15 +27,30 @@ drawBox(void) {
   }
 }
 
-void
-display(void) {
+void display(void) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  glColor3f(1.0f, 0.0f, 0.0f); // Red
+  glVertex3f(1.0f, 1.0f, 1.0f);
+  glVertex3f(-1.0f, 1.0f, 1.0f);
+  glVertex3f(-1.0f, -1.0f, 1.0f);
+  glVertex3f(1.0f, -1.0f, 1.0f);
+
+  glVertex3f(1.0f, -1.0f, 1.0f);
+  glVertex3f(-1.0f, -1.0f, 1.0f);
+  glVertex3f(-1.0f, -1.0f, -1.0f);
+  glVertex3f(1.0f, -1.0f, -1.0f);
+  glBegin(GL_QUADS);
+  glVertex2f(-0.25f, 0.25f); // vertex 1
+  glVertex2f(-0.5f, -0.25f); // vertex 2
+  glVertex2f(0.5f, -0.25f);  // vertex 3
+  glVertex2f(0.25f, 0.25f);  // vertex 4
+  glEnd();
   drawBox();
   glutSwapBuffers();
 }
 
-void
-init(void)
+void init(void)
 {
   /* Setup cube vertex data. */
   v[0][0] = v[1][0] = v[2][0] = v[3][0] = -1;
@@ -74,8 +86,7 @@ init(void)
 }
 
 
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);

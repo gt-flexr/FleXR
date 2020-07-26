@@ -1,4 +1,5 @@
-#include <opencv2/opencv.hpp>
+#include <mxre.h>
+
 #include <EGL/egl.h>
 #include <GL/glut.h>
 #include <iostream>
@@ -6,79 +7,60 @@
 
 using namespace std;
 
-static const EGLint configAttribs[] = {
-    EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
-    EGL_BLUE_SIZE, 8,
-    EGL_GREEN_SIZE, 8,
-    EGL_RED_SIZE, 8,
-    EGL_DEPTH_SIZE, 8,
-    EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
-    EGL_NONE};
-
-static const int pbufferWidth = 1280;
-static const int pbufferHeight = 640;
-static const EGLint pbufferAttribs[] = {
-    EGL_WIDTH, pbufferWidth,
-    EGL_HEIGHT, pbufferHeight,
-    EGL_NONE,
-};
-
-cv::Mat capture()
-{
-  glReadBuffer(GL_FRONT);
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-  unsigned char *pixels = new unsigned char[3 * 1280 * 640];
-  glReadPixels(0, 0, 1280, 640, GL_BGR, GL_UNSIGNED_BYTE, pixels);
-
-  return cv::Mat(640, 1280, CV_8UC3, pixels);
-}
-
 int main(int argc, char *argv[])
 {
-  // 1. Initialize EGL
-  EGLDisplay eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  mxre::eglutils::EGLPbuffer pbuf;
+  mxre::eglutils::initEGLPbuffer(pbuf);
+  mxre::eglutils::setCurrentPbuffer(pbuf);
 
-  EGLint major, minor;
-  EGLint test;
-  GLubyte *data = (GLubyte*)malloc(1280 * 640 * 3);
-  //GLubyte *data = new GLubyte[1280*640*3];
+  mxre::glutils::initGL(WIDTH, HEIGHT);
 
-  eglInitialize(eglDpy, &major, &minor);
+  glClearColor(1.0, 1.0, 1.0, 1.0);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  // 2. Select an appropriate configuration
-  EGLint numConfigs;
-  EGLConfig eglCfg;
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
+  glLoadIdentity();
+  gluLookAt(0, 0, 0,
+            0, 0, 0,
+            0, 1, 0);
 
-  eglChooseConfig(eglDpy, configAttribs, &eglCfg, 1, &numConfigs);
+  // MODELVIEW reset
+  glPushMatrix();
+  glLoadIdentity();
 
-  // 3. Create a surface
-  EGLSurface eglSurf = eglCreatePbufferSurface(eglDpy, eglCfg,
-                                               pbufferAttribs);
+  // Projection reset
+  glMatrixMode(GL_PROJECTION);                 // switch to projection matrix
+  glPushMatrix();                              // save current projection matrix
+  glLoadIdentity();                            // reset projection matrix
+  //gluOrtho2D(0, WIDTH, 0, HEIGHT); // set to orthogonal projection
 
-  // 4. Bind the API
-  eglBindAPI(EGL_OPENGL_API);
+  glBegin(GL_QUADS);
+  glColor3f(1, 0, 0);
+  glVertex3f(1.0f, 1.0f, 1.0f);
+  glVertex3f(-1.0f, 1.0f, 1.0f);
+  glVertex3f(-1.0f, -1.0f, 1.0f);
+  glVertex3f(1.0f, -1.0f, 1.0f);
+  glEnd();
+  glPopMatrix();
+  glMatrixMode(GL_MODELVIEW);
+  glPopMatrix();
 
-  // 5. Create a context and make it current
-  EGLContext eglCtx = eglCreateContext(eglDpy, eglCfg, EGL_NO_CONTEXT,
-                                       NULL);
 
-  eglMakeCurrent(eglDpy, eglSurf, eglSurf, eglCtx);
+  //glTranslatef(0.0f, 0.0f, -6.0f);  // Move right and into the screen
+  glBegin(GL_QUADS);
+  glColor3f(0, 1, 0);
+  glVertex3f(0.5f, 0.5f, -1.0f);
+  glVertex3f(-0.5f, 0.5f, -1.0f);
+  glVertex3f(-0.5f, -0.5f, -1.0f);
+  glVertex3f(0.5f, -0.5f, -1.0f);
+  glEnd();
 
-  // from now on use your OpenGL context
-  glClearColor(1.0, 0.0, 0.0, 1.0);
-  glClear(GL_COLOR_BUFFER_BIT);
-  eglSwapBuffers(eglDpy, eglSurf);
-  //glReadPixels(0, 0, 1280, 640, GL_RGB, GL_UNSIGNED_BYTE, data);
-  cv::Mat cv_data = capture();
+  glPopMatrix();
+
+  cv::Mat cv_data = mxre::glutils::exportGLBufferToCV();
   cv::imwrite("result.jpg", cv_data);
 
-  eglQuerySurface(eglDpy, eglSurf, EGL_WIDTH, &test);
-  cout << "Surface WIDTH: " << test << endl;
-  eglQuerySurface(eglDpy, eglSurf, EGL_HEIGHT, &test);
-  cout << "Surface HEIGHT: " << test << endl;
-
-  // 6. Terminate EGL when finished
-  eglTerminate(eglDpy);
+  mxre::eglutils::terminatePbuffer(pbuf);
   return 0;
 }
