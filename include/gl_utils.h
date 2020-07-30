@@ -18,7 +18,7 @@ namespace mxre
 {
   namespace glutils
   {
-    void initLights()
+    static void initLights()
     {
       // set up light colors (ambient, diffuse, specular)
       GLfloat lightKa[] = {.2f, .2f, .2f, 1.0f}; // ambient light
@@ -35,7 +35,7 @@ namespace mxre
       glEnable(GL_LIGHT0); // MUST enable each light source after configuration
     }
 
-    void initGL(int width, int height)
+    static void initGL(int width, int height)
     {
       glShadeModel(GL_SMOOTH);               // shading mathod: GL_SMOOTH or GL_FLAT
       glPixelStorei(GL_UNPACK_ALIGNMENT, 4); // 4-byte pixel alignment
@@ -75,7 +75,7 @@ namespace mxre
       glLoadIdentity();
     }
 
-    cv::Mat exportGLBufferToCV()
+    static cv::Mat exportGLBufferToCV()
     {
       glReadBuffer(GL_FRONT);
       glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -86,7 +86,7 @@ namespace mxre
       return cv::Mat(HEIGHT, WIDTH, CV_8UC3, pixels);
     }
 
-    void makeEmptyTexture(GLuint &tex, int width, int height)
+    static void makeEmptyTexture(GLuint &tex, int width, int height)
     {
       glGenTextures(1, &tex);
       glBindTexture(GL_TEXTURE_2D, tex);
@@ -101,7 +101,7 @@ namespace mxre
       glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    void makeTextureFromCVFrame(cv::Mat &mat, GLuint &tex)
+    static void makeTextureFromCVFrame(cv::Mat &mat, GLuint &tex)
     {
       if (mat.empty())
       {
@@ -123,7 +123,7 @@ namespace mxre
       glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    void startBackground() {
+    static void startBackground() {
       glMatrixMode(GL_MODELVIEW); // MODELVIEW clear
       glPushMatrix();
       glLoadIdentity();
@@ -133,14 +133,14 @@ namespace mxre
       glLoadIdentity();
     }
 
-    void endBackground() {
+    static void endBackground() {
       glMatrixMode(GL_PROJECTION);
       glPopMatrix();
       glMatrixMode(GL_MODELVIEW);
       glPopMatrix();
     }
 
-    bool checkFramebuffer(GLuint fbo)
+    static bool checkFramebuffer(GLuint fbo)
     {
       std::cout << "FBO: " << fbo << std::endl;
       glBindFramebuffer(GL_FRAMEBUFFER, fbo); // bind
@@ -182,7 +182,7 @@ namespace mxre
       glBindFramebuffer(GL_FRAMEBUFFER, 0); // unbind
     }
 
-    void makeFramebuffer(GLuint &fboID, GLuint &rboDepthID, GLuint &tex, int width, int height)
+    static void makeFramebuffer(GLuint &fboID, GLuint &rboDepthID, GLuint &tex, int width, int height)
     {
       // Frame Buffer
       glGenFramebuffers(1, &fboID);

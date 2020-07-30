@@ -15,7 +15,7 @@ namespace mxre
 {
   namespace gltypes
   {
-    struct Vector2
+    typedef struct Vector2
     {
       float x;
       float y;
@@ -52,9 +52,9 @@ namespace mxre
 
       friend Vector2 operator*(const float a, const Vector2 vec);
       friend std::ostream &operator<<(std::ostream &os, const Vector2 &vec);
-    };
+    } Vector2;
 
-    struct Vector3
+    typedef struct Vector3
     {
       float x;
       float y;
@@ -94,9 +94,9 @@ namespace mxre
 
       friend Vector3 operator*(const float a, const Vector3 vec);
       friend std::ostream &operator<<(std::ostream &os, const Vector3 &vec);
-    };
+    } Vector3;
 
-    struct Vector4
+    typedef struct Vector4
     {
       float x;
       float y;
@@ -135,7 +135,7 @@ namespace mxre
 
       friend Vector4 operator*(const float a, const Vector4 vec);
       friend std::ostream &operator<<(std::ostream &os, const Vector4 &vec);
-    };
+    } Vector4;
 
     // fast math routines from Doom3 SDK
     inline float invSqrt(float x)

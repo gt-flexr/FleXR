@@ -34,7 +34,7 @@ namespace mxre
       EGLContext eglCtx;
     } EGLPbuffer;
 
-    void initEGLPbuffer(EGLPbuffer &pbuf)
+    static void initEGLPbuffer(EGLPbuffer &pbuf)
     {
       // 1. get & init EGL Display
       pbuf.eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -52,11 +52,11 @@ namespace mxre
       pbuf.eglCtx = eglCreateContext(pbuf.eglDpy, pbuf.eglCfg, EGL_NO_CONTEXT, NULL);
     }
 
-    void setCurrentPbuffer(EGLPbuffer &pbuf) {
+    static void setCurrentPbuffer(EGLPbuffer &pbuf) {
       eglMakeCurrent(pbuf.eglDpy, pbuf.eglSurf, pbuf.eglSurf, pbuf.eglCtx);
     }
 
-    void terminatePbuffer(EGLPbuffer &pbuf) {
+    static void terminatePbuffer(EGLPbuffer &pbuf) {
       eglTerminate(pbuf.eglDpy);
     }
   } // namespace utils
