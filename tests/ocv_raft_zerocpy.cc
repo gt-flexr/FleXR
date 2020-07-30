@@ -1,7 +1,8 @@
 #include <raft>
-#include <cstdio>
-#include <iostream>
-#include <chrono>
+//#include <cstdio>
+//#include <iostream>
+//#include <chrono>
+#include <bits/stdc++.h>
 #include <opencv2/opencv.hpp>
 #include <opencv2/video.hpp>
 #include <opencv2/highgui.hpp>
@@ -58,8 +59,9 @@ class processor: public raft::kernel {
   }
 
   virtual raft::kstatus run() {
-    output["out1"].template allocate_s<frame_with_timestamp>(
-        input["in1"].peek<frame_with_timestamp>());
+    auto test = input["in1"].peek<frame_with_timestamp>();
+
+    output["out1"].template allocate_s<frame_with_timestamp>(test);
     output["out1"].send();
 
     input["in1"].recycle();
