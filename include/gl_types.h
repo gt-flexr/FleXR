@@ -1559,6 +1559,12 @@ namespace mxre
     }
     // END OF MATRIX4 INLINE //////////////////////////////////////////////////////
 
+    typedef struct ObjectContext {
+      int index;
+      Matrix4 rotMat;
+      Vector3 transVec;
+    } ObjectContext;
+
   } // namespace gltypes
 } // namespace mxre
 

@@ -7,4 +7,5 @@
 #define MAX_OBJS 5
 #define TOTAL_FRAMES 1000
 
+#define SCALE_FACTOR 10
 #endif

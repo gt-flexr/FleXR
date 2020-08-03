@@ -29,9 +29,8 @@ namespace mxre
       newInfo.img = frame(roiRect);
       newInfo.roi = roiPoints;
       detector->detectAndCompute(frame, maskFrame, newInfo.kps, newInfo.desc);
-      newInfo.index = numOfObjs;
+      newInfo.index = numOfObjs++;
 
-      numOfObjs += 1;
       objInfo.push_back(newInfo);
 
       delete[] roiMask;
