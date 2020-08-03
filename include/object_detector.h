@@ -27,7 +27,7 @@ namespace mxre
           double knnMatchRatio;
           int knnParam;
           double ransacThresh;
-          int minInlinerThresh;
+          int minInlierThresh;
 
         public:
           ObjectDetector(std::vector<mxre::cv_units::ObjectInfo> registeredObjs, cv::Ptr<cv::Feature2D> _detector,

@@ -15,9 +15,9 @@ namespace mxre
       int index;
       cv::Mat img;
       cv::Mat desc;
-      cv::Mat homography;
       std::vector<cv::KeyPoint> kps;
       std::vector<cv::Point2f> roi;
+      std::vector<cv::Point2f> location;
     } ObjectInfo;
 
     static std::vector<cv::Point2f> convertKpsToPts(std::vector<cv::KeyPoint> keypoints)

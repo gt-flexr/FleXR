@@ -23,10 +23,12 @@ namespace mxre
         knnMatchRatio = 0.8f;
         knnParam = 5;
         ransacThresh = 2.5f;
-        minInlinerThresh = 15;
+        minInlierThresh = 10;
       }
 
+
       ObjectDetector::~ObjectDetector() {}
+
 
       raft::kstatus ObjectDetector::run() {
         std::vector<cv::KeyPoint> frameKps;
@@ -49,7 +51,6 @@ namespace mxre
 
         // multiple object detection
         std::vector<mxre::cv_units::ObjectInfo>::iterator objIter;
-
         for (objIter = objInfoVec.begin(); objIter != objInfoVec.end(); ++objIter)
         {
           // 2. use the matcher to find correspondence
@@ -62,7 +63,7 @@ namespace mxre
           // 2.2. add close-enough matches by distance (filtered matches)
           for (unsigned i = 0; i < matches.size(); i++)
           {
-            if (matches[i][0].distance < knnMatchRatio * matches[i][1].distance)
+            if (matches[i][0].distance < knnMatchRatio * matches[i][1].distance) // 1st and 2nd diff distance check
             {
               objMatch.push_back(objIter->kps[matches[i][0].queryIdx]);
               frameMatch.push_back(frameKps[matches[i][0].trainIdx]);
@@ -73,12 +74,14 @@ namespace mxre
           printf("[ObjectDetector] matcher %f ms \n", ((float)(temp2) - temp1)/CLOCKS_PER_SEC*1000);
 
           // 3. get the homography from the matches
+          cv::Mat homography;
           cv::Mat inlierMask;
           std::vector<cv::KeyPoint> objInlier, frameInlier;
           std::vector<cv::DMatch> inlierMatches;
+
           if (objMatch.size() >= 4)
           {
-            objIter->homography = findHomography(mxre::cv_units::convertKpsToPts(objMatch),
+            homography = findHomography(mxre::cv_units::convertKpsToPts(objMatch),
                                                  mxre::cv_units::convertKpsToPts(frameMatch),
                                                  cv::RANSAC, ransacThresh, inlierMask);
           }
@@ -86,9 +89,10 @@ namespace mxre
           clock_t temp3 = clock();
           printf("[ObjectDetector] findHomography %f ms \n", ((float)(temp3) - temp2)/CLOCKS_PER_SEC*1000);
 
-          // 4. if there is an object in teh frame, check the inlier points and save matched inlier points
-          if (objMatch.size() >= 4 && !objIter->homography.empty())
+          // 4. if there is an object in the frame, check the inlier points and save matched inlier points
+          if (objMatch.size() >= 4 && !homography.empty())
           {
+            // 5. find the inliers among the matched keypoints
             for (unsigned i = 0; i < objMatch.size(); i++)
             {
               if (inlierMask.at<uchar>(i))
@@ -103,12 +107,10 @@ namespace mxre
             printf("[ObjectDetector] find inliers %f ms \n", ((float)(temp4)-temp3) / CLOCKS_PER_SEC * 1000);
 
             // 5. Draw the object rectangle in the frame via homography and inliers
-            std::vector<cv::Point2f> frameObjRect;
-            perspectiveTransform((*objIter).roi, frameObjRect, objIter->homography);
-            //cv::Mat frameWithObjRect = frame.clone();
-            if (objInlier.size() >= minInlinerThresh)
+            if (objInlier.size() >= minInlierThresh)
             {
-              mxre::cv_units::drawBoundingBox(frame, frameObjRect);
+              perspectiveTransform(objIter->roi, objIter->location, homography);
+              mxre::cv_units::drawBoundingBox(frame, objIter->location);
             }
             clock_t temp5 = clock();
             printf("[ObjectDetector] perspectiveTransform & draw Box %f ms \n", ((float)(temp5)-temp4) / CLOCKS_PER_SEC * 1000);
