@@ -106,7 +106,7 @@ int main(int argc, char **argv)
                0.0, 0.0, 0.0,
                0.0, 1.0, 0.0);
 
-    mxre::glutils::startBackground();
+    mxre::glutils::startBackground(WIDTH, HEIGHT);
     glBindTexture(GL_TEXTURE_2D, textureID);
     glBegin(GL_QUADS);
     glColor3f(1, 1, 1);

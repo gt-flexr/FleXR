@@ -123,19 +123,35 @@ namespace mxre
       glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    static void startBackground() {
-      glMatrixMode(GL_MODELVIEW); // MODELVIEW clear
+    static void updateTextureFromCVFrame(cv::Mat &mat, GLuint &tex)
+    {
+      glBindTexture(GL_TEXTURE_2D, tex);
+      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mat.cols, mat.rows, GL_BGR, GL_UNSIGNED_BYTE, mat.data);
+      glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    static void startBackground(int width, int height) {
+      // 1. Clear GL_PROJECTION
+      glMatrixMode(GL_PROJECTION);
       glPushMatrix();
       glLoadIdentity();
 
-      glMatrixMode(GL_PROJECTION); // PROJECTION clear
+      // 2. Set projection as orthogonal projection
+      glOrtho(-width/2, -height/2, width/2, height/2, -1, 1);
+
+      // 3. Set GL_MODELVIEW with the orthogonal projection
+      glMatrixMode(GL_MODELVIEW);
       glPushMatrix();
       glLoadIdentity();
+      glTranslatef(-width/2, -height/2, 0); // set mid point
     }
 
     static void endBackground() {
+      // 1. Restore the previous projection
       glMatrixMode(GL_PROJECTION);
       glPopMatrix();
+
+      // 2. Restore the model-view matrix
       glMatrixMode(GL_MODELVIEW);
       glPopMatrix();
     }
