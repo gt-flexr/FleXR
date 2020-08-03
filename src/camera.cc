@@ -1,4 +1,5 @@
 #include <include/camera.h>
+#include <include/cv_types.h>
 
 namespace mxre
 {
@@ -6,17 +7,27 @@ namespace mxre
   {
     namespace input_srcs
     {
-      Camera::Camera(int dev_idx)
+      Camera::Camera(int dev_idx=0) : raft::kernel()
       {
         cam.open(dev_idx, cv::CAP_ANY);
         cam.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
         cam.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
         if (!cam.isOpened())
-        {
           std::cerr << "ERROR: unable to open camera" << std::endl;
-        }
 
         frame_idx = 0;
+
+        // set default camera intrinsic
+        double mat[] = {WIDTH, 0,     WIDTH / 2,
+                        0,     WIDTH, HEIGHT / 2,
+                        0,     0,     1};
+        cv::Mat defaultIntrinsic(3, 3, CV_64FC1, mat);
+        intrinsic = defaultIntrinsic;
+
+        // set default camera distCoeffs
+        double d[] = {0, 0, 0, 0};
+        cv::Mat defaultDistCoeffs(4, 1, CV_64FC1, d);
+        distCoeffs = defaultDistCoeffs;
 
         output.addPort<cv::Mat>("out_frame");
         output.addPort<clock_t>("out_timestamp");

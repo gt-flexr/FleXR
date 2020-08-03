@@ -19,10 +19,16 @@ namespace mxre
       private:
         cv::VideoCapture cam;
         int frame_idx;
+        cv::Mat intrinsic;
+        cv::Mat distCoeffs;
 
       public:
-        Camera(int dev_idx=0);
+        Camera(int dev_idx);
         ~Camera();
+        void setIntrinsic(cv::Mat inIntrinsic) {intrinsic = inIntrinsic;}
+        void setDistCoeffs(cv::Mat inDistCoeffs) {distCoeffs = inDistCoeffs;}
+        cv::Mat getIntrinsic() {return intrinsic;}
+        cv::Mat getDistCoeffs() {return distCoeffs;}
         virtual raft::kstatus run();
       };
     } // namespace input_srcs
