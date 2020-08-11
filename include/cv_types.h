@@ -16,8 +16,10 @@ namespace mxre
       cv::Mat img;
       cv::Mat desc;
       std::vector<cv::KeyPoint> kps;
-      std::vector<cv::Point2f> roi;
-      std::vector<cv::Point2f> location;
+      std::vector<cv::Point3f> rect3D;
+      std::vector<cv::Point2f> rect2D;
+      std::vector<cv::Point2f> location2D;
+      bool isDetected;
     } ObjectInfo;
 
     static std::vector<cv::Point2f> convertKpsToPts(std::vector<cv::KeyPoint> keypoints)

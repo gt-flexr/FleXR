@@ -1561,8 +1561,7 @@ namespace mxre
 
     typedef struct ObjectContext {
       int index;
-      Matrix4 rotMat;
-      Vector3 transVec;
+      Matrix4 modelMat;
     } ObjectContext;
 
   } // namespace gltypes

@@ -109,9 +109,12 @@ namespace mxre
             // 5. Draw the object rectangle in the frame via homography and inliers
             if (objInlier.size() >= minInlierThresh)
             {
-              perspectiveTransform(objIter->roi, objIter->location, homography);
-              mxre::cv_units::drawBoundingBox(frame, objIter->location);
+              objIter->isDetected = true;
+              perspectiveTransform(objIter->rect2D, objIter->location2D, homography);
+              mxre::cv_units::drawBoundingBox(frame, objIter->location2D);
             }
+            else
+              objIter->isDetected = false;
             clock_t temp5 = clock();
             printf("[ObjectDetector] perspectiveTransform & draw Box %f ms \n", ((float)(temp5)-temp4) / CLOCKS_PER_SEC * 1000);
           }

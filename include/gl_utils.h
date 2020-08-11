@@ -137,7 +137,7 @@ namespace mxre
       glLoadIdentity();
 
       // 2. Set projection as orthogonal projection
-      glOrtho(-width/2, -height/2, width/2, height/2, -1, 1);
+      glOrtho(-width/2, width/2, -height/2, height/2, -1, 1);
 
       // 3. Set GL_MODELVIEW with the orthogonal projection
       glMatrixMode(GL_MODELVIEW);

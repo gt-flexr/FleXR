@@ -13,6 +13,8 @@
 // pipeline
 #include "camera.h"
 #include "object_detector.h"
+#include "object_ctx_extractor.h"
+#include "object_renderer.h"
 
 // cv_units
 #include "object_tracker.h"

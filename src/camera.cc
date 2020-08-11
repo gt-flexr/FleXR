@@ -7,7 +7,7 @@ namespace mxre
   {
     namespace input_srcs
     {
-      Camera::Camera(int dev_idx=0) : raft::kernel()
+      Camera::Camera(int dev_idx=0) : intrinsic(3, 3, CV_64FC1), distCoeffs(4, 1, CV_64FC1, {0, 0, 0, 0}), raft::kernel()
       {
         cam.open(dev_idx, cv::CAP_ANY);
         cam.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
@@ -18,16 +18,9 @@ namespace mxre
         frame_idx = 0;
 
         // set default camera intrinsic
-        double mat[] = {WIDTH, 0,     WIDTH / 2,
-                        0,     WIDTH, HEIGHT / 2,
-                        0,     0,     1};
-        cv::Mat defaultIntrinsic(3, 3, CV_64FC1, mat);
-        intrinsic = defaultIntrinsic;
-
-        // set default camera distCoeffs
-        double d[] = {0, 0, 0, 0};
-        cv::Mat defaultDistCoeffs(4, 1, CV_64FC1, d);
-        distCoeffs = defaultDistCoeffs;
+        this->intrinsic.at<double>(0, 0) = WIDTH; this->intrinsic.at<double>(0, 1) = 0; this->intrinsic.at<double>(0, 2) = WIDTH/2;
+        this->intrinsic.at<double>(1, 0) = 0; this->intrinsic.at<double>(1, 1) = WIDTH; this->intrinsic.at<double>(1, 2) = HEIGHT/2;
+        this->intrinsic.at<double>(2, 0) = 0; this->intrinsic.at<double>(2, 1) = 0; this->intrinsic.at<double>(2, 2) = 1;
 
         output.addPort<cv::Mat>("out_frame");
         output.addPort<clock_t>("out_timestamp");

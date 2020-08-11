@@ -35,3 +35,6 @@
 build/
 trials/
 .vscode/
+
+compile_commands.json
+.clangd/

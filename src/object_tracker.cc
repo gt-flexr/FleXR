@@ -25,9 +25,16 @@ namespace mxre
       cv::Mat maskFrame = cv::Mat::zeros(frame.size(), CV_8UC1);
       cv::fillPoly(maskFrame, &roiMaskHead, &roiPointNum, 1, cv::Scalar::all(255));
 
+      std::vector<cv::Point3f> rect3D;
+      rect3D.push_back(cv::Point3f(0, 0, 0));
+      rect3D.push_back(cv::Point3f(roiRect.width, 0, 0));
+      rect3D.push_back(cv::Point3f(roiRect.width, roiRect.height, 0));
+      rect3D.push_back(cv::Point3f(0, roiRect.height, 0));
+
       ObjectInfo newInfo;
       newInfo.img = frame(roiRect);
-      newInfo.roi = roiPoints;
+      newInfo.rect3D = rect3D;
+      newInfo.rect2D = roiPoints;
       detector->detectAndCompute(frame, maskFrame, newInfo.kps, newInfo.desc);
       newInfo.index = numOfObjs++;
 
@@ -41,10 +48,14 @@ namespace mxre
       for(std::vector<ObjectInfo>::iterator it = objInfo.begin(); it != objInfo.end(); ++it) {
         printf("%dth Object Info \n", it->index);
         std::cout << "\tROI size: " << it->img.size() << std::endl;
-        printf("\tROI Location: 0(%f, %f), 1(%f, %f), 2(%f, %f), 3(%f, %f) \n", it->roi[0].x, it->roi[0].y,
-               it->roi[1].x, it->roi[1].y,
-               it->roi[2].x, it->roi[2].y,
-               it->roi[3].x, it->roi[3].y);
+        if (it->location2D.size() == 4)
+        {
+          printf("\tROI Location: 0(%f, %f), 1(%f, %f), 2(%f, %f), 3(%f, %f) \n",
+                 it->location2D[0].x, it->location2D[0].y,
+                 it->location2D[1].x, it->location2D[1].y,
+                 it->location2D[2].x, it->location2D[2].y,
+                 it->location2D[3].x, it->location2D[3].y);
+        }
         printf("\t# of kps: %d\n", (int)it->kps.size());
       }
       std::cout << "==================================" << std::endl;
