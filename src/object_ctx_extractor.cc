@@ -7,9 +7,11 @@ namespace mxre
   {
     namespace contextualizing
     {
-      ObjectCtxExtractor::ObjectCtxExtractor(cv::Mat intrinsic, cv::Mat distCoeffs) :
-         camIntrinsic(intrinsic), camDistCoeffs(distCoeffs), raft::kernel()
+      ObjectCtxExtractor::ObjectCtxExtractor(cv::Mat intrinsic, cv::Mat distCoeffs) : raft::kernel()
       {
+        camIntrinsic = intrinsic.clone();
+        camDistCoeffs = distCoeffs.clone();
+
         input.addPort<cv::Mat>("in_frame");
         input.addPort<std::vector<mxre::cv_units::ObjectInfo>>("in_obj_info");
         input.addPort<clock_t>("in_timestamp");
@@ -35,7 +37,7 @@ namespace mxre
 
         // set outputs
         auto out_frame = output["out_frame"].template allocate_s<cv::Mat>();
-        auto out_obj_context =
+        auto out_obj_context = \
             output["out_obj_context"].template allocate_s<std::vector<mxre::gltypes::ObjectContext>>();
         auto out_ts = output["out_timestamp"].template allocate_s<clock_t>();
 
@@ -43,22 +45,12 @@ namespace mxre
         std::vector<mxre::cv_units::ObjectInfo>::iterator objIter;
         for (objIter = objInfoVec.begin(); objIter != objInfoVec.end(); ++objIter)
         {
-          if (objIter->location.size() == 4)
+          if (objIter->location2D.size() == 4 && objIter->isDetected)
           {
             cv::Mat rvec, tvec;
+            printf("camIntrinsic %f %f %f \n", camIntrinsic.at<double>(0, 0), camIntrinsic.at<double>(0, 1), camIntrinsic.at<double>(0, 2));
 
-            std::vector<cv::Point3f> objectPoint3D;
-            objectPoint3D.push_back(cv::Point3f(objIter->location[0].x, objIter->location[0].y, 0));
-            objectPoint3D.push_back(cv::Point3f(objIter->location[1].x, objIter->location[1].y, 0));
-            objectPoint3D.push_back(cv::Point3f(objIter->location[2].x, objIter->location[2].y, 0));
-            objectPoint3D.push_back(cv::Point3f(objIter->location[3].x, objIter->location[3].y, 0));
-            printf("%f,%f / %f,%f / %f,%f / %f,%f \n\n",
-                objIter->location[0].x, objIter->location[0].y,
-                objIter->location[1].x, objIter->location[1].y,
-                objIter->location[2].x, objIter->location[2].y,
-                objIter->location[3].x, objIter->location[3].y);
-
-            cv::solvePnPRansac(objectPoint3D, objIter->roi, camIntrinsic, camDistCoeffs, rvec, tvec);
+            cv::solvePnPRansac(objIter->rect3D, objIter->location2D, camIntrinsic, camDistCoeffs, rvec, tvec);
             cv::Mat rvecMat;
             cv::Rodrigues(rvec, rvecMat);
             cv::Mat cvViewMat(4, 4, CV_64F);
@@ -86,17 +78,21 @@ namespace mxre
 
             for (unsigned int row = 0; row < 4; ++row) {
               for (unsigned int col = 0; col < 4; ++col) {
-                objCtx.rotMat[row * 4 + col] = cvViewMat.at<double>(row, col);
+                objCtx.modelMat[row * 4 + col] = cvViewMat.at<double>(row, col);
                 printf("%f ", cvViewMat.at<double>(row, col));
               }
               printf("\n");
             }
             printf("\n");
 
-            objCtx.transVec.x = (tvec.at<float>(0, 0) * 2) / WIDTH * SCALE_FACTOR;
-            objCtx.transVec.y = (tvec.at<float>(0, 1) * -2) / WIDTH * SCALE_FACTOR;
-            objCtx.transVec.z = -SCALE_FACTOR - (tvec.at<float>(0, 2) / WIDTH * SCALE_FACTOR);
-            printf("%f %f %f \n", objCtx.transVec.x, objCtx.transVec.y, objCtx.transVec.z);
+            float transX = (tvec.at<double>(0, 0) * 2) / WIDTH;
+            float transY = (tvec.at<double>(0, 1) * 2) / WIDTH;
+            float transZ = tvec.at<double>(0, 2) / WIDTH;
+            printf("[Obj Position] x(%lf), y(%lf), z(%lf) \n", transX, transY, transZ);
+            printf("[Obj Position with SCALE_FACTOR] x(%lf), y(%lf), z(%lf) \n",
+                   transX * SCALE_FACTOR, transY * SCALE_FACTOR, -SCALE_FACTOR - transZ * SCALE_FACTOR);
+            objCtx.modelMat.translate(transX * SCALE_FACTOR, transY * SCALE_FACTOR, -SCALE_FACTOR - transZ * SCALE_FACTOR);
+            printf("\n");
 
             objCtxVec.push_back(objCtx);
           }
