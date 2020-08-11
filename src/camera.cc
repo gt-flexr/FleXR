@@ -7,7 +7,7 @@ namespace mxre
   {
     namespace input_srcs
     {
-      Camera::Camera(int dev_idx=0) : intrinsic(3, 3, CV_64FC1), distCoeffs(4, 1, CV_64FC1, {0, 0, 0, 0}), raft::kernel()
+      Camera::Camera(int dev_idx) : intrinsic(3, 3, CV_64FC1), distCoeffs(4, 1, CV_64FC1, {0, 0, 0, 0}), raft::kernel()
       {
         cam.open(dev_idx, cv::CAP_ANY);
         cam.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
