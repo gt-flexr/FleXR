@@ -9,12 +9,11 @@
 #include <raft>
 #include <raftio>
 
-#define ZEROCPY 1
-
 struct big_t
 {
   int i;
   std::uintptr_t start;
+  char *test;
 #ifdef ZEROCPY
   char padding[ 32768 ];
 #else
@@ -48,6 +47,7 @@ class A : public raft::kernel
         auto &c( output["out"].allocate< big_t >() );
         c.i = i;
         c.start = reinterpret_cast< std::uintptr_t >( &(c.i) );
+        c.test = new char[4096];
         output["out"].send();
       }
 
@@ -106,6 +106,7 @@ class C : public raft::kernel
         std::cout << std::dec << a.i << " - " << std::hex << a.start << " - " << std::hex <<
           reinterpret_cast< std::uintptr_t >( &a.i ) << "\n";
       }
+      delete[] a.test;
       input[ "in" ].recycle(1);
       return (raft::proceed);
     }
