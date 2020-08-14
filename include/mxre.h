@@ -1,22 +1,36 @@
 #ifndef __MXRE__
 #define __MXRE__
 
-// definitions
+/* #define */
 #include "defs.h"
 
-// utils
+
+/* utils */
 #include "gl_utils.h"
 #include "gl_types.h"
 #include "egl_utils.h"
 #include "cv_types.h"
 
-// pipeline
+
+/* cv_units */
+#include "object_tracker.h"
+
+
+/* pipeline */
+/** input_srcs **/
 #include "camera.h"
+
+/** ctx_understanding **/
 #include "object_detector.h"
+
+/** contextualizing **/
 #include "object_ctx_extractor.h"
+
+/** rendering **/
 #include "object_renderer.h"
 
-// cv_units
-#include "object_tracker.h"
+/** network **/
+#include "message_sender.h"
+#include "message_receiver.h"
 
 #endif
