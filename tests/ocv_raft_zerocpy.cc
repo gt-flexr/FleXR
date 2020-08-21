@@ -36,13 +36,13 @@ class Camera: public raft::kernel {
 
   virtual raft::kstatus run() {
     while(frame_idx++ < 1000) {
-      auto data(output["out1"].template allocate_s<frame_with_timestamp>());
-      cam.read((*data).frame);
-      if((*data).frame.empty()) {
+      auto &data(output["out1"].template allocate<frame_with_timestamp>());
+      cam.read(data.frame);
+      if(data.frame.empty()) {
         cerr << "ERROR: blank frame grabbed" << endl;
         break;
       }
-      (*data).time_stamp = chrono::high_resolution_clock::now();
+      data.time_stamp = chrono::high_resolution_clock::now();
       output["out1"].send(); // zero copy
       return raft::proceed;
     }
@@ -109,3 +109,4 @@ int main(int argc, char **argv) {
 
   return EXIT_SUCCESS;
 }
+

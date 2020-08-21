@@ -21,7 +21,7 @@ struct big_t
 #endif
 };
 
-
+// input-output pairs: allocate-send, peek-push
 
 /**
  * Producer: sends down the stream numbers from 1 to 10
@@ -44,11 +44,11 @@ class A : public raft::kernel
 
       if ( i >  -1 )
       {
-        auto &c( output["out"].allocate< big_t >() );
+        auto &c( output["out"].allocate< big_t >() ); // ALLOCATE
         c.i = i;
         c.start = reinterpret_cast< std::uintptr_t >( &(c.i) );
         c.test = new char[4096];
-        output["out"].send();
+        output["out"].send(); // SEND
       }
 
       if ( i < -1 )
@@ -75,9 +75,9 @@ class B : public raft::kernel
 
     virtual raft::kstatus run()
     {
-      auto &a( input[ "in" ].peek< big_t >());
+      auto &a( input[ "in" ].peek< big_t >()); // PEEK
       input[ "in" ].recycle( 1 );
-      output[ "out" ].push( a );
+      output[ "out" ].push( a ); // PUSH
       return (raft::proceed);
     }
 };
@@ -97,7 +97,7 @@ class C : public raft::kernel
 
     virtual raft::kstatus run()
     {
-      auto &a( input[ "in" ].peek< big_t >() );
+      auto &a( input[ "in" ].peek< big_t >() ); // PEEK
       if(ZEROCPY == 1) {
         std::cout << "ZEROCPY " << std::dec << a.i << " - " << std::hex << a.start << " - " << std::hex <<
           reinterpret_cast< std::uintptr_t >( &a.i ) << "\n";
