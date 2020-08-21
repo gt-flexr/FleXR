@@ -1,7 +1,7 @@
 #ifndef __MXRE__
 #define __MXRE__
 
-/* #define */
+/* defs */
 #include "defs.h"
 
 
@@ -30,7 +30,13 @@
 #include "object_renderer.h"
 
 /** network **/
-#include "message_sender.h"
-#include "message_receiver.h"
+#include "network/message_sender.h"
+#include "network/message_receiver.h"
+
+#include "network/static_sender.h"
+#include "network/static_receiver.h"
+
+#include "network/cvmat_receiver.h"
+#include "network/cvmat_sender.h"
 
 #endif
