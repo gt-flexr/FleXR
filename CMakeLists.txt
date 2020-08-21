@@ -26,10 +26,12 @@ set(MXRE_LINKER_LIBS "")
 include(cmake/modules/OpenGL.cmake)
 include(cmake/modules/OpenCV.cmake)
 include(cmake/modules/RaftLib.cmake)
+include(cmake/modules/LibZMQ.cmake)
 
 use_opencv()
 use_opengl()
 use_raftlib()
+use_libzmq()
 
 message(STATUS "[MXRE COMPILE INFO]")
 message("\t MXRE_CXX_FLAGS: ${MXRE_CXX_FLAGS}")

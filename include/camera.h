@@ -23,7 +23,7 @@ namespace mxre
         cv::Mat distCoeffs;
 
       public:
-        Camera(int dev_idx);
+        Camera(int dev_idx=0);
         ~Camera();
         void setIntrinsic(cv::Mat inIntrinsic) {intrinsic = inIntrinsic;}
         void setDistCoeffs(cv::Mat inDistCoeffs) {distCoeffs = inDistCoeffs;}
@@ -36,3 +36,4 @@ namespace mxre
 } // namespace mxre
 
 #endif
+
