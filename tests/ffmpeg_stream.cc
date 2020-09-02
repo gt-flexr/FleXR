@@ -15,7 +15,7 @@ extern "C" {
 #define WIDTH 640
 #define HEIGHT 480
 #define FPS 20
-#define BITRATE 800000
+#define BITRATE 1000000
 
 using namespace std;
 using namespace cv;
@@ -85,12 +85,14 @@ AVStream* addStream(AVFormatContext *context, AVCodec **codec, const char* codec
   codecContext->width = WIDTH;
   codecContext->height = HEIGHT;
   codecContext->bit_rate = BITRATE;
-  //codecContext->pix_fmt = AV_PIX_FMT_YUVJ420P;
-  codecContext->pix_fmt = AV_PIX_FMT_YUV420P;
+  codecContext->pix_fmt = AV_PIX_FMT_YUVJ420P;
+  //codecContext->pix_fmt = AV_PIX_FMT_YUV420P;
   codecContext->time_base = stream->time_base = av_inv_q(dstFps);
   codecContext->framerate = dstFps;
   codecContext->gop_size = 3;
   codecContext->max_b_frames = 0;
+
+  cout << "codecContext->codec->name = " << codecContext->codec->name << endl;
   if (strcmp(codecContext->codec->name, "libx264") == 0) {
     cout << "libx264!" << endl;
     av_opt_set(codecContext->priv_data, "preset", "slow", 0);
@@ -106,8 +108,10 @@ AVStream* addStream(AVFormatContext *context, AVCodec **codec, const char* codec
     av_opt_set(codecContext->priv_data, "2pass", "false", 0);
     av_opt_set(codecContext->priv_data, "vsink", "0", 0);
   }
-  if (strcmp(codecContext->codec->name, "mpeg") == 0) {
+  if (strcmp(codecContext->codec->name, "mjpeg") == 0) {
     cout << "mjpeg!" << endl;
+    codecContext->flags = AV_CODEC_FLAG_QSCALE;
+    codecContext->global_quality = FF_QP2LAMBDA * 3.0;
     av_opt_set(codecContext->priv_data, "huffman", "0", 0);
   }
 
@@ -272,51 +276,5 @@ int main(int argc, char* argv[])
     avio_close(rtpContext->pb);
   avformat_free_context(rtpContext);
 
-  /*
-      char buf[200000]; // ??                 
-      AVFormatContext *sdpCtx[] = {formatCtx};
-      av_sdp_create(sdpCtx, 1, buf, sizeof(buf)); // 되는지 안되는지 모르니까 일단 sdp로 해보자...
-      FILE *fsdp = fopen("test.sdp", "w");
-      cout << "sdp: " << buf << endl;
-      fprintf(fsdp, "%s", buf);
-      fclose(fsdp);
-
-      unsigned frameIdx = 0;
-      bool endOfStream = false;
-      AVPacket *pkt = av_packet_alloc();
-      uint avFramePts=0, nbFrames=0;;
-      do {
-        cout << "debug!!!!" << endl;
-        if (!endOfStream) {
-          cout << "debugCam Read" << endl;
-          cam >> cvImg;
-          cv::imshow("press ESC to exit", cvImg);
-          cout << "debugCam Read" << endl;
-          if (cv::waitKey(33) == 0x1b)
-            endOfStream = true;
-        }
-        if (!endOfStream) {
-          cout << "debug SwsScale" << endl;
-          // convert cv::Mat(OpenCV) to AVFrame(FFmpeg)
-          const int stride[] = { static_cast<int>(cvImg.step[0]) };
-          sws_scale(swsCtx, &cvImg.data, stride, 0, cvImg.rows, avFrame->data, avFrame->linesize);
-          avFrame->pts = avFramePts++;
-        }
-
-        av_init_packet(pkt);
-
-        encode(formatCtx, stream->codec, avFrame, pkt);
-        ++nbFrames;
-        cout << "Num of Frames: " << nbFrames << endl;
-      } while (!endOfStream);
-
-      encode(formatCtx, stream->codec, NULL, pkt);
-      std::cout << nbFrames << " frames encoded" << std::endl;
-
-      av_frame_free(&avFrame);
-      avcodec_close(stream->codec);
-      avio_close(formatCtx->pb);
-      avformat_free_context(formatCtx);
-  */
   return 0;
 }

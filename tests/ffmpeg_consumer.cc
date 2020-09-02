@@ -44,6 +44,7 @@ int main(int argc, char* argv[])
   /*   1. set RTP context */ cout << "==1==" << endl;
   rtpContext = avformat_alloc_context();
   av_dict_set(&whitelist, "protocol_whitelist", "file,udp,rtp,crypto", 0);
+  rtpContext->flags = AVFMT_FLAG_NOBUFFER | AVFMT_FLAG_FLUSH_PACKETS;
 
   ret = avformat_open_input(&rtpContext, filename, NULL, &whitelist);
   if(ret != 0) {
