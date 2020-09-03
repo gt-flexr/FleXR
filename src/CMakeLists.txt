@@ -7,3 +7,4 @@ target_compile_options(mxre PUBLIC "-W" "-Wall" "-Wextra" "-Wpedantic")
 target_compile_options(mxre PUBLIC ${MXRE_CXX_FLAGS})
 target_link_libraries(mxre ${MXRE_LINKER_FLAGS})
 target_link_libraries(mxre ${MXRE_LINKER_LIBS})
+
