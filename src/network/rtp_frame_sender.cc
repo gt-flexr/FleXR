@@ -132,7 +132,7 @@ namespace mxre
         rtpFrame->format = static_cast<int>(rtpCodecContext->pix_fmt);
 
         rtpFrameBufferSize = avpicture_get_size(rtpCodecContext->pix_fmt, width, height);
-        rtpFrameBuffer = (uint8_t*)av_malloc( rtpFrameBufferSize*sizeof(uint8_t) );
+        rtpFrameBuffer = new uint8_t[rtpFrameBufferSize];
         avpicture_fill(reinterpret_cast<AVPicture*>(rtpFrame), rtpFrameBuffer, rtpCodecContext->pix_fmt,
             width, height);
 
@@ -165,7 +165,7 @@ namespace mxre
       void RTPFrameSender::clearSession() {
         if(rtpCodecContext) avcodec_close(rtpCodecContext);
         if(rtpFrame){
-          av_free(rtpFrame->data[0]);
+          delete[] rtpFrame->data[0];
           av_frame_free(&rtpFrame);
         }
         if(!(rtpContext->oformat->flags & AVFMT_NOFILE)) avio_close(rtpContext->pb);
@@ -218,6 +218,7 @@ namespace mxre
         input["in_data"].recycle(1);
         return raft::proceed;
       }
-    }
-  }
-}
+    } // namespace network
+  } // namespace pipeline
+} // namespace mxre
+

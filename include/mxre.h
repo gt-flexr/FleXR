@@ -40,5 +40,6 @@
 #include "network/cvmat_sender.h"
 
 #include "network/rtp_frame_sender.h"
+#include "network/rtp_frame_receiver.h"
 
 #endif
