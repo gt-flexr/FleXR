@@ -56,12 +56,12 @@ namespace mxre
 
         // 2. Send each Mat info & data (iteration) & end flag
         for(uint i = 0; i < inMat.size(); i++) {
-          uint sizeRowsCols[3];
-          sizeRowsCols[0] = inMat[i].total() * inMat[i].elemSize();
-          sizeRowsCols[1] = inMat[i].rows;
-          sizeRowsCols[2] = inMat[i].cols;
-          zmq_send(sock, sizeRowsCols, sizeof(uint)*3, ZMQ_SNDMORE);
-          zmq_send(sock, inMat[i].data, sizeRowsCols[0], ZMQ_SNDMORE);
+          uint matInfo[MX_MAT_ATTR_NUM];
+          matInfo[MX_MAT_SIZE_IDX] = inMat[i].total() * inMat[i].elemSize();
+          matInfo[MX_MAT_ROWS_IDX] = inMat[i].rows;
+          matInfo[MX_MAT_COLS_IDX] = inMat[i].cols;
+          zmq_send(sock, matInfo, sizeof(uint)*MX_MAT_ATTR_NUM, ZMQ_SNDMORE);
+          zmq_send(sock, inMat[i].data, matInfo[0], ZMQ_SNDMORE);
         }
         zmq_send(sock, "end\0", 4, 0);
 

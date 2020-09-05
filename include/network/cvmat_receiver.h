@@ -39,7 +39,7 @@ namespace mxre
       raft::kstatus CVMatReceiver::run() {
         debug_print("[CVMatReceiver] isVector(%d) START", isVector);
         char ackMsg[4], endMsg[4];
-        uint vecSize, sizeRowsCols[3];
+        uint vecSize, matInfo[MX_MAT_ATTR_NUM];
         memcpy(ackMsg, "ACK\0", 4);
 
         if(isVector) {
@@ -50,10 +50,10 @@ namespace mxre
 
           for(uint i = 0; i < vecSize; i++) {
             // 2. Recv Mat info, data, and end flag & Allocate data memory
-            zmq_recv(sock, sizeRowsCols, sizeof(uint)*3, 0);
-            float *inData = new float[sizeRowsCols[0]];
-            zmq_recv(sock, inData, sizeRowsCols[0], 0);
-            cv::Mat newMat(sizeRowsCols[1], sizeRowsCols[2], CV_32F, inData);
+            zmq_recv(sock, matInfo, sizeof(uint)*MX_MAT_ATTR_NUM, 0);
+            float *inData = new float[matInfo[MX_MAT_SIZE_IDX]];
+            zmq_recv(sock, inData, matInfo[MX_MAT_SIZE_IDX], 0);
+            cv::Mat newMat(matInfo[MX_MAT_ROWS_IDX], matInfo[MX_MAT_COLS_IDX], matInfo[MX_MAT_TYPE_IDX], inData);
             outData.push_back(newMat);
             // delete [] inData;
           }
@@ -70,12 +70,12 @@ namespace mxre
           zmq_recv(sock, &vecSize, sizeof(vecSize), 0);
 
           // 2. Recv Mat info, data, and end flag & Allocate data memory
-          zmq_recv(sock, sizeRowsCols, sizeof(uint)*3, 0);
-          float *inData = new float[sizeRowsCols[0]];
-          zmq_recv(sock, inData, sizeRowsCols[0], 0);
+          zmq_recv(sock, matInfo, sizeof(uint)*MX_MAT_ATTR_NUM, 0);
+          float *inData = new float[matInfo[MX_MAT_SIZE_IDX]];
+          zmq_recv(sock, inData, matInfo[MX_MAT_SIZE_IDX], 0);
           zmq_recv(sock, endMsg, 4, 0);
           debug_print("outData init %p, total %d \n", outData.data, outData.total());
-          outData = cv::Mat(sizeRowsCols[1], sizeRowsCols[2], CV_32F, inData);
+          outData = cv::Mat(matInfo[MX_MAT_ROWS_IDX], matInfo[MX_MAT_COLS_IDX], matInfo[MX_MAT_TYPE_IDX], inData);
           debug_print("received %p, matdata %p \n", inData, reinterpret_cast<float*>(outData.data));
           //delete [] inData;
         }
