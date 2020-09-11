@@ -25,7 +25,7 @@ namespace mxre
       {
         private:
           int width, height;
-          std::string decoder, filename;
+          std::string decoder, sdp;
 
           AVFormatContext *rtpContext;
           AVDictionary *protocolWhitelist;
@@ -41,7 +41,7 @@ namespace mxre
           SwsContext *swsContext;
 
         public:
-          RTPFrameReceiver(std::string decoder, int width, int height);
+          RTPFrameReceiver(std::string decoder, std::string sdp, int width, int height);
           ~RTPFrameReceiver();
           void initRTPContext();
           void initRTPCodecAndScaler();

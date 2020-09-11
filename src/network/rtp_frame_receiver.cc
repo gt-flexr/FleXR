@@ -7,11 +7,10 @@ namespace mxre
     namespace network
     {
       /* Constructor() */
-      RTPFrameReceiver::RTPFrameReceiver(std::string decoder, int width, int height) :
-        decoder(decoder), width(width), height(height), raft::kernel()
+      RTPFrameReceiver::RTPFrameReceiver(std::string decoder, std::string sdp, int width, int height) :
+        decoder(decoder), sdp(sdp), width(width), height(height), raft::kernel()
       {
         output.addPort<cv::Mat>("out_data");
-        filename = "test.sdp";
 
         av_register_all();
         avcodec_register_all();
@@ -39,7 +38,7 @@ namespace mxre
 
         // set protocol whitelist to receive
         av_dict_set(&protocolWhitelist, "protocol_whitelist", "file,udp,rtp,crypto", 0);
-        ret = avformat_open_input(&rtpContext, "test.sdp", NULL, &protocolWhitelist);
+        ret = avformat_open_input(&rtpContext, sdp.c_str(), NULL, &protocolWhitelist);
         if(ret < 0) {
           clearSession();
           debug_print("avformat_open_input");
@@ -151,7 +150,6 @@ namespace mxre
         if(packet.stream_index == rtpStreamIndex && readSuccess >= 0) {
           int result = avcodec_decode_video2(rtpCodecContext, rtpFrame, &receivedFrame, &packet);
           if(receivedFrame) {
-            debug_print("Bytes decodecd %d, check %d", result, receivedFrame);
             sws_scale(swsContext, rtpFrame->data, rtpFrame->linesize, 0, rtpFrame->height,
                 convertingFrame->data, convertingFrame->linesize);
 
