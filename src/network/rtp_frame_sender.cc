@@ -7,8 +7,9 @@ namespace mxre
     namespace network
     {
       /* Constructor() */
-      RTPFrameSender::RTPFrameSender(std::string encoder, int port, int bitrate, int fps, int width, int height) :
-        encoder(encoder), port(port), bitrate(bitrate), fps(fps), width(width), height(height), framePts(0),
+      RTPFrameSender::RTPFrameSender(std::string encoder, std::string sdp,
+          int port, int bitrate, int fps, int width, int height) :
+        encoder(encoder), sdp(sdp), port(port), bitrate(bitrate), fps(fps), width(width), height(height), framePts(0),
         raft::kernel()
       {
         input.addPort<cv::Mat>("in_data");
@@ -155,7 +156,7 @@ namespace mxre
         AVFormatContext *ac[] = { rtpContext };
         av_sdp_create(ac, 1, buf, 20000);
         debug_print("sdp:\n%s\n", buf);
-        FILE* fsdp = fopen("test.sdp", "w");
+        FILE* fsdp = fopen(sdp.c_str(), "w");
         fprintf(fsdp, "%s", buf);
         fclose(fsdp);
       }

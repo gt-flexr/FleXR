@@ -26,7 +26,7 @@ namespace mxre
         private:
           int port, bitrate, fps, width, height;
           int64_t framePts;
-          std::string encoder, filename;
+          std::string encoder, filename, sdp;
 
           AVFormatContext *rtpContext;
           AVStream *rtpStream;
@@ -36,7 +36,7 @@ namespace mxre
           SwsContext *swsContext;
 
         public:
-          RTPFrameSender(std::string encoder, int port, int bitrate, int fps, int width, int height);
+          RTPFrameSender(std::string encoder, std::string sdp, int port, int bitrate, int fps, int width, int height);
           ~RTPFrameSender();
           void setRTPContext();
           void setRTPStreamWithCodec();
