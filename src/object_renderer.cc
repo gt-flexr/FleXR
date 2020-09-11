@@ -12,10 +12,8 @@ namespace mxre
 
         input.addPort<cv::Mat>("in_frame");
         input.addPort<std::vector<mxre::gltypes::ObjectContext>>("in_obj_context");
-        input.addPort<clock_t>("in_timestamp");
 
         output.addPort<cv::Mat>("out_frame");
-        output.addPort<clock_t>("out_timestamp");
       }
 
       ObjectRenderer::~ObjectRenderer() {
@@ -24,21 +22,15 @@ namespace mxre
 
       raft::kstatus ObjectRenderer::run()
       {
-        clock_t rt = clock();
         mxre::eglutils::setCurrentPbuffer(pbuf);
         mxre::glutils::initGL(WIDTH, HEIGHT);
 
         // get inputs from the previous kernel: ObjectDetector
         auto frame = input["in_frame"].peek<cv::Mat>();
         auto objCtxVec = input["in_obj_context"].peek<std::vector<mxre::gltypes::ObjectContext>>();
-        auto in_st = input["in_timestamp"].peek<clock_t>();
-
-        printf("[ObjectRenderer] ObjCtxExtractor->ObjRenderer communication cost %f ms \n",
-               ((float)(rt)-in_st) / CLOCKS_PER_SEC * 1000);
 
         // set outputs
         auto out_frame = output["out_frame"].template allocate_s<cv::Mat>();
-        auto out_ts = output["out_timestamp"].template allocate_s<clock_t>();
 
         // 1. Create/update background texture
         if(glIsTexture(backgroundTexture))
@@ -86,19 +78,15 @@ namespace mxre
         glPopMatrix();
         cv::Mat resFrame = mxre::glutils::exportGLBufferToCV();
         *out_frame = resFrame;
-        *out_ts = clock();
 
         input["in_frame"].recycle();
         input["in_obj_context"].recycle();
-        input["in_timestamp"].recycle();
-
-        printf("[ObjectCtxDetector] exe time %f ms \n", ((float)(*out_ts) - in_st) / CLOCKS_PER_SEC * 1000);
 
         output["out_frame"].send();
-        output["out_timestamp"].send();
         return raft::proceed;
       }
 
     } // namespace contextualizing
   }   // namespace pipeline
 } // namespace mxre
+
