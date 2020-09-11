@@ -14,32 +14,24 @@ namespace mxre
 
         input.addPort<cv::Mat>("in_frame");
         input.addPort<std::vector<mxre::cv_units::ObjectInfo>>("in_obj_info");
-        input.addPort<clock_t>("in_timestamp");
 
         // output..
         output.addPort<cv::Mat>("out_frame");
         output.addPort<std::vector<mxre::gltypes::ObjectContext>>("out_obj_context");
-        output.addPort<clock_t>("out_timestamp");
       }
 
       ObjectCtxExtractor::~ObjectCtxExtractor() {}
 
       raft::kstatus ObjectCtxExtractor::run()
       {
-        clock_t rt = clock();
-
         // get inputs from the previous kernel: ObjectDetector
         auto frame = input["in_frame"].peek<cv::Mat>();
         auto objInfoVec = input["in_obj_info"].peek<std::vector<mxre::cv_units::ObjectInfo>>();
-        auto in_st = input["in_timestamp"].peek<clock_t>();
-        printf("[ObjectCtxExtractor] ObjDetector->ObjCtxExtractor communication cost %f ms \n",
-               ((float)(rt)-in_st) / CLOCKS_PER_SEC * 1000);
 
         // set outputs
         auto out_frame = output["out_frame"].template allocate_s<cv::Mat>();
         auto out_obj_context = \
             output["out_obj_context"].template allocate_s<std::vector<mxre::gltypes::ObjectContext>>();
-        auto out_ts = output["out_timestamp"].template allocate_s<clock_t>();
 
         std::vector<mxre::gltypes::ObjectContext> objCtxVec;
         std::vector<mxre::cv_units::ObjectInfo>::iterator objIter;
@@ -48,7 +40,8 @@ namespace mxre
           if (objIter->location2D.size() == 4 && objIter->isDetected)
           {
             cv::Mat rvec, tvec;
-            printf("camIntrinsic %f %f %f \n", camIntrinsic.at<double>(0, 0), camIntrinsic.at<double>(0, 1), camIntrinsic.at<double>(0, 2));
+            printf("camIntrinsic %f %f %f \n", camIntrinsic.at<double>(0, 0), camIntrinsic.at<double>(0, 1),
+                camIntrinsic.at<double>(0, 2));
 
             cv::solvePnPRansac(objIter->rect3D, objIter->location2D, camIntrinsic, camDistCoeffs, rvec, tvec);
             cv::Mat rvecMat;
@@ -99,20 +92,16 @@ namespace mxre
         }
         *out_frame = frame;
         *out_obj_context = objCtxVec;
-        *out_ts = clock();
 
         input["in_frame"].recycle();
         input["in_obj_info"].recycle();
-        input["in_timestamp"].recycle();
-
-        printf("[ObjectCtxDetector] exe time %f ms \n", ((float)(*out_ts) - in_st) / CLOCKS_PER_SEC * 1000);
 
         output["out_frame"].send();
         output["out_obj_context"].send();
-        output["out_timestamp"].send();
         return raft::proceed;
       }
 
     } // namespace contextualizing
   }   // namespace pipeline
 } // namespace mxre
+

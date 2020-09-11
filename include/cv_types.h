@@ -54,7 +54,12 @@ namespace mxre
       drawBoundingBox(image, vecPoints);
     }
 
+    static void releaseMat(cv::Mat mat) {
+      mat.release();
+      if(mat.data) delete [] mat.data;
+    }
   } // namespace cv_units
 } // namespace mxre
 
 #endif
+

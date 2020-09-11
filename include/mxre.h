@@ -20,6 +20,9 @@
 /** input_srcs **/
 #include "camera.h"
 
+/** output_sinks **/
+#include "cv_display.h"
+
 /** ctx_understanding **/
 #include "object_detector.h"
 
@@ -39,4 +42,8 @@
 #include "network/cvmat_receiver.h"
 #include "network/cvmat_sender.h"
 
+#include "network/rtp_frame_sender.h"
+#include "network/rtp_frame_receiver.h"
+
 #endif
+

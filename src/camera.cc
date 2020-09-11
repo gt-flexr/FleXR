@@ -23,7 +23,6 @@ namespace mxre
         this->intrinsic.at<double>(2, 0) = 0; this->intrinsic.at<double>(2, 1) = 0; this->intrinsic.at<double>(2, 2) = 1;
 
         output.addPort<cv::Mat>("out_frame");
-        output.addPort<clock_t>("out_timestamp");
       }
 
       Camera::~Camera()
@@ -36,11 +35,7 @@ namespace mxre
       {
         while (frame_idx++ < TOTAL_FRAMES)
         {
-          //auto frame(output["out_frame"].template allocate_s<cv::Mat>());
-          //auto time_stamp(output["out_time_stamp"].template allocate_s<clock_t>());
           auto frame = output["out_frame"].template allocate_s<cv::Mat>();
-          auto time_stamp = output["out_timestamp"].template allocate_s<clock_t>();
-
 
           cam >> *frame;
           if ((*frame).empty())
@@ -48,11 +43,8 @@ namespace mxre
             std::cerr << "ERROR: blank frame grabbed" << std::endl;
             break;
           }
-          *time_stamp = clock();
-          //cv::imshow("Origin Frame", *frame);
-          //printf("[Camera] %d frame at st(%ld)\n", frame_idx, *time_stamp);
           output["out_frame"].send(); // zero copy
-          output["out_timestamp"].send();
+
           return raft::proceed;
         }
 
@@ -61,3 +53,4 @@ namespace mxre
     } // namespace input_srcs
   }   // namespace pipeline
 } // namespace mxre
+

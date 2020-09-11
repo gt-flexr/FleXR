@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
   const char* codecName = argv[1];
 
   /* FFmpeg RTP Settings */
-  const char *filename = "/home/jin/github/mxre/build/test.sdp";
+  const char *filename = "test1.sdp";
   AVFormatContext *rtpContext;
   AVDictionary *whitelist = NULL;
 
@@ -91,10 +91,10 @@ int main(int argc, char* argv[])
   SwsContext *swsContext = sws_getContext(rtpCodecContext->width, rtpCodecContext->height, rtpCodecContext->pix_fmt,
       rtpCodecContext->width, rtpCodecContext->height, AV_PIX_FMT_RGB24, SWS_BICUBIC, NULL, NULL, NULL);
 
-  int cvBufSize = avpicture_get_size(AV_PIX_FMT_BGR24, rtpCodecContext->width, rtpCodecContext->height);
+  int cvBufSize = avpicture_get_size(AV_PIX_FMT_RGB24, rtpCodecContext->width, rtpCodecContext->height);
   rtpFrame = av_frame_alloc();
   vector<uint8_t> cvFrameBuf(cvBufSize);
-  avpicture_fill(reinterpret_cast<AVPicture*>(rtpFrame), cvFrameBuf.data(), AV_PIX_FMT_BGR24,
+  avpicture_fill(reinterpret_cast<AVPicture*>(rtpFrame), cvFrameBuf.data(), AV_PIX_FMT_RGB24,
       rtpCodecContext->width, rtpCodecContext->height);
 
   int decBufSize = avpicture_get_size(AV_PIX_FMT_YUV420P, rtpCodecContext->width, rtpCodecContext->height);
@@ -105,10 +105,10 @@ int main(int argc, char* argv[])
 
   int gotFrame = 0, readSuccess = -1;
   do {
-    cout << "AA" << endl;
     AVPacket packet;
     av_init_packet(&packet);
     readSuccess = av_read_frame(rtpContext, &packet);
+
     if(packet.stream_index == videoStreamIndex) {
       cout << "SAME" << endl;
       int result = avcodec_decode_video2(rtpCodecContext, decFrame, &gotFrame, &packet);
