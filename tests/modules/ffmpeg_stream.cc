@@ -20,8 +20,8 @@ extern "C" {
 using namespace std;
 using namespace cv;
 
-void setCamera(VideoCapture *cam) {
-  cam->open(0);
+void setCamera(VideoCapture *cam, int camIdx) {
+  cam->open(camIdx);
   cam->set(CAP_PROP_FRAME_WIDTH, WIDTH);
   cam->set(CAP_PROP_FRAME_HEIGHT, HEIGHT);
 }
@@ -132,13 +132,13 @@ int main(int argc, char* argv[])
 
   /* OpenCV Camera Settings */
   cv::VideoCapture cam;
-  setCamera(&cam);
+  setCamera(&cam, 0);
   vector<uint8_t> cvFrameBuf(HEIGHT * WIDTH * 3 + 16);
   Mat cvFrame(HEIGHT, WIDTH, CV_8UC3, cvFrameBuf.data(), WIDTH * 3);
 
 
   /* FFmpeg RTP Settings */
-  const char *filename = "rtp://127.0.0.1:49990";
+  const char *filename = "rtp://0.0.0.0:49983";
   AVFormatContext *rtpContext;
   AVStream *rtpStream;
   AVCodec *rtpCodec;
@@ -203,7 +203,7 @@ int main(int argc, char* argv[])
   AVFormatContext *ac[] = { rtpContext };
   av_sdp_create(ac, 1, buf, 20000);
   printf("sdp:\n%s\n", buf);
-  FILE* fsdp = fopen("test.sdp", "w");
+  FILE* fsdp = fopen("test1.sdp", "w");
   fprintf(fsdp, "%s", buf);
   fclose(fsdp);
 

@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
   const char* codecName = argv[1];
 
   /* FFmpeg RTP Settings */
-  const char *filename = "/home/jin/github/mxre/build/test.sdp";
+  const char *filename = "test1.sdp";
   AVFormatContext *rtpContext;
   AVDictionary *whitelist = NULL;
 
