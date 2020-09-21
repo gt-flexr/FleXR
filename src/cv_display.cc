@@ -9,19 +9,19 @@ namespace mxre
     {
       CVDisplay::CVDisplay()
       {
-        input.addPort<cv::Mat>("in_frame");
+        input.addPort<mxre::cv_units::Mat>("in_frame");
       }
 
       CVDisplay::~CVDisplay() {}
 
       raft::kstatus CVDisplay::run()
       {
-        auto frame = input["in_frame"].peek<cv::Mat>();
+        auto &frame( input["in_frame"].peek<mxre::cv_units::Mat>() );
 
-        cv::imshow("CVDisplay", frame);
+        cv::imshow("CVDisplay", frame.cvMat);
         int inKey = cv::waitKey(100) & 0xFF;
+        frame.release();
 
-        cv_units::releaseMat(frame);
         input["in_frame"].recycle();
 
         return raft::proceed;

@@ -1,5 +1,7 @@
 #include <include/object_renderer.h>
 #include <include/gl_objects.h>
+#include <include/cv_types.h>
+
 namespace mxre
 {
   namespace pipeline
@@ -10,10 +12,10 @@ namespace mxre
       {
         mxre::eglutils::initEGLPbuffer(pbuf);
 
-        input.addPort<cv::Mat>("in_frame");
+        input.addPort<mxre::cv_units::Mat>("in_frame");
         input.addPort<std::vector<mxre::gltypes::ObjectContext>>("in_obj_context");
 
-        output.addPort<cv::Mat>("out_frame");
+        output.addPort<mxre::cv_units::Mat>("out_frame");
       }
 
       ObjectRenderer::~ObjectRenderer() {
@@ -26,17 +28,20 @@ namespace mxre
         mxre::glutils::initGL(WIDTH, HEIGHT);
 
         // get inputs from the previous kernel: ObjectDetector
-        auto frame = input["in_frame"].peek<cv::Mat>();
-        auto objCtxVec = input["in_obj_context"].peek<std::vector<mxre::gltypes::ObjectContext>>();
+        auto &frame( input["in_frame"].peek<mxre::cv_units::Mat>() );
+        auto objCtxVec( input["in_obj_context"].peek<std::vector<mxre::gltypes::ObjectContext>>() );
 
         // set outputs
-        auto out_frame = output["out_frame"].template allocate_s<cv::Mat>();
+        auto &out_frame( output["out_frame"].allocate<mxre::cv_units::Mat>() );
 
-        // 1. Create/update background texture
-        if(glIsTexture(backgroundTexture))
+        // 1. Create/update background texture & release previous CV frame
+        if(glIsTexture(backgroundTexture)) {
           mxre::glutils::updateTextureFromCVFrame(frame, backgroundTexture);
-        else
+        }
+        else {
           mxre::glutils::makeTextureFromCVFrame(frame, backgroundTexture);
+        }
+        frame.release();
 
         // 2. Draw background frame
         glClearColor(1.0, 1.0, 1.0, 1.0);
@@ -57,8 +62,10 @@ namespace mxre
         std::vector<mxre::gltypes::ObjectContext>::iterator objCtxIter;
         for (objCtxIter = objCtxVec.begin(); objCtxIter != objCtxVec.end(); ++objCtxIter)
         {
-          //printf("Translation info [obj renderer]: %f %f %f \n", objCtxIter->transVec.x, objCtxIter->transVec.y, objCtxIter->transVec.z);
-          //objCtxIter->rotMat.translate(objCtxIter->transVec.x, objCtxIter->transVec.y, objCtxIter->transVec.z);
+          /*
+          printf("Translation info [obj renderer]: %f %f %f \n", objCtxIter->transVec.x, objCtxIter->transVec.y,
+                                                                 objCtxIter->transVec.z);
+          objCtxIter->rotMat.translate(objCtxIter->transVec.x, objCtxIter->transVec.y, objCtxIter->transVec.z);
           printf("ObjCtxIter->modelMat=================== \n");
           printf("%f %f %f %f\n %f %f %f %f\n %f %f %f %f \n %f %f %f %f \n",
            objCtxIter->modelMat[0], objCtxIter->modelMat[1], objCtxIter->modelMat[2], objCtxIter->modelMat[3],
@@ -67,17 +74,17 @@ namespace mxre
            objCtxIter->modelMat[12], objCtxIter->modelMat[13], objCtxIter->modelMat[14], objCtxIter->modelMat[15]
           );
           printf("===================================== \n");
+          */
           glLoadMatrixf(objCtxIter->modelMat.get());
 
-          if(objCtxIter->index == 0) mxre::globjs::drawTeapot();
+          if(objCtxIter->index == 1) mxre::globjs::drawTeapot();
           else mxre::globjs::drawBox();
           //mxre::globjs::drawBox();
           glFlush();
         }
 
         glPopMatrix();
-        cv::Mat resFrame = mxre::glutils::exportGLBufferToCV();
-        *out_frame = resFrame;
+        out_frame = mxre::glutils::exportGLBufferToCV();
 
         input["in_frame"].recycle();
         input["in_obj_context"].recycle();

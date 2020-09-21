@@ -22,7 +22,7 @@ namespace mxre
         this->intrinsic.at<double>(1, 0) = 0; this->intrinsic.at<double>(1, 1) = WIDTH; this->intrinsic.at<double>(1, 2) = HEIGHT/2;
         this->intrinsic.at<double>(2, 0) = 0; this->intrinsic.at<double>(2, 1) = 0; this->intrinsic.at<double>(2, 2) = 1;
 
-        output.addPort<cv::Mat>("out_frame");
+        output.addPort<mxre::cv_units::Mat>("out_frame");
       }
 
       Camera::~Camera()
@@ -35,10 +35,11 @@ namespace mxre
       {
         while (frame_idx++ < TOTAL_FRAMES)
         {
-          auto frame = output["out_frame"].template allocate_s<cv::Mat>();
+          auto &frame( output["out_frame"].allocate<mxre::cv_units::Mat>() );
+          frame = mxre::cv_units::Mat(HEIGHT, WIDTH, CV_8UC3);
+          cam.read(frame.cvMat);
 
-          cam >> *frame;
-          if ((*frame).empty())
+          if (frame.cvMat.empty())
           {
             std::cerr << "ERROR: blank frame grabbed" << std::endl;
             break;

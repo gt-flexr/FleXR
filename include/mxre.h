@@ -25,6 +25,7 @@
 
 /** ctx_understanding **/
 #include "object_detector.h"
+#include "cuda_orb_detector.h"
 
 /** contextualizing **/
 #include "object_ctx_extractor.h"

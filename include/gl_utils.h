@@ -6,6 +6,7 @@
 #endif
 
 #include "defs.h"
+#include "cv_types.h"
 
 #include <GL/glut.h>
 #include <GL/gl.h>
@@ -34,6 +35,7 @@ namespace mxre
 
       glEnable(GL_LIGHT0); // MUST enable each light source after configuration
     }
+
 
     static void initGL(int width, int height)
     {
@@ -75,7 +77,8 @@ namespace mxre
       glLoadIdentity();
     }
 
-    static cv::Mat exportGLBufferToCV()
+
+    static mxre::cv_units::Mat exportGLBufferToCV()
     {
       glReadBuffer(GL_FRONT);
       glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -83,8 +86,11 @@ namespace mxre
       unsigned char *pixels = new unsigned char[3 * WIDTH * HEIGHT];
       glReadPixels(0, 0, WIDTH, HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, pixels);
 
-      return cv::Mat(HEIGHT, WIDTH, CV_8UC3, pixels);
+      debug_print("allocated pixel addr: %p", static_cast<void*>(pixels));
+
+      return mxre::cv_units::Mat(HEIGHT, WIDTH, CV_8UC3, pixels);
     }
+
 
     static void makeEmptyTexture(GLuint &tex, int width, int height)
     {
@@ -101,9 +107,10 @@ namespace mxre
       glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    static void makeTextureFromCVFrame(cv::Mat &mat, GLuint &tex)
+
+    static void makeTextureFromCVFrame(mxre::cv_units::Mat &mat, GLuint &tex)
     {
-      if (mat.empty())
+      if (mat.cvMat.empty())
       {
         std::cout << "image empty" << std::endl;
         return;
@@ -123,12 +130,14 @@ namespace mxre
       glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    static void updateTextureFromCVFrame(cv::Mat &mat, GLuint &tex)
+
+    static void updateTextureFromCVFrame(mxre::cv_units::Mat &mat, GLuint &tex)
     {
       glBindTexture(GL_TEXTURE_2D, tex);
       glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mat.cols, mat.rows, GL_BGR, GL_UNSIGNED_BYTE, mat.data);
       glBindTexture(GL_TEXTURE_2D, 0);
     }
+
 
     static void startBackground(int width, int height) {
       // 1. Clear GL_PROJECTION
@@ -146,6 +155,7 @@ namespace mxre
       glTranslatef(-width/2, -height/2, 0); // set mid point
     }
 
+
     static void endBackground() {
       // 1. Restore the previous projection
       glMatrixMode(GL_PROJECTION);
@@ -155,6 +165,7 @@ namespace mxre
       glMatrixMode(GL_MODELVIEW);
       glPopMatrix();
     }
+
 
     static bool checkFramebuffer(GLuint fbo)
     {
@@ -197,6 +208,7 @@ namespace mxre
       }
       glBindFramebuffer(GL_FRAMEBUFFER, 0); // unbind
     }
+
 
     static void makeFramebuffer(GLuint &fboID, GLuint &rboDepthID, GLuint &tex, int width, int height)
     {

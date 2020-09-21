@@ -12,9 +12,9 @@ namespace mxre
                                                                                 detector(_detector),
                                                                                 matcher(_matcher), raft::kernel()
       {
-        input.addPort<cv::Mat>("in_frame");
+        input.addPort<mxre::cv_units::Mat>("in_frame");
 
-        output.addPort<cv::Mat>("out_frame");
+        output.addPort<mxre::cv_units::Mat>("out_frame");
         output.addPort<std::vector<mxre::cv_units::ObjectInfo>>("out_obj_info");
 
         // Object Detection Parameters
@@ -31,14 +31,14 @@ namespace mxre
       raft::kstatus ObjectDetector::run() {
         std::vector<cv::KeyPoint> frameKps;
         cv::Mat frameDesc;
-        auto frame = input["in_frame"].peek<cv::Mat>();
+        auto &frame( input["in_frame"].peek<mxre::cv_units::Mat>() );
 
         // prepare output for the next kernel
-        auto out_frame = output["out_frame"].template allocate_s<cv::Mat>();
-        auto out_obj_info = output["out_obj_info"].template allocate_s<std::vector<mxre::cv_units::ObjectInfo>>();
+        auto &out_frame( output["out_frame"].allocate<mxre::cv_units::Mat>() );
+        auto &out_obj_info( output["out_obj_info"].allocate<std::vector<mxre::cv_units::ObjectInfo>>() );
 
         // 1. figure out frame keypoints and descriptors to detect objects in the frame
-        detector->detectAndCompute(frame, cv::noArray(), frameKps, frameDesc);
+        detector->detectAndCompute(frame.cvMat, cv::noArray(), frameKps, frameDesc);
 
         // multiple object detection
         std::vector<mxre::cv_units::ObjectInfo>::iterator objIter;
@@ -94,15 +94,15 @@ namespace mxre
             {
               objIter->isDetected = true;
               perspectiveTransform(objIter->rect2D, objIter->location2D, homography);
-              mxre::cv_units::drawBoundingBox(frame, objIter->location2D);
+              mxre::cv_units::drawBoundingBox(frame.cvMat, objIter->location2D);
             }
             else
               objIter->isDetected = false;
           }
         }
 
-        *out_frame = frame;
-        *out_obj_info = objInfoVec;
+        out_frame = frame;
+        out_obj_info = objInfoVec;
 
         input["in_frame"].recycle();
 
