@@ -40,6 +40,11 @@ namespace mxre
       /* Run() */
       template<typename IN_T>
       raft::kstatus StaticSender<IN_T>::run() {
+
+#ifdef __PROFILE__
+        TimeVal start = getNow();
+#endif
+
         debug_print("[StaticSender] isVector(%d) START", isVector);
         uint numElem, elemSize;
         void *data;
@@ -68,6 +73,12 @@ namespace mxre
         zmq_recv(sock, ackMsg, 4, 0);
 
         input["in_data"].recycle(1);
+
+#ifdef __PROFILE__
+        TimeVal end = getNow();
+        debug_print("Exe Time: %lfms", getExeTime(end, start));
+#endif
+
         return raft::proceed;
       }
     } // namespace network

@@ -24,6 +24,11 @@ namespace mxre
 
       raft::kstatus ObjectCtxExtractor::run()
       {
+
+#ifdef __PROFILE__
+        TimeVal start = getNow();
+#endif
+
         // get inputs from the previous kernel: ObjectDetector
         auto &frame( input["in_frame"].peek<mxre::cv_units::Mat>() );
         auto &objInfoVec( input["in_obj_info"].peek<std::vector<mxre::cv_units::ObjectInfo>>() );
@@ -88,8 +93,8 @@ namespace mxre
             //printf("[Obj Position] x(%lf), y(%lf), z(%lf) \n", transX, transY, transZ);
             //printf("[Obj Position with SCALE_FACTOR] x(%lf), y(%lf), z(%lf) \n",
             //       transX * SCALE_FACTOR, transY * SCALE_FACTOR, -SCALE_FACTOR - transZ * SCALE_FACTOR);
+            //printf("\n");
             objCtx.modelMat.translate(transX * SCALE_FACTOR, transY * SCALE_FACTOR, -SCALE_FACTOR - transZ * SCALE_FACTOR);
-            printf("\n");
 
             objCtxVec.push_back(objCtx);
           }
@@ -100,8 +105,14 @@ namespace mxre
         input["in_frame"].recycle();
         input["in_obj_info"].recycle();
 
+#ifdef __PROFILE__
+        TimeVal end = getNow();
+        debug_print("Exe Time: %lfms", getExeTime(end, start));
+#endif
+
         output["out_frame"].send();
         output["out_obj_context"].send();
+
         return raft::proceed;
       }
 

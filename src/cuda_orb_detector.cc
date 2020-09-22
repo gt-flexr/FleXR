@@ -30,6 +30,9 @@ namespace mxre
 
 
       raft::kstatus CudaORBDetector::run() {
+#ifdef __PROFILE__
+        TimeVal start = getNow();
+#endif
         auto &frame( input["in_frame"].peek<mxre::cv_units::Mat>() );
 
         auto &out_frame( output["out_frame"].allocate<mxre::cv_units::Mat>() );
@@ -94,6 +97,11 @@ namespace mxre
         out_obj_info = objInfoVec;
 
         input["in_frame"].recycle();
+
+#ifdef __PROFILE__
+        TimeVal end = getNow();
+        debug_print("Exe Time: %lfms", getExeTime(end, start));
+#endif
 
         output["out_frame"].send();
         output["out_obj_info"].send();

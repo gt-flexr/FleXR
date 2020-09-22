@@ -23,4 +23,10 @@
                               fprintf(stderr, __VA_ARGS__); \
                               fprintf(stderr, "\n"); } \
                             } while (0)
+
+#include <chrono>
+#define getExeTime(a,b) ( (double)(std::chrono::duration_cast<std::chrono::microseconds>(a-b).count()) / 1000 )
+#define getNow() std::chrono::high_resolution_clock::now()
+typedef std::chrono::high_resolution_clock::time_point TimeVal;
 #endif
+

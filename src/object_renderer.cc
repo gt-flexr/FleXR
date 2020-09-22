@@ -24,6 +24,11 @@ namespace mxre
 
       raft::kstatus ObjectRenderer::run()
       {
+
+#ifdef __PROFILE__
+        TimeVal start = getNow();
+#endif
+
         mxre::eglutils::setCurrentPbuffer(pbuf);
         mxre::glutils::initGL(WIDTH, HEIGHT);
 
@@ -40,6 +45,7 @@ namespace mxre
         }
         else {
           mxre::glutils::makeTextureFromCVFrame(frame, backgroundTexture);
+          mxre::glutils::updateTextureFromCVFrame(frame, backgroundTexture);
         }
         frame.release();
 
@@ -82,12 +88,16 @@ namespace mxre
           //mxre::globjs::drawBox();
           glFlush();
         }
-
         glPopMatrix();
         out_frame = mxre::glutils::exportGLBufferToCV();
 
         input["in_frame"].recycle();
         input["in_obj_context"].recycle();
+
+#ifdef __PROFILE__
+        TimeVal end = getNow();
+        debug_print("Exe Time: %lfms", getExeTime(end, start));
+#endif
 
         output["out_frame"].send();
         return raft::proceed;

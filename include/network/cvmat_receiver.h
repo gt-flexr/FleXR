@@ -38,6 +38,11 @@ namespace mxre
 
       /* Run() */
       raft::kstatus MatReceiver::run() {
+
+#ifdef __PROFILE__
+        TimeVal start = getNow();
+#endif
+
         debug_print("[MatReceiver] isVector(%d) START", isVector);
         char ackMsg[4], endMsg[4];
         uint vecSize, matInfo[MX_MAT_ATTR_NUM];
@@ -95,6 +100,12 @@ namespace mxre
 
         // 3. Send ACK
         zmq_send(sock, ackMsg, 4, 0);
+
+#ifdef __PROFILE__
+        TimeVal end = getNow();
+        debug_print("Exe Time: %lfms", getExeTime(end, start));
+#endif
+
         output["out_data"].send();
         return raft::proceed;
       }

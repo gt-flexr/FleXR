@@ -43,6 +43,11 @@ namespace mxre
       /* Run() */
       template<typename OUT_T>
       raft::kstatus StaticReceiver<OUT_T>::run() {
+
+#ifdef __PROFILE__
+        TimeVal start = getNow();
+#endif
+
         debug_print("[StaticReceiver] isVector(%d) START", isVector);
         uint numElem, elemSize;
         void *data;
@@ -71,6 +76,12 @@ namespace mxre
 
         // 3. Send ACK
         zmq_send(sock, ackMsg, 4, 0);
+
+
+#ifdef __PROFILE__
+        TimeVal end = getNow();
+        debug_print("Exe Time: %lfms", getExeTime(end, start));
+#endif
 
         output["out_data"].send();
         return raft::proceed;

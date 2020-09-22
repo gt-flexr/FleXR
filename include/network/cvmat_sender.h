@@ -39,11 +39,13 @@ namespace mxre
 
       /* Run() */
       raft::kstatus MatSender::run() {
-        debug_print("[MatSender] isVector(%d) START", isVector);
+
+#ifdef __PROFILE__
+        TimeVal start = getNow();
+#endif
         char ackMsg[4];
         std::vector<mxre::cv_units::Mat> inMat;
         if(isVector) {
-          //auto &inData( input["in_data"].template peek<std::vector<mxre::cv_units::Mat>>() );
           inMat = input["in_data"].template peek<std::vector<mxre::cv_units::Mat>>();
         }
         else {
@@ -75,6 +77,12 @@ namespace mxre
           inMat[i].release();
         }
         input["in_data"].recycle(1);
+
+#ifdef __PROFILE__
+        TimeVal end = getNow();
+        debug_print("Exe Time: %lfms", getExeTime(end, start));
+#endif
+
         return raft::proceed;
       }
     } // namespace network

@@ -176,6 +176,11 @@ namespace mxre
 
       /* Run() */
       raft::kstatus RTPFrameSender::run() {
+
+#ifdef __PROFILE__
+        TimeVal start = getNow();
+#endif
+
         auto &inData( input["in_data"].template peek<mxre::cv_units::Mat>() );
         if(inData.rows != height || inData.cols != width) {
           clearSession();
@@ -215,6 +220,12 @@ namespace mxre
         inData.release();
 
         input["in_data"].recycle(1);
+
+#ifdef __PROFILE__
+        TimeVal end = getNow();
+        debug_print("Exe Time: %lfms", getExeTime(end, start));
+#endif
+
         return raft::proceed;
       }
     } // namespace network

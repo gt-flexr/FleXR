@@ -139,6 +139,11 @@ namespace mxre
 
       /* Run() */
       raft::kstatus RTPFrameReceiver::run() {
+
+#ifdef __PROFILE__
+        TimeVal start = getNow();
+#endif
+
         auto &outData( output["out_data"].allocate<mxre::cv_units::Mat>() );
         int ret = 0, receivedFrame = 0, readSuccess = -1;
 
@@ -159,6 +164,12 @@ namespace mxre
           }
         }
         av_free_packet(&packet);
+
+#ifdef __PROFILE__
+        TimeVal end = getNow();
+        debug_print("Exe Time: %lfms", getExeTime(end, start));
+#endif
+
         return raft::proceed;
       }
     } // namespace network
