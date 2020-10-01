@@ -3,12 +3,11 @@
 
 #include <GL/glut.h>
 #include <GL/gl.h>
-#include <GL/glext.h>
 
 
 namespace mxre
 {
-  namespace globjs
+  namespace gl
   {
     static void drawBox() {
       glBegin(GL_QUADS);           // Begin drawing the color cube with 6 quads

@@ -8,7 +8,7 @@
 
 namespace mxre
 {
-  namespace eglutils
+  namespace egl
   {
     static const EGLint configAttribs[] = {
         EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
@@ -59,6 +59,7 @@ namespace mxre
     static void terminatePbuffer(EGLPbuffer &pbuf) {
       eglTerminate(pbuf.eglDpy);
     }
-  } // namespace utils
+  } // namespace egl
 } // namespace mxre
 #endif
+

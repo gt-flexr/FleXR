@@ -10,10 +10,11 @@
 #include <cmath>
 #include <iostream>
 #include <iomanip>
+#include <glm/glm.hpp>
 
 namespace mxre
 {
-  namespace gltypes
+  namespace gl
   {
     typedef struct Vector2
     {
@@ -1561,10 +1562,11 @@ namespace mxre
 
     typedef struct ObjectContext {
       int index;
-      Matrix4 modelMat;
+      glm::vec3 rvec;
+      glm::vec3 tvec;
     } ObjectContext;
 
-  } // namespace gltypes
+  } // namespace gl
 } // namespace mxre
 
 #endif

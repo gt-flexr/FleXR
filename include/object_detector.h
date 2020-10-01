@@ -20,7 +20,7 @@ namespace mxre
       class ObjectDetector : public raft::kernel
       {
         private:
-          std::vector<mxre::cv_units::ObjectInfo> objInfoVec;
+          std::vector<mxre::cv_units::ObjectInfo> objInfos;
           cv::Ptr<cv::Feature2D> detector;
           cv::Ptr<cv::DescriptorMatcher> matcher;
 

@@ -1,18 +1,30 @@
 #ifndef __MXRE__
 #define __MXRE__
 
-/* defs */
+#ifndef STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#endif
+
+/* defs & utils */
 #include "defs.h"
+#include "utils/path_finder.h"
 
 
-/* utils */
-#include "gl_utils.h"
-#include "gl_types.h"
-#include "egl_utils.h"
-#include "cv_types.h"
+/* ogl egl */
+#include "gl/shader.h"
+#include "gl/mesh.h"
+#include "gl/model.h"
+#include "gl/camera.h"
+#include "gl/gl_utils.h"
+#include "gl/gl_objects.h"
+#include "gl/gl_types.h"
+#include "gl/egl_utils.h"
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 
 /* cv_units */
+#include "cv_types.h"
 #include "object_tracker.h"
 
 
