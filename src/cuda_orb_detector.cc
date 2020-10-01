@@ -1,4 +1,4 @@
-#include <include/cuda_orb_detector.h>
+#include "cuda_orb_detector.h"
 #include <opencv2/core.hpp>
 
 namespace mxre
@@ -14,6 +14,11 @@ namespace mxre
 
         output.addPort<mxre::cv_units::Mat>("out_frame");
         output.addPort<std::vector<mxre::cv_units::ObjectInfo>>("out_obj_info");
+
+#ifdef __PROFILE__
+        input.addPort<FrameStamp>("frame_stamp");
+        output.addPort<FrameStamp>("frame_stamp");
+#endif
 
         // Object Detection Parameters
         knnMatchRatio = 0.8f;
@@ -101,6 +106,12 @@ namespace mxre
 #ifdef __PROFILE__
         TimeVal end = getNow();
         debug_print("Exe Time: %lfms", getExeTime(end, start));
+
+        auto &inFrameStamp( input["frame_stamp"].peek<FrameStamp>() );
+        auto &outFrameStamp( output["frame_stamp"].allocate<FrameStamp>() );
+        outFrameStamp = inFrameStamp;
+        input["frame_stamp"].recycle();
+        output["frame_stamp"].send();
 #endif
 
         output["out_frame"].send();

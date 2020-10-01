@@ -1,4 +1,4 @@
-#include <include/object_detector.h>
+#include "object_detector.h"
 
 namespace mxre
 {
@@ -6,9 +6,9 @@ namespace mxre
   {
     namespace ctx_understanding
     {
-      ObjectDetector::ObjectDetector(std::vector<mxre::cv_units::ObjectInfo> registeredObjVec,
+      ObjectDetector::ObjectDetector(std::vector<mxre::cv_units::ObjectInfo> registeredObjs,
                                      cv::Ptr<cv::Feature2D> _detector,
-                                     cv::Ptr<cv::DescriptorMatcher> _matcher) : objInfoVec(registeredObjVec),
+                                     cv::Ptr<cv::DescriptorMatcher> _matcher) : objInfos(registeredObjs),
                                                                                 detector(_detector),
                                                                                 matcher(_matcher), raft::kernel()
       {
@@ -16,6 +16,11 @@ namespace mxre
 
         output.addPort<mxre::cv_units::Mat>("out_frame");
         output.addPort<std::vector<mxre::cv_units::ObjectInfo>>("out_obj_info");
+
+#ifdef __PROFILE__
+        input.addPort<FrameStamp>("frame_stamp");
+        output.addPort<FrameStamp>("frame_stamp");
+#endif
 
         // Object Detection Parameters
         knnMatchRatio = 0.8f;
@@ -47,7 +52,7 @@ namespace mxre
 
         // multiple object detection
         std::vector<mxre::cv_units::ObjectInfo>::iterator objIter;
-        for (objIter = objInfoVec.begin(); objIter != objInfoVec.end(); ++objIter)
+        for (objIter = objInfos.begin(); objIter != objInfos.end(); ++objIter)
         {
           // 2. use the matcher to find correspondence
           std::vector<std::vector<cv::DMatch>> matches;
@@ -107,13 +112,19 @@ namespace mxre
         }
 
         out_frame = frame;
-        out_obj_info = objInfoVec;
+        out_obj_info = objInfos;
 
         input["in_frame"].recycle();
 
 #ifdef __PROFILE__
         TimeVal end = getNow();
         debug_print("Exe Time: %lfms", getExeTime(end, start));
+
+        auto &inFrameStamp( input["frame_stamp"].peek<FrameStamp>() );
+        auto &outFrameStamp( output["frame_stamp"].allocate<FrameStamp>() );
+        outFrameStamp = inFrameStamp;
+        input["frame_stamp"].recycle();
+        output["frame_stamp"].send();
 #endif
 
         output["out_frame"].send();

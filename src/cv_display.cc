@@ -1,5 +1,5 @@
-#include <include/cv_display.h>
-#include <include/cv_types.h>
+#include "cv_display.h"
+#include "cv_types.h"
 
 namespace mxre
 {
@@ -10,6 +10,10 @@ namespace mxre
       CVDisplay::CVDisplay()
       {
         input.addPort<mxre::cv_units::Mat>("in_frame");
+
+#ifdef __PROFILE__
+        input.addPort<FrameStamp>("frame_stamp");
+#endif
       }
 
       CVDisplay::~CVDisplay() {}
@@ -32,6 +36,10 @@ namespace mxre
 #ifdef __PROFILE__
         TimeVal end = getNow();
         debug_print("Exe Time: %lfms", getExeTime(end, start));
+
+        auto &inFrameStamp( input["frame_stamp"].peek<FrameStamp>() );
+        debug_print("Frame(%d) Processing Time %lfms", inFrameStamp.index, getExeTime(end, inFrameStamp.st));
+        input["frame_stamp"].recycle();
 #endif
 
         return raft::proceed;
