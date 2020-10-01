@@ -31,7 +31,8 @@ build_option(BUILD_TYPE Debug)
 build_option(PROFILE ON)
 
 # Source codes & headers
-include_directories("include")
+#include_directories("include")
+configure_file(config/root_directory.h.in config/root_directory.h)
 
 # MXRE compile info
 set(MXRE_CXX_FLAGS "")
@@ -51,6 +52,7 @@ message("\t MXRE_LINKER_FLAGS: ${MXRE_LINKER_FLAGS}")
 message("\t MXRE_LINKER_LIBS: ${MXRE_LINKER_LIBS}")
 message("\t MXRE_SRCS: ${MXRE_SRCS}")
 
+add_subdirectory(third-party)
 add_subdirectory(src)
-add_subdirectory(tests)
+add_subdirectory(examples)
 
