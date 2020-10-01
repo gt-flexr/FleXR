@@ -1,30 +1,8 @@
-#include "cv_types.h"
 #include <raft>
 #include <mxre.h>
 #include <bits/stdc++.h>
-#include <raftinc/kernel.hpp>
 
 using namespace std;
-
-class testSink: public raft::kernel {
-  public:
-  testSink() {
-    input.addPort<mxre::cv_units::Mat>("in_frame");
-  }
-
-  raft::kstatus run() {
-    debug_print("testSink START");
-    auto &frame( input["in_frame"].peek<mxre::cv_units::Mat>() );
-
-    debug_print("received pixel isExt %d data %p", frame.isExt, frame.data);
-    frame.release();
-
-    input["in_frame"].recycle();
-    debug_print("testSink END");
-
-    return raft::proceed;
-  }
-};
 
 int main(int argc, char const *argv[])
 {
@@ -97,10 +75,8 @@ int main(int argc, char const *argv[])
   mxre::pipeline::input_srcs::Camera cam(camera_no);
   mxre::pipeline::ctx_understanding::ObjectDetector objDetector(objTracker.getRegisteredObjects(), orb, matcher);
   mxre::pipeline::contextualizing::ObjectCtxExtractor objCtxExtractor(cam.getIntrinsic(), cam.getDistCoeffs());
-  mxre::pipeline::rendering::ObjectRenderer objRenderer;
+  mxre::pipeline::rendering::ObjectRenderer objRenderer(objTracker.getRegisteredObjects());
   mxre::pipeline::output_sinks::CVDisplay cvDisplay;
-
-  testSink sink;
 
   raft::map pipeline;
 
@@ -115,10 +91,16 @@ int main(int argc, char const *argv[])
   // obj ctx extractor - obj renderer
   pipeline += objCtxExtractor["out_frame"] >> objRenderer["in_frame"];
   pipeline += objCtxExtractor["out_obj_context"] >> objRenderer["in_obj_context"];
-  pipeline += objRenderer["out_frame"] >> sink["in_frame"];
 
   // obj renderer - test sink
-  //pipeline += objRenderer["out_frame"] >> cvDisplay["in_frame"];
+  pipeline += objRenderer["out_frame"] >> cvDisplay["in_frame"];
+
+#ifdef __PROFILE__
+  pipeline += cam["frame_stamp"] >> objDetector["frame_stamp"];
+  pipeline += objDetector["frame_stamp"] >> objCtxExtractor["frame_stamp"];
+  pipeline += objCtxExtractor["frame_stamp"] >> objRenderer["frame_stamp"];
+  pipeline += objRenderer["frame_stamp"] >> cvDisplay["frame_stamp"];
+#endif
 
   cout << "pipeline ext()" << endl;
   pipeline.exe();

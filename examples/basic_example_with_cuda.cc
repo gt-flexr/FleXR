@@ -6,7 +6,6 @@ using namespace std;
 
 int main(int argc, char const *argv[])
 {
-  /* set markers */
   cv::CommandLineParser parser(argc, argv,
       "{@input_path |0|input path can be a camera id, like 0,1,2 or a video filename}");
   parser.printMessage();
@@ -73,33 +72,36 @@ int main(int argc, char const *argv[])
   objTracker.printRegisteredObjects();
   video_src.release();
 
-  cv::Mat defaultDistCoeffs = cv::Mat(4, 1, CV_64FC1, {0, 0, 0, 0});
-  cv::Mat defaultIntrinsic = cv::Mat(3, 3, CV_64FC1);
-  defaultIntrinsic.at<double>(0, 0) = WIDTH; defaultIntrinsic.at<double>(0, 1) = 0; defaultIntrinsic.at<double>(0, 2) = WIDTH/2;
-  defaultIntrinsic.at<double>(1, 0) = 0; defaultIntrinsic.at<double>(1, 1) = WIDTH; defaultIntrinsic.at<double>(1, 2) = HEIGHT/2;
-  defaultIntrinsic.at<double>(2, 0) = 0; defaultIntrinsic.at<double>(2, 1) = 0; defaultIntrinsic.at<double>(2, 2) = 1;
+  mxre::pipeline::input_srcs::Camera cam(camera_no);
+  mxre::pipeline::ctx_understanding::CudaORBDetector cudaORBDetector(objTracker.getRegisteredObjects());
+  mxre::pipeline::contextualizing::ObjectCtxExtractor objCtxExtractor(cam.getIntrinsic(), cam.getDistCoeffs());
+  mxre::pipeline::rendering::ObjectRenderer objRenderer(objTracker.getRegisteredObjects());
+  mxre::pipeline::output_sinks::CVDisplay cvDisplay;
 
-  raft::map servingPipeline;
-  mxre::pipeline::ctx_understanding::ObjectDetector objDetector(objTracker.getRegisteredObjects(), orb, matcher);
-  mxre::pipeline::contextualizing::ObjectCtxExtractor objCtxExtractor(defaultIntrinsic, defaultDistCoeffs);
-  mxre::pipeline::rendering::ObjectRenderer objRenderer;
-  mxre::pipeline::network::RTPFrameSender rtpSender("mjpeg", "recv.sdp", 49995, 800000, 10, WIDTH, HEIGHT);
-  mxre::pipeline::network::RTPFrameReceiver rtpReceiver("mjpeg", "send.sdp", WIDTH, HEIGHT);
+  raft::map pipeline;
 
-  //mxre::pipeline::output_sinks::CVDisplay cvDisplay;
+  // cam - obj detector
+  pipeline += cam["out_frame"] >> cudaORBDetector["in_frame"];
 
-  servingPipeline += rtpReceiver["out_data"] >> objDetector["in_frame"];
+  // obj detector - obj ctx extractor
+  pipeline += cudaORBDetector["out_frame"] >> objCtxExtractor["in_frame"];
+  pipeline += cudaORBDetector["out_obj_info"] >> objCtxExtractor["in_obj_info"];
 
-  servingPipeline += objDetector["out_frame"] >> objCtxExtractor["in_frame"];
-  servingPipeline += objDetector["out_obj_info"] >> objCtxExtractor["in_obj_info"];
+  // obj ctx extractor - obj renderer
+  pipeline += objCtxExtractor["out_frame"] >> objRenderer["in_frame"];
+  pipeline += objCtxExtractor["out_obj_context"] >> objRenderer["in_obj_context"];
 
-  servingPipeline += objCtxExtractor["out_frame"] >> objRenderer["in_frame"];
-  servingPipeline += objCtxExtractor["out_obj_context"] >> objRenderer["in_obj_context"];
+  // obj renderer - test sink
+  pipeline += objRenderer["out_frame"] >> cvDisplay["in_frame"];
 
-  servingPipeline += objRenderer["out_frame"] >> rtpSender["in_data"];
-  //servingPipeline += objRenderer["out_frame"] >> cvDisplay["in_frame"];
+#ifdef __PROFILE__
+  pipeline += cam["frame_stamp"] >> cudaORBDetector["frame_stamp"];
+  pipeline += cudaORBDetector["frame_stamp"] >> objCtxExtractor["frame_stamp"];
+  pipeline += objCtxExtractor["frame_stamp"] >> objRenderer["frame_stamp"];
+  pipeline += objRenderer["frame_stamp"] >> cvDisplay["frame_stamp"];
+#endif
 
-  servingPipeline.exe();
+  pipeline.exe();
   return 0;
 }
 
