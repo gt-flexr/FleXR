@@ -6,6 +6,7 @@
 #include <opencv2/opencv.hpp>
 #include <string>
 #include "defs.h"
+#include "cv_types.h"
 
 extern "C" {
 #include <libavformat/avformat.h>

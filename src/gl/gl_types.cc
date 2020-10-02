@@ -20,12 +20,12 @@
 
 #include <cmath>
 #include <algorithm>
-#include <include/gl_types.h>
+#include <gl/gl_types.h>
 #include <iostream>
 
 namespace mxre
 {
-  namespace gltypes
+  namespace gl
   {
     const float DEG2RAD = 3.141593f / 180.0f;
     const float RAD2DEG = 180.0f / 3.141593f;
@@ -804,5 +804,6 @@ Matrix4& Matrix4::skew(float angle, const Vector3& axis)
 
       return Vector3(pitch, yaw, roll);
     }
-  } // namespace gltypes
+  } // namespace gl
 } // namespace mxre
+

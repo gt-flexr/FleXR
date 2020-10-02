@@ -9,9 +9,19 @@
 #include <opencv2/highgui.hpp>
 
 #include "defs.h"
-#include "egl_utils.h"
-#include "gl_utils.h"
-#include "gl_types.h"
+#include "cv_types.h"
+#include "utils/path_finder.h"
+
+#include "gl/egl_utils.h"
+#include "gl/gl_utils.h"
+#include "gl/gl_objects.h"
+#include "gl/gl_types.h"
+#include "gl/camera.h"
+#include "gl/shader.h"
+#include "gl/model.h"
+
+#include "ar/world.h"
+#include "ar/object.h"
 
 namespace mxre
 {
@@ -22,10 +32,14 @@ namespace mxre
       class ObjectRenderer : public raft::kernel
       {
       private:
-        mxre::eglutils::EGLPbuffer pbuf;
+        mxre::egl::EGLPbuffer *pbuf;
         GLuint backgroundTexture;
+        mxre::gl::Camera camera;
+        mxre::gl::Shader shader;
+        std::vector<mxre::ar::World> worldMaps;
+        bool binding;
       public:
-        ObjectRenderer();
+        ObjectRenderer(std::vector<mxre::cv_units::ObjectInfo> registeredObjs);
         ~ObjectRenderer();
         virtual raft::kstatus run();
       };
@@ -34,3 +48,4 @@ namespace mxre
 } // namespace mxre
 
 #endif
+

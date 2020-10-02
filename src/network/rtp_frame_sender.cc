@@ -1,4 +1,4 @@
-#include <include/network/rtp_frame_sender.h>
+#include "network/rtp_frame_sender.h"
 
 namespace mxre
 {
@@ -12,7 +12,7 @@ namespace mxre
         encoder(encoder), sdp(sdp), port(port), bitrate(bitrate), fps(fps), width(width), height(height), framePts(0),
         raft::kernel()
       {
-        input.addPort<cv::Mat>("in_data");
+        input.addPort<mxre::cv_units::Mat>("in_data");
         this->filename = "rtp://0.0.0.0:" + std::to_string(port);
 
         av_register_all();
@@ -176,7 +176,12 @@ namespace mxre
 
       /* Run() */
       raft::kstatus RTPFrameSender::run() {
-        auto &inData( input["in_data"].template peek<cv::Mat>() );
+
+#ifdef __PROFILE__
+        TimeVal start = getNow();
+#endif
+
+        auto &inData( input["in_data"].template peek<mxre::cv_units::Mat>() );
         if(inData.rows != height || inData.cols != width) {
           clearSession();
           debug_print("inMat size is not compatible.");
@@ -186,7 +191,7 @@ namespace mxre
         int ret=0, gotPkt=0;
 
         // convert cvframe into ffmpeg frame
-        const int stride[] = {static_cast<int>(inData.step[0])};
+        const int stride[] = {static_cast<int>(inData.cvMat.step[0])};
         sws_scale(swsContext, &inData.data, stride, 0, inData.rows, rtpFrame->data, rtpFrame->linesize);
         rtpFrame->pts = framePts++;
 
@@ -212,11 +217,15 @@ namespace mxre
           /* Write the compressed frame to the media file. */
           av_interleaved_write_frame(rtpContext, &packet);
         }
-
         inData.release();
-        if(inData.data) delete[] inData.data;
 
         input["in_data"].recycle(1);
+
+#ifdef __PROFILE__
+        TimeVal end = getNow();
+        debug_print("Exe Time: %lfms", getExeTime(end, start));
+#endif
+
         return raft::proceed;
       }
     } // namespace network

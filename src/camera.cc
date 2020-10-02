@@ -1,5 +1,5 @@
-#include <include/camera.h>
-#include <include/cv_types.h>
+#include "camera.h"
+#include "cv_types.h"
 
 namespace mxre
 {
@@ -22,7 +22,10 @@ namespace mxre
         this->intrinsic.at<double>(1, 0) = 0; this->intrinsic.at<double>(1, 1) = WIDTH; this->intrinsic.at<double>(1, 2) = HEIGHT/2;
         this->intrinsic.at<double>(2, 0) = 0; this->intrinsic.at<double>(2, 1) = 0; this->intrinsic.at<double>(2, 2) = 1;
 
-        output.addPort<cv::Mat>("out_frame");
+        output.addPort<mxre::cv_units::Mat>("out_frame");
+#ifdef __PROFILE__
+        output.addPort<FrameStamp>("frame_stamp");
+#endif
       }
 
       Camera::~Camera()
@@ -33,22 +36,30 @@ namespace mxre
 
       raft::kstatus Camera::run()
       {
-        while (frame_idx++ < TOTAL_FRAMES)
+        auto &frame( output["out_frame"].allocate<mxre::cv_units::Mat>() );
+        frame = mxre::cv_units::Mat(HEIGHT, WIDTH, CV_8UC3);
+        cam.read(frame.cvMat);
+
+        if (frame.cvMat.empty())
         {
-          auto frame = output["out_frame"].template allocate_s<cv::Mat>();
-
-          cam >> *frame;
-          if ((*frame).empty())
-          {
-            std::cerr << "ERROR: blank frame grabbed" << std::endl;
-            break;
-          }
-          output["out_frame"].send(); // zero copy
-
-          return raft::proceed;
+          std::cerr << "ERROR: blank frame grabbed" << std::endl;
+          exit(1);
         }
 
-        return raft::stop;
+#ifdef __PROFILE__
+        auto &frameStamp( output["frame_stamp"].allocate<FrameStamp>() );
+        frameStamp.index = frame_idx;
+        frameStamp.st = getNow();
+        output["frame_stamp"].send();
+#endif
+
+        output["out_frame"].send();
+
+        frame_idx++;
+        if(frame_idx < TOTAL_FRAMES)
+          return raft::proceed;
+        else
+          return raft::stop;
       }
     } // namespace input_srcs
   }   // namespace pipeline

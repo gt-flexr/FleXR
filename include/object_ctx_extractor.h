@@ -8,6 +8,7 @@
 #include <opencv2/video.hpp>
 #include <opencv2/highgui.hpp>
 
+#include <glm/glm.hpp>
 #include "defs.h"
 #include "cv_types.h"
 

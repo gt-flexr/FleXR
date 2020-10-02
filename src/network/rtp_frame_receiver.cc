@@ -1,4 +1,4 @@
-#include <include/network/rtp_frame_receiver.h>
+#include "network/rtp_frame_receiver.h"
 
 namespace mxre
 {
@@ -10,7 +10,7 @@ namespace mxre
       RTPFrameReceiver::RTPFrameReceiver(std::string decoder, std::string sdp, int width, int height) :
         decoder(decoder), sdp(sdp), width(width), height(height), raft::kernel()
       {
-        output.addPort<cv::Mat>("out_data");
+        output.addPort<mxre::cv_units::Mat>("out_data");
 
         av_register_all();
         avcodec_register_all();
@@ -139,7 +139,12 @@ namespace mxre
 
       /* Run() */
       raft::kstatus RTPFrameReceiver::run() {
-        auto &outData( output["out_data"].allocate<cv::Mat>() );
+
+#ifdef __PROFILE__
+        TimeVal start = getNow();
+#endif
+
+        auto &outData( output["out_data"].allocate<mxre::cv_units::Mat>() );
         int ret = 0, receivedFrame = 0, readSuccess = -1;
 
         AVPacket packet;
@@ -153,12 +158,18 @@ namespace mxre
             sws_scale(swsContext, rtpFrame->data, rtpFrame->linesize, 0, rtpFrame->height,
                 convertingFrame->data, convertingFrame->linesize);
 
-            outData = cv::Mat(rtpCodecContext->height, rtpCodecContext->width, CV_8UC3, convertingFrameBuf.data(),
-                              convertingFrame->linesize[0]).clone();
+            outData = mxre::cv_units::Mat(cv::Mat(rtpCodecContext->height, rtpCodecContext->width, CV_8UC3,
+                                                  convertingFrameBuf.data(), convertingFrame->linesize[0]));
             output["out_data"].send();
           }
         }
         av_free_packet(&packet);
+
+#ifdef __PROFILE__
+        TimeVal end = getNow();
+        debug_print("Exe Time: %lfms", getExeTime(end, start));
+#endif
+
         return raft::proceed;
       }
     } // namespace network

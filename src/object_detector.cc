@@ -1,4 +1,4 @@
-#include <include/object_detector.h>
+#include "object_detector.h"
 
 namespace mxre
 {
@@ -6,16 +6,21 @@ namespace mxre
   {
     namespace ctx_understanding
     {
-      ObjectDetector::ObjectDetector(std::vector<mxre::cv_units::ObjectInfo> registeredObjVec,
+      ObjectDetector::ObjectDetector(std::vector<mxre::cv_units::ObjectInfo> registeredObjs,
                                      cv::Ptr<cv::Feature2D> _detector,
-                                     cv::Ptr<cv::DescriptorMatcher> _matcher) : objInfoVec(registeredObjVec),
+                                     cv::Ptr<cv::DescriptorMatcher> _matcher) : objInfos(registeredObjs),
                                                                                 detector(_detector),
                                                                                 matcher(_matcher), raft::kernel()
       {
-        input.addPort<cv::Mat>("in_frame");
+        input.addPort<mxre::cv_units::Mat>("in_frame");
 
-        output.addPort<cv::Mat>("out_frame");
+        output.addPort<mxre::cv_units::Mat>("out_frame");
         output.addPort<std::vector<mxre::cv_units::ObjectInfo>>("out_obj_info");
+
+#ifdef __PROFILE__
+        input.addPort<FrameStamp>("frame_stamp");
+        output.addPort<FrameStamp>("frame_stamp");
+#endif
 
         // Object Detection Parameters
         knnMatchRatio = 0.8f;
@@ -29,20 +34,25 @@ namespace mxre
 
 
       raft::kstatus ObjectDetector::run() {
+
+#ifdef __PROFILE__
+        TimeVal start = getNow();
+#endif
+
         std::vector<cv::KeyPoint> frameKps;
         cv::Mat frameDesc;
-        auto frame = input["in_frame"].peek<cv::Mat>();
+        auto &frame( input["in_frame"].peek<mxre::cv_units::Mat>() );
 
         // prepare output for the next kernel
-        auto out_frame = output["out_frame"].template allocate_s<cv::Mat>();
-        auto out_obj_info = output["out_obj_info"].template allocate_s<std::vector<mxre::cv_units::ObjectInfo>>();
+        auto &out_frame( output["out_frame"].allocate<mxre::cv_units::Mat>() );
+        auto &out_obj_info( output["out_obj_info"].allocate<std::vector<mxre::cv_units::ObjectInfo>>() );
 
         // 1. figure out frame keypoints and descriptors to detect objects in the frame
-        detector->detectAndCompute(frame, cv::noArray(), frameKps, frameDesc);
+        detector->detectAndCompute(frame.cvMat, cv::noArray(), frameKps, frameDesc);
 
         // multiple object detection
         std::vector<mxre::cv_units::ObjectInfo>::iterator objIter;
-        for (objIter = objInfoVec.begin(); objIter != objInfoVec.end(); ++objIter)
+        for (objIter = objInfos.begin(); objIter != objInfos.end(); ++objIter)
         {
           // 2. use the matcher to find correspondence
           std::vector<std::vector<cv::DMatch>> matches;
@@ -94,20 +104,32 @@ namespace mxre
             {
               objIter->isDetected = true;
               perspectiveTransform(objIter->rect2D, objIter->location2D, homography);
-              mxre::cv_units::drawBoundingBox(frame, objIter->location2D);
+              mxre::cv_units::drawBoundingBox(frame.cvMat, objIter->location2D);
             }
             else
               objIter->isDetected = false;
           }
         }
 
-        *out_frame = frame;
-        *out_obj_info = objInfoVec;
+        out_frame = frame;
+        out_obj_info = objInfos;
 
         input["in_frame"].recycle();
 
+#ifdef __PROFILE__
+        TimeVal end = getNow();
+        debug_print("Exe Time: %lfms", getExeTime(end, start));
+
+        auto &inFrameStamp( input["frame_stamp"].peek<FrameStamp>() );
+        auto &outFrameStamp( output["frame_stamp"].allocate<FrameStamp>() );
+        outFrameStamp = inFrameStamp;
+        input["frame_stamp"].recycle();
+        output["frame_stamp"].send();
+#endif
+
         output["out_frame"].send();
         output["out_obj_info"].send();
+
         return raft::proceed;
       }
 

@@ -6,6 +6,8 @@
 #include <opencv2/video.hpp>
 #include <opencv2/highgui.hpp>
 
+#include "defs.h"
+
 namespace mxre
 {
   namespace cv_units
@@ -21,6 +23,56 @@ namespace mxre
       std::vector<cv::Point2f> location2D;
       bool isDetected;
     } ObjectInfo;
+
+
+    class Mat {
+      public:
+      bool isExt;
+
+      cv::Mat cvMat;
+      unsigned char* data;
+      size_t total, elemSize;
+      int rows, cols, type;
+
+      Mat(){}
+
+      Mat(cv::Mat inMat){
+        isExt = false;
+        cvMat = inMat.clone();
+        setMatInfo();
+      }
+
+      Mat(int rows, int cols, int type) {
+        isExt = false;
+        cvMat = cv::Mat(rows, cols, type);
+        setMatInfo();
+      }
+
+      Mat(int rows, int cols, int type, void *data) {
+        isExt = true;
+        cvMat = cv::Mat(rows, cols, type, data);
+        setMatInfo();
+      }
+
+      void setMatInfo() {
+        total = cvMat.total();
+        elemSize = cvMat.elemSize();
+        type = cvMat.type();
+        rows = cvMat.rows;
+        cols = cvMat.cols;
+        data = cvMat.data;
+      }
+
+      void release() {
+        if(!cvMat.empty()){
+          cvMat.release();
+          if(data && isExt) {
+            delete [] data;
+          }
+        }
+      }
+    };
+
 
     static std::vector<cv::Point2f> convertKpsToPts(std::vector<cv::KeyPoint> keypoints)
     {
@@ -54,10 +106,6 @@ namespace mxre
       drawBoundingBox(image, vecPoints);
     }
 
-    static void releaseMat(cv::Mat mat) {
-      mat.release();
-      if(mat.data) delete [] mat.data;
-    }
   } // namespace cv_units
 } // namespace mxre
 

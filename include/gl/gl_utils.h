@@ -6,17 +6,17 @@
 #endif
 
 #include "defs.h"
+#include "cv_types.h"
 
+#include <GL/glew.h>
 #include <GL/glut.h>
-#include <GL/gl.h>
-#include <GL/glext.h>
 
 #include <opencv2/opencv.hpp>
 #include <iostream>
 
 namespace mxre
 {
-  namespace glutils
+  namespace gl
   {
     static void initLights()
     {
@@ -35,8 +35,14 @@ namespace mxre
       glEnable(GL_LIGHT0); // MUST enable each light source after configuration
     }
 
+
     static void initGL(int width, int height)
     {
+      GLenum err = glewInit();
+      if (GLEW_OK != err) {
+        debug_print("Failed to init glew");
+      }
+
       glShadeModel(GL_SMOOTH);               // shading mathod: GL_SMOOTH or GL_FLAT
       glPixelStorei(GL_UNPACK_ALIGNMENT, 4); // 4-byte pixel alignment
 
@@ -75,16 +81,23 @@ namespace mxre
       glLoadIdentity();
     }
 
-    static cv::Mat exportGLBufferToCV()
+
+    static mxre::cv_units::Mat exportGLBufferToCV()
     {
       glReadBuffer(GL_FRONT);
       glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
       unsigned char *pixels = new unsigned char[3 * WIDTH * HEIGHT];
       glReadPixels(0, 0, WIDTH, HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, pixels);
+      debug_print("allocated pixel addr: %p", static_cast<void*>(pixels));
 
-      return cv::Mat(HEIGHT, WIDTH, CV_8UC3, pixels);
+      mxre::cv_units::Mat mat(HEIGHT, WIDTH, CV_8UC3, pixels);
+
+      // flip around X-axis (Y-flip) from GL to CV
+      cv::flip(mat.cvMat, mat.cvMat, 0);
+      return mat;
     }
+
 
     static void makeEmptyTexture(GLuint &tex, int width, int height)
     {
@@ -92,18 +105,17 @@ namespace mxre
       glBindTexture(GL_TEXTURE_2D, tex);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-      //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-      glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+      //glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-      glGenerateMipmap(GL_TEXTURE_2D);
+      //glGenerateMipmap(GL_TEXTURE_2D);
       glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    static void makeTextureFromCVFrame(cv::Mat &mat, GLuint &tex)
+
+    static void makeTextureFromCVFrame(mxre::cv_units::Mat &mat, GLuint &tex)
     {
-      if (mat.empty())
+      if (mat.cvMat.empty())
       {
         std::cout << "image empty" << std::endl;
         return;
@@ -114,37 +126,44 @@ namespace mxre
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-      //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-      //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-
-      glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+      // flip around X-axis (Y-flip) from CV to GL
+      cv::flip(mat.cvMat, mat.cvMat, 0);
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mat.cols, mat.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, mat.data);
-      glGenerateMipmap(GL_TEXTURE_2D);
       glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    static void updateTextureFromCVFrame(cv::Mat &mat, GLuint &tex)
+
+    static void updateTextureFromCVFrame(mxre::cv_units::Mat &mat, GLuint &tex)
     {
       glBindTexture(GL_TEXTURE_2D, tex);
+      // flip around X-axis (Y-flip) from CV to GL
+      cv::flip(mat.cvMat, mat.cvMat, 0);
       glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mat.cols, mat.rows, GL_BGR, GL_UNSIGNED_BYTE, mat.data);
       glBindTexture(GL_TEXTURE_2D, 0);
     }
 
+
     static void startBackground(int width, int height) {
-      // 1. Clear GL_PROJECTION
+      // 1. Clear ModelView
+      glPushMatrix();
+      glLoadIdentity();
+
+      // 2. Clear Projection
       glMatrixMode(GL_PROJECTION);
       glPushMatrix();
       glLoadIdentity();
 
       // 2. Set projection as orthogonal projection
-      glOrtho(-width/2, width/2, -height/2, height/2, -1, 1);
+      //glOrtho(-width/2, width/2, -height/2, height/2, -1, 1);
 
       // 3. Set GL_MODELVIEW with the orthogonal projection
-      glMatrixMode(GL_MODELVIEW);
-      glPushMatrix();
-      glLoadIdentity();
-      glTranslatef(-width/2, -height/2, 0); // set mid point
+      //glMatrixMode(GL_MODELVIEW);
+      //glPushMatrix();
+      //glLoadIdentity();
+      //glTranslatef(-width/2, -height/2, 0); // set mid point
+      gluOrtho2D(0, width, 0, height); // set to orthogonal projection
     }
+
 
     static void endBackground() {
       // 1. Restore the previous projection
@@ -155,6 +174,7 @@ namespace mxre
       glMatrixMode(GL_MODELVIEW);
       glPopMatrix();
     }
+
 
     static bool checkFramebuffer(GLuint fbo)
     {
@@ -198,6 +218,7 @@ namespace mxre
       glBindFramebuffer(GL_FRAMEBUFFER, 0); // unbind
     }
 
+
     static void makeFramebuffer(GLuint &fboID, GLuint &rboDepthID, GLuint &tex, int width, int height)
     {
       // Frame Buffer
@@ -221,7 +242,7 @@ namespace mxre
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-  } // namespace glutils
+  } // namespace gl
 } // namespace mxre
 
 #endif

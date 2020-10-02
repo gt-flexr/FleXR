@@ -75,10 +75,8 @@ int main(int argc, char const *argv[])
   mxre::pipeline::input_srcs::Camera cam(camera_no);
   mxre::pipeline::ctx_understanding::ObjectDetector objDetector(objTracker.getRegisteredObjects(), orb, matcher);
   mxre::pipeline::contextualizing::ObjectCtxExtractor objCtxExtractor(cam.getIntrinsic(), cam.getDistCoeffs());
-  mxre::pipeline::rendering::ObjectRenderer objRenderer;
+  mxre::pipeline::rendering::ObjectRenderer objRenderer(objTracker.getRegisteredObjects());
   mxre::pipeline::output_sinks::CVDisplay cvDisplay;
-  //mxre::pipeline::rendering::ObjectOverlayer objOverlayer;
-  //mxre::pipeline::output_sink::Display disp;
 
   raft::map pipeline;
 
@@ -89,6 +87,7 @@ int main(int argc, char const *argv[])
   pipeline += objDetector["out_frame"] >> objCtxExtractor["in_frame"];
   pipeline += objDetector["out_obj_info"] >> objCtxExtractor["in_obj_info"];
 
+
   // obj ctx extractor - obj renderer
   pipeline += objCtxExtractor["out_frame"] >> objRenderer["in_frame"];
   pipeline += objCtxExtractor["out_obj_context"] >> objRenderer["in_obj_context"];
@@ -96,6 +95,14 @@ int main(int argc, char const *argv[])
   // obj renderer - test sink
   pipeline += objRenderer["out_frame"] >> cvDisplay["in_frame"];
 
+#ifdef __PROFILE__
+  pipeline += cam["frame_stamp"] >> objDetector["frame_stamp"];
+  pipeline += objDetector["frame_stamp"] >> objCtxExtractor["frame_stamp"];
+  pipeline += objCtxExtractor["frame_stamp"] >> objRenderer["frame_stamp"];
+  pipeline += objRenderer["frame_stamp"] >> cvDisplay["frame_stamp"];
+#endif
+
+  cout << "pipeline ext()" << endl;
   pipeline.exe();
   return 0;
 }

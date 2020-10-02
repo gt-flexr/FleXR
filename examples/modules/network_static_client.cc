@@ -1,4 +1,3 @@
-#include "network/static_sender.h"
 #include <raft>
 #include <mxre.h>
 #include <bits/stdc++.h>
