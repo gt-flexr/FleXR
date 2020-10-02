@@ -1,5 +1,6 @@
 #include "object_renderer.h"
 #include <GL/gl.h>
+#include <GL/glew.h>
 
 namespace mxre
 {
@@ -10,21 +11,51 @@ namespace mxre
       ObjectRenderer::ObjectRenderer(std::vector<mxre::cv_units::ObjectInfo> registeredObjs) :
         camera(glm::vec3(0.0f, 3.0f, 0.0f)), raft::kernel()
       {
-        isSet = false;
-        mxre::egl::initEGLPbuffer(pbuf);
-
         input.addPort<mxre::cv_units::Mat>("in_frame");
         input.addPort<std::vector<mxre::gl::ObjectContext>>("in_obj_context");
 
         output.addPort<mxre::cv_units::Mat>("out_frame");
 
+        // 0. Create pbuf as a context
+        pbuf = new mxre::egl::EGLPbuffer;
+        mxre::egl::initEGLPbuffer(*pbuf);
+
+        // 1. Init pbuf as context and GL with the context
+        mxre::egl::bindPbuffer(*pbuf);
+        mxre::gl::initGL(WIDTH, HEIGHT);
+
+        // 2. Init Shader
+        stbi_set_flip_vertically_on_load(true);
+        shader.init(mxre::utils::PathFinder::find("build/examples/model_loading.vs").c_str(),
+            mxre::utils::PathFinder::find("build/examples/model_loading.fs").c_str());
+
+        // 3. Based on the registeredObjs, set AR worlds
         std::vector<mxre::cv_units::ObjectInfo>::iterator objIter;
         for(objIter = registeredObjs.begin(); objIter != registeredObjs.end(); ++objIter) {
-          ModelMap newObjMap;
-          newObjMap.objectIndex = objIter->index;
-          newObjMap.modelMat.push_back(glm::mat4(1.0f));
-          modelMaps.push_back(newObjMap);
+          mxre::ar::World newWorld(objIter->index);
+          // Register 3D models to each world
+          printf("%dth world: register models", objIter->index);
+          newWorld.addModel("resources/0_stone/Stone.obj");
+          newWorld.addModel("resources/1_neck/Neck_Mech_Walker.obj");
+          newWorld.addModel("resources/2_mars/Mars 2K.obj");
+          newWorld.addModel("resources/3_earth/Earth 2K.obj");
+          newWorld.addModel("resources/4_shuttle/Transport Shuttle_obj.obj");
+
+          worldMaps.push_back(newWorld);
         }
+
+        // 4. Add objects to the worlds
+        std::vector<mxre::ar::World>::iterator worldIter;
+        for (worldIter = worldMaps.begin(); worldIter != worldMaps.end(); ++worldIter)
+        {
+          unsigned int randModelIndex = rand() % worldIter->models.size();
+          mxre::ar::Object newObj(randModelIndex);
+          worldIter->addObject(newObj);
+        }
+
+        // 5. Unbind the pbuf context in init thread
+        mxre::egl::unbindPbuffer(*pbuf);
+        binding = false;
 
 #ifdef __PROFILE__
         input.addPort<FrameStamp>("frame_stamp");
@@ -34,26 +65,16 @@ namespace mxre
 
 
       ObjectRenderer::~ObjectRenderer() {
-        mxre::egl::terminatePbuffer(pbuf);
+        mxre::egl::terminatePbuffer(*pbuf);
+        delete [] pbuf;
       }
 
 
       raft::kstatus ObjectRenderer::run()
       {
-        mxre::egl::setCurrentPbuffer(pbuf);
-        mxre::gl::initGL(WIDTH, HEIGHT);
-        if(!isSet) {
-          shader.init(mxre::utils::PathFinder::find("build/examples/model_loading.vs").c_str(),
-              mxre::utils::PathFinder::find("build/examples/model_loading.fs").c_str());
-
-          std::vector<ModelMap>::iterator mapIter;
-          for(mapIter = modelMaps.begin(); mapIter != modelMaps.end(); ++mapIter) {
-            mxre::gl::Model model(mxre::utils::PathFinder::find("resources/obj_neck_mech/Neck_Mech_Walker.obj"));
-            mapIter->models.push_back(model);
-          }
-
-          stbi_set_flip_vertically_on_load(true);
-          isSet = true;
+        if(!binding) {
+          mxre::egl::bindPbuffer(*pbuf);
+          binding = true;
         }
 
 #ifdef __PROFILE__
@@ -68,9 +89,8 @@ namespace mxre
         auto &out_frame( output["out_frame"].allocate<mxre::cv_units::Mat>() );
 
         // 1. Create/update background texture & release previous CV frame
-        if(glIsTexture(backgroundTexture)) {
+        if(glIsTexture(backgroundTexture))
           mxre::gl::updateTextureFromCVFrame(frame, backgroundTexture);
-        }
         else
           mxre::gl::makeTextureFromCVFrame(frame, backgroundTexture);
         frame.release();
@@ -100,15 +120,14 @@ namespace mxre
         std::vector<mxre::gl::ObjectContext>::iterator objCtxIter;
         for (objCtxIter = objCtxVec.begin(); objCtxIter != objCtxVec.end(); ++objCtxIter)
         {
-          glm::mat4 modelMat = glm::mat4(1.0f);
-
-          modelMat = glm::translate(modelMat, objCtxIter->tvec);
-          modelMat = glm::rotate(modelMat, objCtxIter->rvec[0], glm::vec3(1, 0, 0));
-          modelMat = glm::rotate(modelMat, objCtxIter->rvec[1], glm::vec3(0, 1, 0));
-          modelMat = glm::rotate(modelMat, objCtxIter->rvec[2], glm::vec3(0, 0, 1));
-          modelMat = glm::scale(modelMat, glm::vec3(0.3f, 0.3f, 0.3f));
-          shader.setMat4("model", modelMat);
-          modelMaps[0].models[0].draw(shader);
+          // world iteration
+          // set world mat
+          // draw objects in the world
+          worldMaps[objCtxIter->index].resetCoord();
+          worldMaps[objCtxIter->index].translate(objCtxIter->tvec);
+          worldMaps[objCtxIter->index].rotate(objCtxIter->rvec);
+          worldMaps[objCtxIter->index].scale(glm::vec3(0.1, 0.1, 0.1));
+          worldMaps[objCtxIter->index].draw(shader);
           glFlush();
         }
         glPopMatrix();

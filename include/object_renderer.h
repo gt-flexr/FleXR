@@ -11,6 +11,7 @@
 #include "defs.h"
 #include "cv_types.h"
 #include "utils/path_finder.h"
+
 #include "gl/egl_utils.h"
 #include "gl/gl_utils.h"
 #include "gl/gl_objects.h"
@@ -19,6 +20,8 @@
 #include "gl/shader.h"
 #include "gl/model.h"
 
+#include "ar/world.h"
+#include "ar/object.h"
 
 namespace mxre
 {
@@ -26,21 +29,15 @@ namespace mxre
   {
     namespace rendering
     {
-      typedef struct ModelMap {
-        int objectIndex;
-        std::vector<mxre::gl::Model> models;
-        std::vector<glm::mat4> modelMat;
-      } ModelMap;
-
       class ObjectRenderer : public raft::kernel
       {
       private:
-        mxre::egl::EGLPbuffer pbuf;
+        mxre::egl::EGLPbuffer *pbuf;
         GLuint backgroundTexture;
         mxre::gl::Camera camera;
         mxre::gl::Shader shader;
-        std::vector<ModelMap> modelMaps;
-        bool isSet;
+        std::vector<mxre::ar::World> worldMaps;
+        bool binding;
       public:
         ObjectRenderer(std::vector<mxre::cv_units::ObjectInfo> registeredObjs);
         ~ObjectRenderer();
