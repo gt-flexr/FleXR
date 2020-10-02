@@ -52,8 +52,14 @@ namespace mxre
       pbuf.eglCtx = eglCreateContext(pbuf.eglDpy, pbuf.eglCfg, EGL_NO_CONTEXT, NULL);
     }
 
-    static void setCurrentPbuffer(EGLPbuffer &pbuf) {
-      eglMakeCurrent(pbuf.eglDpy, pbuf.eglSurf, pbuf.eglSurf, pbuf.eglCtx);
+    static void bindPbuffer(EGLPbuffer &pbuf) {
+      if (eglMakeCurrent(pbuf.eglDpy, pbuf.eglSurf, pbuf.eglSurf, pbuf.eglCtx) == EGL_FALSE)
+        debug_print("Failed to bind");
+    }
+
+    static void unbindPbuffer(EGLPbuffer &pbuf) {
+      if (eglMakeCurrent(pbuf.eglDpy, NULL, NULL, NULL) == EGL_FALSE)
+        debug_print("Failed to unbind");
     }
 
     static void terminatePbuffer(EGLPbuffer &pbuf) {

@@ -38,7 +38,11 @@ namespace mxre
 
     static void initGL(int width, int height)
     {
-      glewInit();
+      GLenum err = glewInit();
+      if (GLEW_OK != err) {
+        debug_print("Failed to init glew");
+      }
+
       glShadeModel(GL_SMOOTH);               // shading mathod: GL_SMOOTH or GL_FLAT
       glPixelStorei(GL_UNPACK_ALIGNMENT, 4); // 4-byte pixel alignment
 
