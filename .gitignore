@@ -34,6 +34,8 @@
 # MXRE
 build/
 trials/
+resources/*
+!resources/README.md
 .vscode/
 
 compile_commands.json
