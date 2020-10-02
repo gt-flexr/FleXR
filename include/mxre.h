@@ -9,6 +9,9 @@
 #include "defs.h"
 #include "utils/path_finder.h"
 
+/* AR */
+#include "ar/world.h"
+#include "ar/object.h"
 
 /* ogl egl */
 #include "gl/shader.h"
