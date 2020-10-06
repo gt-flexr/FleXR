@@ -1,3 +1,4 @@
+#ifdef __USE_OPENCV_CUDA__
 #include <raft>
 #include <mxre.h>
 #include <bits/stdc++.h>
@@ -108,4 +109,6 @@ int main(int argc, char const *argv[])
   pipeline.exe();
   return 0;
 }
+
+#endif
 

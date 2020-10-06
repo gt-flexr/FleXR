@@ -1,3 +1,4 @@
+#ifdef __USE_OPENCV_CUDA__
 #include "cuda_orb_detector.h"
 #include <opencv2/core.hpp>
 
@@ -105,7 +106,7 @@ namespace mxre
 
 #ifdef __PROFILE__
         TimeVal end = getNow();
-        debug_print("Exe Time: %lfms", getExeTime(end, start));
+        profile_print("Exe Time: %lfms", getExeTime(end, start));
 
         auto &inFrameStamp( input["frame_stamp"].peek<FrameStamp>() );
         auto &outFrameStamp( output["frame_stamp"].allocate<FrameStamp>() );
@@ -122,4 +123,6 @@ namespace mxre
     } // namespace ctx_understanding
   }   // namespace pipeline
 } // namespace mxre
+
+#endif
 

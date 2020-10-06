@@ -13,7 +13,7 @@ namespace mxre
         raft::kernel()
       {
         input.addPort<mxre::cv_units::Mat>("in_data");
-        this->filename = "rtp://0.0.0.0:" + std::to_string(port);
+        this->filename = "rtp://192.168.123.4:" + std::to_string(port);
 
         av_register_all();
         avcodec_register_all();
@@ -223,7 +223,7 @@ namespace mxre
 
 #ifdef __PROFILE__
         TimeVal end = getNow();
-        debug_print("Exe Time: %lfms", getExeTime(end, start));
+        profile_print("Exe Time: %lfms", getExeTime(end, start));
 #endif
 
         return raft::proceed;

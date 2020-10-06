@@ -76,7 +76,7 @@ namespace mxre
 
 #ifdef __PROFILE__
         TimeVal end = getNow();
-        debug_print("Exe Time: %lfms", getExeTime(end, start));
+        profile_print("Exe Time: %lfms", getExeTime(end, start));
 #endif
 
         return raft::proceed;

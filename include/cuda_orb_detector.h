@@ -1,3 +1,4 @@
+#ifdef __USE_OPENCV_CUDA__
 #ifndef __MXRE_CUDA_OBJ_DETECTOR__
 #define __MXRE_CUDA_OBJ_DETECTOR__
 
@@ -44,4 +45,4 @@ namespace mxre
 } // namespace mxre
 
 #endif
-
+#endif

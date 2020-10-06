@@ -118,7 +118,7 @@ namespace mxre
 
 #ifdef __PROFILE__
         TimeVal end = getNow();
-        debug_print("Exe Time: %lfms", getExeTime(end, start));
+        profile_print("Exe Time: %lfms", getExeTime(end, start));
 
         auto &inFrameStamp( input["frame_stamp"].peek<FrameStamp>() );
         auto &outFrameStamp( output["frame_stamp"].allocate<FrameStamp>() );

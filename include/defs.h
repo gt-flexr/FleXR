@@ -21,6 +21,14 @@
                               fprintf(stderr, "\n"); } \
                             } while (0)
 
+#ifdef __PROFILE__
+#define profile_print(...) do { \
+                            fprintf(stderr, "\033[1;34m[PROFILE] \033[0;32m[FUNC] %s \033[0m", __PRETTY_FUNCTION__); \
+                            fprintf(stderr, __VA_ARGS__); \
+                            fprintf(stderr, "\n");  \
+                           } while (0)
+#endif
+
 #include <chrono>
 #define getExeTime(a,b) ( (double)(std::chrono::duration_cast<std::chrono::microseconds>(a-b).count()) / 1000 )
 #define getNow() std::chrono::high_resolution_clock::now()
