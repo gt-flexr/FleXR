@@ -11,3 +11,6 @@ macro(use_raftlib)
     add_definitions(-DZEROCPY=1)
   endif(RAFTLIB_FOUND)
 endmacro()
+
+use_raftlib()
+

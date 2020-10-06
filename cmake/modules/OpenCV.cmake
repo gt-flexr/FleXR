@@ -8,5 +8,12 @@ macro(use_opencv)
     include_directories(${OPENCV_INCLUDE_DIRS})
     list(APPEND MXRE_CXX_FLAGS ${OPENCV_CFLAGS_OTHER})
     list(APPEND MXRE_LINKER_FLAGS ${OPENCV_LDFLAGS})
+
+    if(${USE_OPENCV_CUDA})
+      add_definitions(-D__USE_OPENCV_CUDA__)
+    endif(${USE_OPENCV_CUDA})
   endif(OPENCV_FOUND)
 endmacro()
+
+use_opencv()
+

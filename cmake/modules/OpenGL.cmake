@@ -42,3 +42,6 @@ macro(use_opengl)
   endif()
 
 endmacro()
+
+use_opengl()
+

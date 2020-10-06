@@ -10,3 +10,6 @@ macro(use_libzmq)
     list(APPEND MXRE_LINKER_FLAGS ${LIBZMQ_LDFLAGS})
   endif(LIBZMQ_FOUND)
 endmacro()
+
+use_libzmq()
+

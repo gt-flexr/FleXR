@@ -16,3 +16,6 @@ macro(use_gstreamer)
     list(APPEND MXRE_LINKER_FLAGS ${GSTREAMER_LDFLAGS} ${GST_VIDEO_LDFLAGS} ${GST_AUDIO_LDFLAGS})
   endif( GSTREAMER_FOUND AND GST_VIDEO_FOUND AND GST_AUDIO_FOUND )
 endmacro()
+
+use_gstreamer()
+
