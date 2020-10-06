@@ -1,4 +1,16 @@
-file(GLOB_RECURSE EXAMPLE_SRCS *.cc)
+file(GLOB_RECURSE EXAMPLE_SRCS modules/*.cc)
+list(APPEND EXAMPLE_SRCS
+  basic_example.cc
+  fulloff_client.cc
+  fulloff_server.cc
+)
+
+if(${USE_OPENCV_CUDA})
+list(APPEND EXAMPLE_SRCS
+  basic_example_with_cuda.cc
+  fulloff_server_with_cuda.cc
+)
+endif(${USE_OPENCV_CUDA})
 
 foreach(EXAMPLE_SRC ${EXAMPLE_SRCS})
   get_filename_component (NAME_WITHOUT_EXTENSION ${EXAMPLE_SRC} NAME_WE)
