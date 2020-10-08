@@ -7,8 +7,8 @@ namespace mxre
     namespace network
     {
       /* Constructor() */
-      RTPFrameReceiver::RTPFrameReceiver(std::string decoder, std::string sdp, int width, int height) :
-        decoder(decoder), sdp(sdp), width(width), height(height), raft::kernel()
+      RTPFrameReceiver::RTPFrameReceiver(std::string decoder, std::string srcAddr, int srcPort, int width, int height) :
+        decoder(decoder),width(width), height(height), raft::kernel()
       {
         output.addPort<mxre::cv_units::Mat>("out_data");
 
@@ -16,6 +16,10 @@ namespace mxre
         avcodec_register_all();
         avformat_network_init();
         protocolWhitelist = NULL;
+
+        // recv sdp and save it as a file
+        sdp = srcAddr + "_" + std::to_string(srcPort) + ".sdp";
+        recvSDP(srcAddr, srcPort);
 
         initRTPContext();
         initRTPCodecAndScaler();
@@ -27,6 +31,35 @@ namespace mxre
       RTPFrameReceiver::~RTPFrameReceiver() {
         clearSession();
         avformat_network_deinit();
+      }
+
+
+      /* recvSDP() */
+      void RTPFrameReceiver::recvSDP(std::string srcAddr, int srcPort) {
+        char buf[SDP_BUF_SIZE], ackMsg[4];
+        void *ctx, *sock;
+        memcpy(ackMsg, "ACK\0", 4);
+
+        // 1. Create a session
+        ctx = zmq_ctx_new();
+        sock = zmq_socket(ctx, ZMQ_REP);
+
+        std::string src = "tcp://*:" + std::to_string(srcPort);
+        zmq_bind(sock, src.c_str());
+
+        // 2. Recv the sdp
+        zmq_recv(sock, buf, sizeof(char)*SDP_BUF_SIZE, 0);
+
+        // 3. Store it as a file
+        FILE* fsdp = fopen(sdp.c_str(), "w");
+        fprintf(fsdp, "%s", buf);
+        fclose(fsdp);
+
+        // 4. Send an ack
+        zmq_send(sock, ackMsg, 4, 0);
+
+        zmq_close(sock);
+        zmq_ctx_destroy(ctx);
       }
 
 

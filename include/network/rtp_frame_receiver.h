@@ -2,9 +2,10 @@
 #define __MXRE_RTP_RECEIVER__
 
 #include <bits/stdc++.h>
-#include <raft>
 #include <opencv2/opencv.hpp>
-#include <string>
+#include <raft>
+#include <zmq.h>
+
 #include "defs.h"
 #include "cv_types.h"
 
@@ -42,12 +43,13 @@ namespace mxre
           SwsContext *swsContext;
 
         public:
-          RTPFrameReceiver(std::string decoder, std::string sdp, int width, int height);
+          RTPFrameReceiver(std::string decoder, std::string srcAddr, int srcPort, int width, int height);
           ~RTPFrameReceiver();
           void initRTPContext();
           void initRTPCodecAndScaler();
           void initFrame();
           void clearSession();
+          void recvSDP(std::string srcAddr, int srcPort);
           virtual raft::kstatus run();
       };
     } // namespace network

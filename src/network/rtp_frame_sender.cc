@@ -7,13 +7,12 @@ namespace mxre
     namespace network
     {
       /* Constructor() */
-      RTPFrameSender::RTPFrameSender(std::string encoder, std::string sdp,
-          int port, int bitrate, int fps, int width, int height) :
-        encoder(encoder), sdp(sdp), port(port), bitrate(bitrate), fps(fps), width(width), height(height), framePts(0),
-        raft::kernel()
+      RTPFrameSender::RTPFrameSender(std::string encoder, std::string destAddr,
+          int destPort, int bitrate, int fps, int width, int height) : encoder(encoder), bitrate(bitrate),
+          fps(fps), width(width), height(height), framePts(0), raft::kernel()
       {
         input.addPort<mxre::cv_units::Mat>("in_data");
-        this->filename = "rtp://192.168.123.4:" + std::to_string(port);
+        this->filename = "rtp://" + destAddr + ":" + std::to_string(destPort);
 
         av_register_all();
         avcodec_register_all();
@@ -22,7 +21,7 @@ namespace mxre
         setRTPContext();
         setRTPStreamWithCodec();
         setFrameWithScaler();
-        generateSDP();
+        sendSDP(destAddr, destPort);
       }
 
 
@@ -143,8 +142,11 @@ namespace mxre
       }
 
 
-      /* generateSDP() */
-      void RTPFrameSender::generateSDP() {
+      /* sendSDP() */
+      void RTPFrameSender::sendSDP(std::string &destAddr, int port) {
+        char buf[SDP_BUF_SIZE], ackMsg[4];
+        void *ctx, *sock;
+
         int ret = avformat_write_header(rtpContext, NULL);
         if(ret < 0) {
           clearSession();
@@ -152,13 +154,25 @@ namespace mxre
           exit(1);
         }
 
-        char buf[20000];
         AVFormatContext *ac[] = { rtpContext };
-        av_sdp_create(ac, 1, buf, 20000);
+        av_sdp_create(ac, 1, buf, SDP_BUF_SIZE);
         debug_print("sdp:\n%s\n", buf);
-        FILE* fsdp = fopen(sdp.c_str(), "w");
-        fprintf(fsdp, "%s", buf);
-        fclose(fsdp);
+
+        // 1. Create a session
+        ctx = zmq_ctx_new();
+        sock = zmq_socket(ctx, ZMQ_REQ);
+        std::string dest = "tcp://" + destAddr + ":" + std::to_string(port);
+        zmq_connect(sock, dest.c_str());
+
+        // 2. Send the created sdp
+        zmq_send(sock, buf, sizeof(char) * SDP_BUF_SIZE, 0);
+
+        // 3. Recv an ack
+        zmq_recv(sock, ackMsg, 4, 0);
+
+        // 4. Clear the session
+        zmq_close(sock);
+        zmq_ctx_destroy(ctx);
       }
 
 

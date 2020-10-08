@@ -14,6 +14,9 @@
 #define MX_MAT_COLS_IDX 2
 #define MX_MAT_TYPE_IDX 3
 
+// SDP buf size
+#define SDP_BUF_SIZE 2048
+
 // color-print reference: http://web.theurbanpenguin.com/adding-color-to-your-output-from-c/
 #define debug_print(...) do { if (__DEBUG__) { \
                               fprintf(stderr, "\033[1;31m[DEBUG] \033[0;32m[FUNC] %s \033[0m", __PRETTY_FUNCTION__); \
