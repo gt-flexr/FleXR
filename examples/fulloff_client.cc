@@ -63,7 +63,7 @@ int main(int argc, char const *argv[])
   // 1. create & run a sending pipeline
   raft::map sendingPipe;
   mxre::pipeline::input_srcs::Camera cam(camera_no);
-  mxre::pipeline::network::RTPFrameSender rtpSender("mjpeg", "send.sdp", 49991, 800000, 10, WIDTH, HEIGHT);
+  mxre::pipeline::network::RTPFrameSender rtpSender("mjpeg", "127.0.0.1", 49985, 800000, 10, WIDTH, HEIGHT);
   sendingPipe += cam["out_frame"] >> rtpSender["in_data"];
 #ifdef __PROFILE__
   TempSink tempSink;
@@ -73,7 +73,7 @@ int main(int argc, char const *argv[])
 
   // 2. create & run a receiving pipeline
   raft::map receivingPipe;
-  mxre::pipeline::network::RTPFrameReceiver rtpReceiver("mjpeg", "recv.sdp", WIDTH, HEIGHT);
+  mxre::pipeline::network::RTPFrameReceiver rtpReceiver("mjpeg", "127.0.0.1", 49987, WIDTH, HEIGHT);
   mxre::pipeline::output_sinks::CVDisplay cvDisplay;
   receivingPipe += rtpReceiver["out_data"] >> cvDisplay["in_frame"];
 #ifdef __PROFILE__

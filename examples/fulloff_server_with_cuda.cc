@@ -125,8 +125,8 @@ int main(int argc, char const *argv[])
   mxre::pipeline::ctx_understanding::CudaORBDetector objDetector(objTracker.getRegisteredObjects());
   mxre::pipeline::contextualizing::ObjectCtxExtractor objCtxExtractor(defaultIntrinsic, defaultDistCoeffs);
   mxre::pipeline::rendering::ObjectRenderer objRenderer(objTracker.getRegisteredObjects());
-  mxre::pipeline::network::RTPFrameSender rtpSender("mjpeg", "recv.sdp", 49995, 800000, 10, WIDTH, HEIGHT);
-  mxre::pipeline::network::RTPFrameReceiver rtpReceiver("mjpeg", "send.sdp", WIDTH, HEIGHT);
+  mxre::pipeline::network::RTPFrameReceiver rtpReceiver("mjpeg", "127.0.0.1", 49985, WIDTH, HEIGHT);
+  mxre::pipeline::network::RTPFrameSender rtpSender("mjpeg", "127.0.0.1", 49987, 800000, 10, WIDTH, HEIGHT);
 
   //mxre::pipeline::output_sinks::CVDisplay cvDisplay;
 

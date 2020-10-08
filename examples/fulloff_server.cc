@@ -124,13 +124,12 @@ int main(int argc, char const *argv[])
   defaultIntrinsic.at<double>(2, 0) = 0; defaultIntrinsic.at<double>(2, 1) = 0; defaultIntrinsic.at<double>(2, 2) = 1;
 
   raft::map servingPipeline;
-  //mxre::pipeline::ctx_understanding::ObjectDetector objDetector(objTracker.getRegisteredObjects(), orb, matcher);
-  mxre::pipeline::ctx_understanding::CudaORBDetector objDetector(objTracker.getRegisteredObjects());
+  mxre::pipeline::ctx_understanding::ObjectDetector objDetector(objTracker.getRegisteredObjects(), orb, matcher);
   mxre::pipeline::contextualizing::ObjectCtxExtractor objCtxExtractor(defaultIntrinsic, defaultDistCoeffs,
       WIDTH, HEIGHT);
   mxre::pipeline::rendering::ObjectRenderer objRenderer(objTracker.getRegisteredObjects(), WIDTH, HEIGHT);
-  mxre::pipeline::network::RTPFrameSender rtpSender("mjpeg", "recv.sdp", 49995, 800000, 10, WIDTH, HEIGHT);
-  mxre::pipeline::network::RTPFrameReceiver rtpReceiver("mjpeg", "send.sdp", WIDTH, HEIGHT);
+  mxre::pipeline::network::RTPFrameReceiver rtpReceiver("mjpeg", "127.0.0.1", 49985, WIDTH, HEIGHT);
+  mxre::pipeline::network::RTPFrameSender rtpSender("mjpeg", "127.0.0.1", 49987, 800000, 10, WIDTH, HEIGHT);
 
   //mxre::pipeline::output_sinks::CVDisplay cvDisplay;
 
