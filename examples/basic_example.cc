@@ -75,12 +75,12 @@ int main(int argc, char const *argv[])
   objTracker.printRegisteredObjects();
   video_src.release();
 
-  mxre::pipeline::input_srcs::Camera cam(camera_no);
+  mxre::pipeline::device::CVCamera cam(camera_no, WIDTH, HEIGHT);
   mxre::pipeline::ctx_understanding::ObjectDetector objDetector(objTracker.getRegisteredObjects(), orb, matcher);
   mxre::pipeline::contextualizing::ObjectCtxExtractor objCtxExtractor(cam.getIntrinsic(), cam.getDistCoeffs(),
-      1280, 720);
-  mxre::pipeline::rendering::ObjectRenderer objRenderer(objTracker.getRegisteredObjects(), 1280, 720);
-  mxre::pipeline::output_sinks::CVDisplay cvDisplay;
+      WIDTH, HEIGHT);
+  mxre::pipeline::rendering::ObjectRenderer objRenderer(objTracker.getRegisteredObjects(), WIDTH, HEIGHT);
+  mxre::pipeline::device::CVDisplay cvDisplay;
 
   raft::map pipeline;
 
