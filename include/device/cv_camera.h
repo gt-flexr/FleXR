@@ -12,9 +12,9 @@ namespace mxre
 {
   namespace pipeline
   {
-    namespace input_srcs
+    namespace device
     {
-      class Camera : public raft::kernel
+      class CVCamera : public raft::kernel
       {
       private:
         cv::VideoCapture cam;
@@ -24,15 +24,15 @@ namespace mxre
         int width, height;
 
       public:
-        Camera(int dev_idx=0, int width=1280, int height=720);
-        ~Camera();
+        CVCamera(int dev_idx=0, int width=1280, int height=720);
+        ~CVCamera();
         void setIntrinsic(cv::Mat inIntrinsic) {intrinsic = inIntrinsic;}
         void setDistCoeffs(cv::Mat inDistCoeffs) {distCoeffs = inDistCoeffs;}
         cv::Mat getIntrinsic() {return intrinsic;}
         cv::Mat getDistCoeffs() {return distCoeffs;}
         virtual raft::kstatus run();
       };
-    } // namespace input_srcs
+    } // namespace device
   }   // namespace pipeline
 } // namespace mxre
 

@@ -32,12 +32,10 @@
 
 
 /* pipeline */
-/** input_srcs **/
-#include "camera.h"
+/** device **/
 #include "image_loader.h"
-
-/** output_sinks **/
-#include "cv_display.h"
+#include "device/cv_camera.h"
+#include "device/cv_display.h"
 
 /** ctx_understanding **/
 #include "object_detector.h"

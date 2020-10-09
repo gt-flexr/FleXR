@@ -1,11 +1,11 @@
-#include "camera.h"
+#include "device/cv_camera.h"
 #include "cv_types.h"
 
 namespace mxre
 {
   namespace pipeline
   {
-    namespace input_srcs
+    namespace device
     {
       std::string type2str(int type) {
         std::string r;
@@ -31,7 +31,7 @@ namespace mxre
       }
 
 
-      Camera::Camera(int dev_idx, int width, int height) : intrinsic(3, 3, CV_64FC1),
+      CVCamera::CVCamera(int dev_idx, int width, int height) : intrinsic(3, 3, CV_64FC1),
           distCoeffs(4, 1, CV_64FC1, {0, 0, 0, 0}), width(width), height(height), raft::kernel()
       {
         cam.open(dev_idx, cv::CAP_ANY);
@@ -61,13 +61,13 @@ namespace mxre
 #endif
       }
 
-      Camera::~Camera()
+      CVCamera::~CVCamera()
       {
         if (cam.isOpened())
           cam.release();
       }
 
-      raft::kstatus Camera::run()
+      raft::kstatus CVCamera::run()
       {
         auto &frame( output["out_frame"].allocate<mxre::cv_units::Mat>() );
         frame = mxre::cv_units::Mat(height, width, CV_8UC3);
@@ -97,7 +97,7 @@ namespace mxre
         else
           return raft::stop;
       }
-    } // namespace input_srcs
+    } // namespace device
   }   // namespace pipeline
 } // namespace mxre
 

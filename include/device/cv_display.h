@@ -12,7 +12,7 @@ namespace mxre
 {
   namespace pipeline
   {
-    namespace output_sinks
+    namespace device
     {
       class CVDisplay : public raft::kernel
       {
@@ -21,7 +21,7 @@ namespace mxre
         ~CVDisplay();
         virtual raft::kstatus run();
       };
-    } // namespace output_sinks
+    } // namespace device
   }   // namespace pipeline
 } // namespace mxre
 

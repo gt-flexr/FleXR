@@ -1,11 +1,11 @@
-#include "cv_display.h"
+#include "device/cv_display.h"
 #include "cv_types.h"
 
 namespace mxre
 {
   namespace pipeline
   {
-    namespace output_sinks
+    namespace device
     {
       CVDisplay::CVDisplay()
       {
@@ -44,7 +44,7 @@ namespace mxre
 
         return raft::proceed;
       }
-    } // namespace input_srcs
+    } // namespace device
   }   // namespace pipeline
 } // namespace mxre
 
