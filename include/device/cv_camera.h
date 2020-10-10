@@ -1,5 +1,5 @@
-#ifndef __MXRE_CAM__
-#define __MXRE_CAM__
+#ifndef __MXRE_CV_CAMERA__
+#define __MXRE_CV_CAMERA__
 
 #include <bits/stdc++.h>
 #include <raft>

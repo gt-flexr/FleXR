@@ -11,8 +11,10 @@
 #endif
 
 #include "gl/model.h"
+#include "gl/camera.h"
 #include "ar/object.h"
 #include "utils/path_finder.h"
+#include "defs.h"
 
 namespace mxre
 {
@@ -21,11 +23,14 @@ namespace mxre
     public:
       int index;
       glm::mat4 worldMat;
+      glm::mat4 projection;
+      mxre::gl::Camera camera;
       std::vector<mxre::gl::Model> models;
       std::vector<mxre::ar::Object> objects;
 
-      World(int index) : index(index) {
+      World(int index) : index(index), camera(glm::vec3(0.0f, 3.0f, 0.0f)) {
         worldMat = glm::mat4(1.0f);
+        projection = glm::perspective(glm::radians(camera.zoom), (float)WIDTH/(float)HEIGHT, 0.1f, 100.0f);
       }
 
       void addModel(const char* path) {
