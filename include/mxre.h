@@ -5,9 +5,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #endif
 
-/* defs & utils */
+/* defs */
 #include "defs.h"
-#include "utils/path_finder.h"
 
 /* AR */
 #include "ar/world.h"
@@ -36,6 +35,7 @@
 #include "image_loader.h"
 #include "device/cv_camera.h"
 #include "device/cv_display.h"
+#include "device/keyboard.h"
 
 /** ctx_understanding **/
 #include "object_detector.h"

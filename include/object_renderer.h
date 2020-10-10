@@ -10,7 +10,6 @@
 
 #include "defs.h"
 #include "cv_types.h"
-#include "utils/path_finder.h"
 
 #include "gl/egl_utils.h"
 #include "gl/gl_utils.h"
@@ -20,8 +19,7 @@
 #include "gl/shader.h"
 #include "gl/model.h"
 
-#include "ar/world.h"
-#include "ar/object.h"
+#include "ar/world_manager.h"
 
 namespace mxre
 {
@@ -29,21 +27,22 @@ namespace mxre
   {
     namespace rendering
     {
+
       class ObjectRenderer : public raft::kernel
       {
       private:
         mxre::egl::EGLPbuffer *pbuf;
+        mxre::ar::WorldManager worldManager;
         GLuint backgroundTexture;
-        mxre::gl::Camera camera;
-        mxre::gl::Shader shader;
-        std::vector<mxre::ar::World> worldMaps;
         bool binding;
         int width, height;
+
       public:
         ObjectRenderer(std::vector<mxre::cv_units::ObjectInfo> registeredObjs, int width, int height);
         ~ObjectRenderer();
         virtual raft::kstatus run();
       };
+
     } // namespace rendering
   }   // namespace pipeline
 } // namespace mxre

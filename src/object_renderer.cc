@@ -9,11 +9,14 @@ namespace mxre
     namespace rendering
     {
       ObjectRenderer::ObjectRenderer(std::vector<mxre::cv_units::ObjectInfo> registeredObjs, int width, int height) :
-        width(width), height(height),
-        camera(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0, 1, 0), -90, 0, 45), raft::kernel()
+        width(width), height(height), raft::kernel()
       {
+        // ObjectCtxExtractor inputs
         input.addPort<mxre::cv_units::Mat>("in_frame");
         input.addPort<std::vector<mxre::gl::ObjectContext>>("in_obj_context");
+
+        // Keyboard input
+        input.addPort<char>("in_keystroke");
 
         output.addPort<mxre::cv_units::Mat>("out_frame");
 
@@ -25,37 +28,19 @@ namespace mxre
         mxre::egl::bindPbuffer(*pbuf);
         mxre::gl::initGL(width, height);
 
-        // 2. Init Shader
-        stbi_set_flip_vertically_on_load(true);
-        shader.init(mxre::utils::PathFinder::find("build/examples/model_loading.vs").c_str(),
-            mxre::utils::PathFinder::find("build/examples/model_loading.fs").c_str());
-
-        // 3. Based on the registeredObjs, set AR worlds
+        // 2. Set AR Worlds via WorldManager
+        // 2.1. Init shader
+        worldManager.initShader();
+        // 2.2. Add new worlds
         std::vector<mxre::cv_units::ObjectInfo>::iterator objIter;
         for(objIter = registeredObjs.begin(); objIter != registeredObjs.end(); ++objIter) {
-          mxre::ar::World newWorld(objIter->index);
-          // Register 3D models to each world
-          printf("%dth world: register models", objIter->index);
-          newWorld.addModel("resources/ArmyTruck_OBJ/armytruck.obj");
-          newWorld.addModel("resources/1_neck/Neck_Mech_Walker.obj");
-          newWorld.addModel("resources/0_stone/Stone.obj");
-          newWorld.addModel("resources/2_mars/Mars 2K.obj");
-          newWorld.addModel("resources/3_earth/Earth 2K.obj");
-          newWorld.addModel("resources/4_shuttle/Transport Shuttle_obj.obj");
-
-          worldMaps.push_back(newWorld);
+          worldManager.addWorld(objIter->index);
         }
+        // 2.3. Add an object to each world (temporarily)
+        for(int i = 0; i < worldManager.numOfWorlds; i++)
+          worldManager.addObjectToWorld(i);
 
-        // 4. Add objects to the worlds
-        std::vector<mxre::ar::World>::iterator worldIter;
-        for (worldIter = worldMaps.begin(); worldIter != worldMaps.end(); ++worldIter)
-        {
-          unsigned int randModelIndex = rand() % worldIter->models.size();
-          mxre::ar::Object newObj(randModelIndex);
-          worldIter->addObject(newObj);
-        }
-
-        // 5. Unbind the pbuf context in init thread
+        // 3. Unbind the pbuf context in init thread
         mxre::egl::unbindPbuffer(*pbuf);
         binding = false;
 
@@ -83,11 +68,21 @@ namespace mxre
         TimeVal start = getNow();
 #endif
 
-        // get inputs from the previous kernel: ObjectDetector
+        // 0.0.Get inputs from the previous kernel: ObjectDetector
         auto &frame( input["in_frame"].peek<mxre::cv_units::Mat>() );
         auto objCtxVec( input["in_obj_context"].peek<std::vector<mxre::gl::ObjectContext>>() );
 
-        // set outputs
+        // 0.1.Get input keystroke from Keyboard
+        auto &keyPort(input["in_keystroke"]);
+        char key;
+        if(keyPort.size() > 0) {
+          key = input ["in_keystroke"].peek<char>();
+          std::cout << "Input Key captured object_renderer: " << key << std::endl;
+          keyPort.recycle(1);
+        }
+        else key = 0;
+
+        // 0.2.Set output
         auto &out_frame( output["out_frame"].allocate<mxre::cv_units::Mat>() );
 
         // 1. Create/update background texture & release previous CV frame
@@ -112,31 +107,8 @@ namespace mxre
         glEnd();
         mxre::gl::endBackground();
 
-        shader.use();
-        //glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), (float)WIDTH/(float)HEIGHT, 0.1f, 100.0f);
-        glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), (float)width/(float)height, 0.1f, 100.0f);
-        glm::mat4 view = camera.getViewMatrix();
-        shader.setMat4("projection", projection);
-        shader.setMat4("view", view);
+        worldManager.startWorlds(key, objCtxVec);
 
-        std::vector<mxre::gl::ObjectContext>::iterator objCtxIter;
-        for (objCtxIter = objCtxVec.begin(); objCtxIter != objCtxVec.end(); ++objCtxIter)
-        {
-          // world iteration
-          // set world mat
-          // draw objects in the world
-          worldMaps[objCtxIter->index].resetCoord();
-          worldMaps[objCtxIter->index].translate(
-              glm::vec3(objCtxIter->tvec.x, objCtxIter->tvec.y, objCtxIter->tvec.z));
-          worldMaps[objCtxIter->index].rotate(glm::vec3(objCtxIter->rvec.x, objCtxIter->rvec.y, objCtxIter->rvec.z));
-          printf("Translation: %f %f %f\n", objCtxIter->tvec.x, objCtxIter->tvec.y, objCtxIter->tvec.z);
-          printf("Rotation: %f %f %f\n", objCtxIter->rvec.x, objCtxIter->rvec.y, objCtxIter->rvec.z);
-          worldMaps[objCtxIter->index].scale(glm::vec3(0.1, 0.1, 0.1));
-          worldMaps[objCtxIter->index].draw(shader);
-          glFlush();
-        }
-        glPopMatrix();
-        glUseProgram(0);
         out_frame = mxre::gl::exportGLBufferToCV(width, height);
 
         input["in_frame"].recycle();
