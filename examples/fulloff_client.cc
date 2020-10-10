@@ -69,6 +69,11 @@ int main(int argc, char const *argv[])
   TempSink tempSink;
   sendingPipe += cam["frame_stamp"] >> tempSink["frame_stamp"];
 #endif
+
+  mxre::pipeline::device::Keyboard keyboard;
+  mxre::pipeline::network::StaticSender<char> keySender("127.0.0.1", 49986, false);
+  sendingPipe += keyboard["out_keystroke"] >> keySender["in_data"];
+
   std::thread sendingThread(runPipeline, &sendingPipe);
 
   // 2. create & run a receiving pipeline

@@ -76,6 +76,7 @@ int main(int argc, char const *argv[])
   video_src.release();
 
   mxre::pipeline::device::CVCamera cam(camera_no, WIDTH, HEIGHT);
+  mxre::pipeline::device::Keyboard keyboard;
   mxre::pipeline::ctx_understanding::ObjectDetector objDetector(objTracker.getRegisteredObjects(), orb, matcher);
   mxre::pipeline::contextualizing::ObjectCtxExtractor objCtxExtractor(cam.getIntrinsic(), cam.getDistCoeffs(),
       WIDTH, HEIGHT);
@@ -95,6 +96,7 @@ int main(int argc, char const *argv[])
   // obj ctx extractor - obj renderer
   pipeline += objCtxExtractor["out_frame"] >> objRenderer["in_frame"];
   pipeline += objCtxExtractor["out_obj_context"] >> objRenderer["in_obj_context"];
+  pipeline += keyboard["out_keystroke"] >> objRenderer["in_keystroke"];
 
   // obj renderer - test sink
   pipeline += objRenderer["out_frame"] >> cvDisplay["in_frame"];

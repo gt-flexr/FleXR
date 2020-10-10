@@ -129,6 +129,7 @@ int main(int argc, char const *argv[])
       WIDTH, HEIGHT);
   mxre::pipeline::rendering::ObjectRenderer objRenderer(objTracker.getRegisteredObjects(), WIDTH, HEIGHT);
   mxre::pipeline::network::RTPFrameReceiver rtpReceiver("mjpeg", "127.0.0.1", 49985, WIDTH, HEIGHT);
+  mxre::pipeline::network::StaticReceiver<char> keyReceiver(49986, false);
   mxre::pipeline::network::RTPFrameSender rtpSender("mjpeg", "127.0.0.1", 49987, 800000, 10, WIDTH, HEIGHT);
 
   //mxre::pipeline::output_sinks::CVDisplay cvDisplay;
@@ -140,6 +141,7 @@ int main(int argc, char const *argv[])
 
   servingPipeline += objCtxExtractor["out_frame"] >> objRenderer["in_frame"];
   servingPipeline += objCtxExtractor["out_obj_context"] >> objRenderer["in_obj_context"];
+  servingPipeline += keyReceiver["out_data"] >> objRenderer["in_keystroke"];
 
   servingPipeline += objRenderer["out_frame"] >> rtpSender["in_data"];
 #ifdef __PROFILE__
