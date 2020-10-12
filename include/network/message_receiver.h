@@ -32,7 +32,9 @@ namespace mxre
         sock = zmq_socket(ctx, ZMQ_REP);
 
         std::string bindingAddr = "tcp://*:" + std::to_string(port);
+        debug_print("Message Receiver binding %s", bindingAddr.c_str());
         zmq_bind(sock, bindingAddr.c_str());
+        debug_print("Message Receiver binding %s -- DONE", bindingAddr.c_str());
       }
 
 

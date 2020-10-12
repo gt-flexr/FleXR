@@ -43,13 +43,13 @@ namespace mxre
           SwsContext *swsContext;
 
         public:
-          RTPFrameReceiver(std::string decoder, std::string srcAddr, int srcPort, int width, int height);
+          RTPFrameReceiver(std::string decoder, int srcPort, int width, int height);
           ~RTPFrameReceiver();
           void initRTPContext();
           void initRTPCodecAndScaler();
           void initFrame();
           void clearSession();
-          void recvSDP(std::string srcAddr, int srcPort);
+          void recvSDP(int srcPort);
           virtual raft::kstatus run();
       };
     } // namespace network

@@ -78,7 +78,7 @@ int main(int argc, char const *argv[])
 
   // 2. create & run a receiving pipeline
   raft::map receivingPipe;
-  mxre::pipeline::network::RTPFrameReceiver rtpReceiver("mjpeg", "127.0.0.1", 49987, WIDTH, HEIGHT);
+  mxre::pipeline::network::RTPFrameReceiver rtpReceiver("mjpeg", 49987, WIDTH, HEIGHT);
   mxre::pipeline::device::CVDisplay cvDisplay;
   receivingPipe += rtpReceiver["out_data"] >> cvDisplay["in_frame"];
 #ifdef __PROFILE__

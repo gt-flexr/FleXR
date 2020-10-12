@@ -7,7 +7,7 @@ namespace mxre
     namespace network
     {
       /* Constructor() */
-      RTPFrameReceiver::RTPFrameReceiver(std::string decoder, std::string srcAddr, int srcPort, int width, int height) :
+      RTPFrameReceiver::RTPFrameReceiver(std::string decoder, int srcPort, int width, int height) :
         decoder(decoder),width(width), height(height), raft::kernel()
       {
         output.addPort<mxre::cv_units::Mat>("out_data");
@@ -18,8 +18,8 @@ namespace mxre
         protocolWhitelist = NULL;
 
         // recv sdp and save it as a file
-        sdp = srcAddr + "_" + std::to_string(srcPort) + ".sdp";
-        recvSDP(srcAddr, srcPort);
+        sdp = "localhost_" + std::to_string(srcPort) + ".sdp";
+        recvSDP(srcPort);
 
         initRTPContext();
         initRTPCodecAndScaler();
@@ -35,7 +35,7 @@ namespace mxre
 
 
       /* recvSDP() */
-      void RTPFrameReceiver::recvSDP(std::string srcAddr, int srcPort) {
+      void RTPFrameReceiver::recvSDP(int srcPort) {
         char buf[SDP_BUF_SIZE], ackMsg[4];
         void *ctx, *sock;
         memcpy(ackMsg, "ACK\0", 4);
