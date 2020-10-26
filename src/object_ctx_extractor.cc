@@ -7,7 +7,8 @@ namespace mxre
   {
     namespace contextualizing
     {
-      ObjectCtxExtractor::ObjectCtxExtractor(cv::Mat intrinsic, cv::Mat distCoeffs) : raft::kernel()
+      ObjectCtxExtractor::ObjectCtxExtractor(cv::Mat intrinsic, cv::Mat distCoeffs, int width, int height) :
+          raft::kernel(), width(width), height(height)
       {
         camIntrinsic = intrinsic.clone();
         camDistCoeffs = distCoeffs.clone();
@@ -55,9 +56,9 @@ namespace mxre
 
             mxre::gl::ObjectContext objCtx;
             objCtx.index = objIter->index;
-            float transX = (tvec.at<double>(0, 0) * 2) / WIDTH;
-            float transY = (tvec.at<double>(0, 1) * 2) / HEIGHT;
-            float transZ = tvec.at<double>(0, 2) / WIDTH;
+            float transX = (tvec.at<double>(0, 0) * 2) / width;
+            float transY = (tvec.at<double>(0, 1) * 2) / height;
+            float transZ = tvec.at<double>(0, 2) / width;
 
             float rotX = rvec.at<double>(0, 0);
             float rotY = rvec.at<double>(0, 1);

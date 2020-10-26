@@ -38,8 +38,9 @@ namespace mxre
         mxre::gl::Shader shader;
         std::vector<mxre::ar::World> worldMaps;
         bool binding;
+        int width, height;
       public:
-        ObjectRenderer(std::vector<mxre::cv_units::ObjectInfo> registeredObjs);
+        ObjectRenderer(std::vector<mxre::cv_units::ObjectInfo> registeredObjs, int width, int height);
         ~ObjectRenderer();
         virtual raft::kstatus run();
       };

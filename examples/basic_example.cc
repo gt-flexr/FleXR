@@ -2,6 +2,9 @@
 #include <mxre.h>
 #include <bits/stdc++.h>
 
+#define WIDTH 1280
+#define HEIGHT 720
+
 using namespace std;
 
 int main(int argc, char const *argv[])
@@ -74,8 +77,9 @@ int main(int argc, char const *argv[])
 
   mxre::pipeline::input_srcs::Camera cam(camera_no);
   mxre::pipeline::ctx_understanding::ObjectDetector objDetector(objTracker.getRegisteredObjects(), orb, matcher);
-  mxre::pipeline::contextualizing::ObjectCtxExtractor objCtxExtractor(cam.getIntrinsic(), cam.getDistCoeffs());
-  mxre::pipeline::rendering::ObjectRenderer objRenderer(objTracker.getRegisteredObjects());
+  mxre::pipeline::contextualizing::ObjectCtxExtractor objCtxExtractor(cam.getIntrinsic(), cam.getDistCoeffs(),
+      1280, 720);
+  mxre::pipeline::rendering::ObjectRenderer objRenderer(objTracker.getRegisteredObjects(), 1280, 720);
   mxre::pipeline::output_sinks::CVDisplay cvDisplay;
 
   raft::map pipeline;

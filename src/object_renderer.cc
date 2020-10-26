@@ -8,8 +8,9 @@ namespace mxre
   {
     namespace rendering
     {
-      ObjectRenderer::ObjectRenderer(std::vector<mxre::cv_units::ObjectInfo> registeredObjs) :
-        camera(glm::vec3(0.0f, 3.0f, 0.0f)), raft::kernel()
+      ObjectRenderer::ObjectRenderer(std::vector<mxre::cv_units::ObjectInfo> registeredObjs, int width, int height) :
+        width(width), height(height),
+        camera(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0, 1, 0), -90, 0, 45), raft::kernel()
       {
         input.addPort<mxre::cv_units::Mat>("in_frame");
         input.addPort<std::vector<mxre::gl::ObjectContext>>("in_obj_context");
@@ -18,11 +19,11 @@ namespace mxre
 
         // 0. Create pbuf as a context
         pbuf = new mxre::egl::EGLPbuffer;
-        mxre::egl::initEGLPbuffer(*pbuf);
+        mxre::egl::initEGLPbuffer(*pbuf, width, height);
 
         // 1. Init pbuf as context and GL with the context
         mxre::egl::bindPbuffer(*pbuf);
-        mxre::gl::initGL(WIDTH, HEIGHT);
+        mxre::gl::initGL(width, height);
 
         // 2. Init Shader
         stbi_set_flip_vertically_on_load(true);
@@ -99,20 +100,20 @@ namespace mxre
         glClearColor(1.0, 1.0, 1.0, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        mxre::gl::startBackground(WIDTH, HEIGHT);
+        mxre::gl::startBackground(width, height);
         glBindTexture(GL_TEXTURE_2D, backgroundTexture);
         glBegin(GL_QUADS);
         glColor3f(1, 1, 1);
-          glTexCoord2i(0,0); glVertex3f(0, 0, -1);
-          glTexCoord2i(1,0); glVertex3f(WIDTH, 0, -1);
-          glTexCoord2i(1,1); glVertex3f(WIDTH, HEIGHT, -1);
-          glTexCoord2i(0,1); glVertex3f(0, HEIGHT, -1);
+          glTexCoord2i(0,0); glVertex3f(0,     0,      -1);
+          glTexCoord2i(1,0); glVertex3f(width, 0,      -1);
+          glTexCoord2i(1,1); glVertex3f(width, height, -1);
+          glTexCoord2i(0,1); glVertex3f(0,     height, -1);
         glEnd();
         mxre::gl::endBackground();
 
         shader.use();
         //glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), (float)WIDTH/(float)HEIGHT, 0.1f, 100.0f);
-        glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), (float)800/(float)600, 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), (float)width/(float)height, 0.1f, 100.0f);
         glm::mat4 view = camera.getViewMatrix();
         shader.setMat4("projection", projection);
         shader.setMat4("view", view);
@@ -132,7 +133,7 @@ namespace mxre
         }
         glPopMatrix();
         glUseProgram(0);
-        out_frame = mxre::gl::exportGLBufferToCV();
+        out_frame = mxre::gl::exportGLBufferToCV(width, height);
 
         input["in_frame"].recycle();
         input["in_obj_context"].recycle();

@@ -2,8 +2,10 @@
 #include <mxre.h>
 #include <bits/stdc++.h>
 
-using namespace std;
+#define WIDTH 1280
+#define HEIGHT 720
 
+using namespace std;
 
 // pipeline runner for threads
 void runPipeline(raft::map *pipeline) { pipeline->exe(); }

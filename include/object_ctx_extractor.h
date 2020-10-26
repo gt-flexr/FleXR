@@ -23,9 +23,10 @@ namespace mxre
       private:
         cv::Mat camIntrinsic;
         cv::Mat camDistCoeffs;
+        int width, height;
 
       public:
-        ObjectCtxExtractor(cv::Mat intrinsic, cv::Mat distCoeffs);
+        ObjectCtxExtractor(cv::Mat intrinsic, cv::Mat distCoeffs, int width, int height);
         ~ObjectCtxExtractor();
         virtual raft::kstatus run();
       };
