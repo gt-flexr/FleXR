@@ -4,6 +4,12 @@
 #include <bits/stdc++.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
+#ifndef GLM_ENABLE_EXPERIMENTAL
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/string_cast.hpp>
+#endif
+
 #include "gl/model.h"
 #include "ar/object.h"
 #include "utils/path_finder.h"
@@ -33,15 +39,19 @@ namespace mxre
         objects.push_back(newObject);
       }
 
+      void emptyObject() {
+        objects.clear();
+      }
+
       void resetCoord() {
         worldMat = glm::mat4(1.0f);
       }
 
-      void translate(glm::vec3 &trans) {
+      void translate(glm::vec3 trans) {
         worldMat = glm::translate(worldMat, trans);
       }
 
-      void rotate(glm::vec3 &rot) {
+      void rotate(glm::vec3 rot) {
         worldMat = glm::rotate(worldMat, rot.x, glm::vec3(1, 0, 0));
         worldMat = glm::rotate(worldMat, rot.y, glm::vec3(0, 1, 0));
         worldMat = glm::rotate(worldMat, rot.z, glm::vec3(0, 0, 1));
@@ -52,11 +62,14 @@ namespace mxre
       }
 
       void draw(mxre::gl::Shader &shader) {
-        shader.setMat4("model", worldMat);
+        glm::mat4 modelMat;
+
+        //shader.setMat4("model", worldMat);
         std::vector<mxre::ar::Object>::iterator objIter;
         for(objIter = objects.begin(); objIter != objects.end(); ++objIter) {
-          // worldMat * objIter->objectMat
-          // shader.setMat4("model", worldMat);
+          modelMat = worldMat * objIter->objectMat;
+          shader.setMat4("model", modelMat);
+
           models[objIter->modelIndex].draw(shader);
         }
       }
