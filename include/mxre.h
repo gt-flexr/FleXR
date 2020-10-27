@@ -48,6 +48,7 @@
 
 /** rendering **/
 #include "object_renderer.h"
+#include "complexyolo_renderer.h"
 
 /** network **/
 #include "network/message_sender.h"
