@@ -65,8 +65,10 @@ namespace mxre
             float rotZ = rvec.at<double>(0, 2);
 
             // Convert the OCV coordinate system into the OGL coordinate system
-            objCtx.rvec.x = -rotY;   objCtx.rvec.y = -rotZ;   objCtx.rvec.z = rotX;
-            objCtx.tvec.x = -transY; objCtx.tvec.y = -transZ; objCtx.tvec.z = transX;
+            //objCtx.rvec.x = -rotY;   objCtx.rvec.y = -rotZ;   objCtx.rvec.z = rotX;
+            objCtx.rvec.x = rotX;   objCtx.rvec.y = -rotY;   objCtx.rvec.z = -rotZ;
+            //objCtx.tvec.x = transY; objCtx.tvec.y = -transZ; objCtx.tvec.z = transX;
+            objCtx.tvec.x = transX; objCtx.tvec.y = transY; objCtx.tvec.z = -transZ;
 
             //def draw_axis(img, R, t, K):
             //  rotV, _ = cv2.Rodrigues(R)

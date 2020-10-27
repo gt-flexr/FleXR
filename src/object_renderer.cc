@@ -36,8 +36,9 @@ namespace mxre
           mxre::ar::World newWorld(objIter->index);
           // Register 3D models to each world
           printf("%dth world: register models", objIter->index);
-          newWorld.addModel("resources/0_stone/Stone.obj");
+          newWorld.addModel("resources/ArmyTruck_OBJ/armytruck.obj");
           newWorld.addModel("resources/1_neck/Neck_Mech_Walker.obj");
+          newWorld.addModel("resources/0_stone/Stone.obj");
           newWorld.addModel("resources/2_mars/Mars 2K.obj");
           newWorld.addModel("resources/3_earth/Earth 2K.obj");
           newWorld.addModel("resources/4_shuttle/Transport Shuttle_obj.obj");
@@ -125,8 +126,11 @@ namespace mxre
           // set world mat
           // draw objects in the world
           worldMaps[objCtxIter->index].resetCoord();
-          worldMaps[objCtxIter->index].translate(objCtxIter->tvec);
-          worldMaps[objCtxIter->index].rotate(objCtxIter->rvec);
+          worldMaps[objCtxIter->index].translate(
+              glm::vec3(objCtxIter->tvec.x, objCtxIter->tvec.y, objCtxIter->tvec.z));
+          worldMaps[objCtxIter->index].rotate(glm::vec3(objCtxIter->rvec.x, objCtxIter->rvec.y, objCtxIter->rvec.z));
+          printf("Translation: %f %f %f\n", objCtxIter->tvec.x, objCtxIter->tvec.y, objCtxIter->tvec.z);
+          printf("Rotation: %f %f %f\n", objCtxIter->rvec.x, objCtxIter->rvec.y, objCtxIter->rvec.z);
           worldMaps[objCtxIter->index].scale(glm::vec3(0.1, 0.1, 0.1));
           worldMaps[objCtxIter->index].draw(shader);
           glFlush();

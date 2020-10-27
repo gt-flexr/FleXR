@@ -125,8 +125,6 @@ namespace mxre
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-      // flip around X-axis (Y-flip) from CV to GL
-      cv::flip(mat.cvMat, mat.cvMat, 0);
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mat.cols, mat.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, mat.data);
       glBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -135,8 +133,6 @@ namespace mxre
     static void updateTextureFromCVFrame(mxre::cv_units::Mat &mat, GLuint &tex)
     {
       glBindTexture(GL_TEXTURE_2D, tex);
-      // flip around X-axis (Y-flip) from CV to GL
-      cv::flip(mat.cvMat, mat.cvMat, 0);
       glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mat.cols, mat.rows, GL_BGR, GL_UNSIGNED_BYTE, mat.data);
       glBindTexture(GL_TEXTURE_2D, 0);
     }

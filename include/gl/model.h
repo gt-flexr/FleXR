@@ -72,7 +72,7 @@ namespace mxre {
 
       void convertAiVec3ToGlmVec3(glm::vec3 &glmVec, aiVector3D &aiVec) {
         glmVec.x = aiVec.x;
-        glmVec.y = aiVec.y;
+        glmVec.y = -aiVec.y;
         glmVec.z = aiVec.z;
       }
 
