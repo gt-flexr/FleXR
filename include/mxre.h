@@ -34,6 +34,7 @@
 /* pipeline */
 /** input_srcs **/
 #include "camera.h"
+#include "image_loader.h"
 
 /** output_sinks **/
 #include "cv_display.h"
