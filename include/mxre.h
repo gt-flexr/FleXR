@@ -63,5 +63,10 @@
 #include "network/rtp_frame_sender.h"
 #include "network/rtp_frame_receiver.h"
 
+/* Perceptions */
+/** Complex YOLO **/
+#include "perceptions/complex_yolo/prediction_receiver.h"
+#include "perceptions/complex_yolo/types.h"
+
 #endif
 
