@@ -34,6 +34,10 @@ namespace mxre
       size_t total, elemSize;
       int rows, cols, type;
 
+      ~Mat(){
+        release(); // ??
+      }
+
       Mat(){}
 
       Mat(cv::Mat inMat){
@@ -54,6 +58,22 @@ namespace mxre
         setMatInfo();
       }
 
+
+      Mat(const Mat &ref) {
+        isExt = false; // ??
+        cvMat = ref.cvMat.clone();
+        setMatInfo();
+      }
+
+      Mat& operator=(const Mat& ref) {
+        release();
+        isExt = false; // ??
+        std::cout << ref.cvMat.cols << "x" << ref.cvMat.rows << std::endl;
+        cvMat = ref.cvMat.clone();
+        setMatInfo();
+        return *this;
+      }
+
       void setMatInfo() {
         total = cvMat.total();
         elemSize = cvMat.elemSize();
@@ -64,7 +84,7 @@ namespace mxre
       }
 
       void release() {
-        if(!cvMat.empty()){
+        if(!cvMat.empty()) {
           cvMat.release();
           if(data && isExt) {
             delete [] data;
