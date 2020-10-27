@@ -82,19 +82,18 @@ namespace mxre
     }
 
 
-    static mxre::cv_units::Mat exportGLBufferToCV()
+    static mxre::cv_units::Mat exportGLBufferToCV(int width, int height)
     {
       glReadBuffer(GL_FRONT);
       glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-      unsigned char *pixels = new unsigned char[3 * WIDTH * HEIGHT];
-      glReadPixels(0, 0, WIDTH, HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, pixels);
+      unsigned char *pixels = new unsigned char[3 * width * height];
+      glReadPixels(0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, pixels);
       debug_print("allocated pixel addr: %p", static_cast<void*>(pixels));
 
-      mxre::cv_units::Mat mat(HEIGHT, WIDTH, CV_8UC3, pixels);
+      mxre::cv_units::Mat mat(height, width, CV_8UC3, pixels);
+      debug_print("width, height: %dx%d, %dx%d", width, height, mat.cvMat.cols, mat.cvMat.rows);
 
-      // flip around X-axis (Y-flip) from GL to CV
-      cv::flip(mat.cvMat, mat.cvMat, 0);
       return mat;
     }
 
@@ -126,8 +125,6 @@ namespace mxre
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-      // flip around X-axis (Y-flip) from CV to GL
-      cv::flip(mat.cvMat, mat.cvMat, 0);
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mat.cols, mat.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, mat.data);
       glBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -136,8 +133,6 @@ namespace mxre
     static void updateTextureFromCVFrame(mxre::cv_units::Mat &mat, GLuint &tex)
     {
       glBindTexture(GL_TEXTURE_2D, tex);
-      // flip around X-axis (Y-flip) from CV to GL
-      cv::flip(mat.cvMat, mat.cvMat, 0);
       glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mat.cols, mat.rows, GL_BGR, GL_UNSIGNED_BYTE, mat.data);
       glBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -161,6 +156,7 @@ namespace mxre
       //glPushMatrix();
       //glLoadIdentity();
       //glTranslatef(-width/2, -height/2, 0); // set mid point
+      debug_print("width height %d %d \n", width, height);
       gluOrtho2D(0, width, 0, height); // set to orthogonal projection
     }
 

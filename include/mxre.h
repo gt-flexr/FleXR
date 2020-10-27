@@ -34,6 +34,7 @@
 /* pipeline */
 /** input_srcs **/
 #include "camera.h"
+#include "image_loader.h"
 
 /** output_sinks **/
 #include "cv_display.h"
@@ -47,6 +48,7 @@
 
 /** rendering **/
 #include "object_renderer.h"
+#include "complexyolo_renderer.h"
 
 /** network **/
 #include "network/message_sender.h"
@@ -60,6 +62,11 @@
 
 #include "network/rtp_frame_sender.h"
 #include "network/rtp_frame_receiver.h"
+
+/* Perceptions */
+/** Complex YOLO **/
+#include "perceptions/complex_yolo/prediction_receiver.h"
+#include "perceptions/complex_yolo/types.h"
 
 #endif
 

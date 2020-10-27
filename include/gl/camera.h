@@ -30,8 +30,8 @@ namespace mxre {
         float speed, sensitivity, zoom;
 
         Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f),
-               float yaw = YAW, float pitch = PITCH) : front(glm::vec3(0.0f, 0.0f, -1.0f)), speed(SPEED),
-                                                       sensitivity(SENSITIVITY), zoom(ZOOM) {
+               float yaw = YAW, float pitch = PITCH, float zoom=ZOOM) : front(glm::vec3(0.0f, 0.0f, -1.0f)),
+                speed(SPEED), sensitivity(SENSITIVITY), zoom(zoom) {
           this->position = position;
           this->worldUp = up;
           this->yaw = yaw;
@@ -62,6 +62,7 @@ namespace mxre {
           newFront.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
           newFront.y = sin(glm::radians(pitch));
           newFront.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+          printf("cam xyz: %f %f %f \n", newFront.x, newFront.y, newFront.z);
 
           front = glm::normalize(newFront);
           right = glm::normalize(glm::cross(front, worldUp));

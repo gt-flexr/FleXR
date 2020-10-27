@@ -2,6 +2,9 @@
 #include <mxre.h>
 #include <bits/stdc++.h>
 
+#define WIDTH 1280
+#define HEIGHT 720
+
 using namespace std;
 
 class TempSrc : public raft::kernel {
@@ -123,8 +126,9 @@ int main(int argc, char const *argv[])
   raft::map servingPipeline;
   //mxre::pipeline::ctx_understanding::ObjectDetector objDetector(objTracker.getRegisteredObjects(), orb, matcher);
   mxre::pipeline::ctx_understanding::CudaORBDetector objDetector(objTracker.getRegisteredObjects());
-  mxre::pipeline::contextualizing::ObjectCtxExtractor objCtxExtractor(defaultIntrinsic, defaultDistCoeffs);
-  mxre::pipeline::rendering::ObjectRenderer objRenderer(objTracker.getRegisteredObjects());
+  mxre::pipeline::contextualizing::ObjectCtxExtractor objCtxExtractor(defaultIntrinsic, defaultDistCoeffs,
+      WIDTH, HEIGHT);
+  mxre::pipeline::rendering::ObjectRenderer objRenderer(objTracker.getRegisteredObjects(), WIDTH, HEIGHT);
   mxre::pipeline::network::RTPFrameSender rtpSender("mjpeg", "recv.sdp", 49995, 800000, 10, WIDTH, HEIGHT);
   mxre::pipeline::network::RTPFrameReceiver rtpReceiver("mjpeg", "send.sdp", WIDTH, HEIGHT);
 

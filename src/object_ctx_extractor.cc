@@ -7,7 +7,8 @@ namespace mxre
   {
     namespace contextualizing
     {
-      ObjectCtxExtractor::ObjectCtxExtractor(cv::Mat intrinsic, cv::Mat distCoeffs) : raft::kernel()
+      ObjectCtxExtractor::ObjectCtxExtractor(cv::Mat intrinsic, cv::Mat distCoeffs, int width, int height) :
+          raft::kernel(), width(width), height(height)
       {
         camIntrinsic = intrinsic.clone();
         camDistCoeffs = distCoeffs.clone();
@@ -55,17 +56,19 @@ namespace mxre
 
             mxre::gl::ObjectContext objCtx;
             objCtx.index = objIter->index;
-            float transX = (tvec.at<double>(0, 0) * 2) / WIDTH;
-            float transY = (tvec.at<double>(0, 1) * 2) / HEIGHT;
-            float transZ = tvec.at<double>(0, 2) / WIDTH;
+            float transX = (tvec.at<double>(0, 0) * 2) / width;
+            float transY = (tvec.at<double>(0, 1) * 2) / height;
+            float transZ = tvec.at<double>(0, 2) / width;
 
             float rotX = rvec.at<double>(0, 0);
             float rotY = rvec.at<double>(0, 1);
             float rotZ = rvec.at<double>(0, 2);
 
             // Convert the OCV coordinate system into the OGL coordinate system
-            objCtx.rvec.x = -rotY;   objCtx.rvec.y = -rotZ;   objCtx.rvec.z = rotX;
-            objCtx.tvec.x = -transY; objCtx.tvec.y = -transZ; objCtx.tvec.z = transX;
+            //objCtx.rvec.x = -rotY;   objCtx.rvec.y = -rotZ;   objCtx.rvec.z = rotX;
+            objCtx.rvec.x = rotX;   objCtx.rvec.y = -rotY;   objCtx.rvec.z = -rotZ;
+            //objCtx.tvec.x = transY; objCtx.tvec.y = -transZ; objCtx.tvec.z = transX;
+            objCtx.tvec.x = transX; objCtx.tvec.y = transY; objCtx.tvec.z = -transZ;
 
             //def draw_axis(img, R, t, K):
             //  rotV, _ = cv2.Rodrigues(R)

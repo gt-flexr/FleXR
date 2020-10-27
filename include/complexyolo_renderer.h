@@ -1,5 +1,5 @@
-#ifndef __MXRE_OBJ_RENDERER__
-#define __MXRE_OBJ_RENDERER__
+#ifndef __MXRE_COMPLEX_YOLO_RENDERER__
+#define __MXRE_COMPLEX_YOLO_RENDERER__
 
 #include <bits/stdc++.h>
 #include <raft>
@@ -11,6 +11,7 @@
 #include "defs.h"
 #include "cv_types.h"
 #include "utils/path_finder.h"
+#include "perceptions/complex_yolo/types.h"
 
 #include "gl/egl_utils.h"
 #include "gl/gl_utils.h"
@@ -29,19 +30,19 @@ namespace mxre
   {
     namespace rendering
     {
-      class ObjectRenderer : public raft::kernel
+      class ComplexYOLORenderer : public raft::kernel
       {
       private:
         mxre::egl::EGLPbuffer *pbuf;
         GLuint backgroundTexture;
         mxre::gl::Camera camera;
         mxre::gl::Shader shader;
-        std::vector<mxre::ar::World> worldMaps;
+        mxre::ar::World worldMap;
         bool binding;
-        int width, height;
+        int width, height, depth;
       public:
-        ObjectRenderer(std::vector<mxre::cv_units::ObjectInfo> registeredObjs, int width, int height);
-        ~ObjectRenderer();
+        ComplexYOLORenderer(int width = 1252, int height = 380, int depth=50);
+        ~ComplexYOLORenderer();
         virtual raft::kstatus run();
       };
     } // namespace rendering

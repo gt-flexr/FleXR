@@ -21,9 +21,10 @@ namespace mxre
         int frame_idx;
         cv::Mat intrinsic;
         cv::Mat distCoeffs;
+        int width, height;
 
       public:
-        Camera(int dev_idx=0);
+        Camera(int dev_idx=0, int width=1280, int height=720);
         ~Camera();
         void setIntrinsic(cv::Mat inIntrinsic) {intrinsic = inIntrinsic;}
         void setDistCoeffs(cv::Mat inDistCoeffs) {distCoeffs = inDistCoeffs;}
