@@ -1,10 +1,11 @@
-#include "object_tracker.h"
+#include <types/cv/orb_marker_tracker.h>
 
 namespace mxre
 {
-  namespace cv_units
+  namespace cv_types
   {
-    void ObjectTracker::registerObject(const cv::Mat frame, cv::Rect roiRect) {
+
+    void ORBMarkerTracker::registerObject(const cv::Mat frame, cv::Rect roiRect) {
       // get the object mask
       std::vector<cv::Point2f> roiPoints;
       roiPoints.push_back(cv::Point2f(static_cast<float>(roiRect.x), static_cast<float>(roiRect.y)));
@@ -43,7 +44,8 @@ namespace mxre
       delete[] roiMask;
     }
 
-    void ObjectTracker::printRegisteredObjects() {
+
+    void ORBMarkerTracker::printRegisteredObjects() {
       std::cout << "===== printRegisteredObjects =====" << std::endl;
       for(std::vector<ObjectInfo>::iterator it = objInfo.begin(); it != objInfo.end(); ++it) {
         printf("%dth Object Info \n", it->index);
@@ -60,6 +62,7 @@ namespace mxre
       }
       std::cout << "==================================" << std::endl;
     }
-  } // namespace cv_units
+
+  } // namespace cv_types
 } // namespace mxre
 
