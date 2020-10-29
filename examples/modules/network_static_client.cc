@@ -48,7 +48,7 @@ int main(int argc, char const *argv[])
   bool isVector = true;
 
   TestSrc<int> testSrc(isVector, 8192);
-  mxre::pipeline::network::StaticSender<int> staticSender("localhost", 5555, isVector);
+  mxre::kernels::StaticSender<int> staticSender("localhost", 5555, isVector);
   cout << "created pipeline elements" << endl;
 
   raft::map pipeline;

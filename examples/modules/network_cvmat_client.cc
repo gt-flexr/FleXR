@@ -17,17 +17,17 @@ class TestSrc : public raft::kernel {
   TestSrc(bool isVector=false, int numMat=1): raft::kernel(), isVector(isVector), numMat(numMat) {
     cout << "TestSrc isVector: " << isVector << endl;
     if(isVector)
-      output.addPort<vector<mxre::cv_units::Mat>>("out_data");
+      output.addPort<vector<mxre::cv_types::Mat>>("out_data");
     else
-      output.addPort<mxre::cv_units::Mat>("out_data");
+      output.addPort<mxre::cv_types::Mat>("out_data");
   }
 
   virtual raft::kstatus run() {
     printf("[TestSource] run \n");
     if(isVector) {
-      auto &outData( output["out_data"].template allocate<vector<mxre::cv_units::Mat>>() );
+      auto &outData( output["out_data"].template allocate<vector<mxre::cv_types::Mat>>() );
       for(int i = 0; i < numMat; i++) {
-        mxre::cv_units::Mat newMat(16, 2048, CV_32F);
+        mxre::cv_types::Mat newMat(16, 2048, CV_32F);
         newMat.cvMat.at<float>(0, 0) = i;
         newMat.cvMat.at<float>(0, 1) = i+1;
         newMat.cvMat.at<float>(0, 2) = i+2;
@@ -37,8 +37,8 @@ class TestSrc : public raft::kernel {
       }
     }
     else {
-      auto &outData( output["out_data"].template allocate<mxre::cv_units::Mat>() );
-      outData = mxre::cv_units::Mat(16, 2048, CV_32F);
+      auto &outData( output["out_data"].template allocate<mxre::cv_types::Mat>() );
+      outData = mxre::cv_types::Mat(16, 2048, CV_32F);
       outData.cvMat.at<float>(0, 0) = 0;
       outData.cvMat.at<float>(0, 1) = 1;
       outData.cvMat.at<float>(0, 2) = 2;
@@ -56,7 +56,7 @@ int main(int argc, char const *argv[])
   bool isVector = false;
 
   TestSrc testSrc(isVector, 5);
-  mxre::pipeline::network::MatSender matSender("localhost", 5555, isVector);
+  mxre::kernels::MatSender matSender("localhost", 5555, isVector);
   cout << "created pipeline elements" << endl;
 
   raft::map pipeline;
@@ -66,4 +66,3 @@ int main(int argc, char const *argv[])
   pipeline.exe();
   return 0;
 }
-

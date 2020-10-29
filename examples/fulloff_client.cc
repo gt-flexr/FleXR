@@ -16,13 +16,13 @@ class TempSrc : public raft::kernel {
   TempSrc() : raft::kernel() {
 #ifdef __PROFILE__
     frame_idx=0;
-    output.addPort<FrameStamp>("frame_stamp");
+    output.addPort<mxre::types::FrameStamp>("frame_stamp");
 #endif
   }
 
   raft::kstatus run() {
 #ifdef __PROFILE__
-    auto &outFrameStamp( output["frame_stamp"].allocate<FrameStamp>() );
+    auto &outFrameStamp( output["frame_stamp"].allocate<mxre::types::FrameStamp>() );
     outFrameStamp.index = frame_idx++;
     outFrameStamp.st = getNow();
     output["frame_stamp"].send();
@@ -37,13 +37,13 @@ class TempSink : public raft::kernel {
   public:
   TempSink() : raft::kernel() {
 #ifdef __PROFILE__
-    input.addPort<FrameStamp>("frame_stamp");
+    input.addPort<mxre::types::FrameStamp>("frame_stamp");
 #endif
   }
 
   raft::kstatus run() {
 #ifdef __PROFILE__
-    auto &inFrameStamp( input["frame_stamp"].peek<FrameStamp>() );
+    auto &inFrameStamp( input["frame_stamp"].peek<mxre::types::FrameStamp>() );
     input["frame_stamp"].recycle();
 #endif
     return raft::proceed;
@@ -62,19 +62,24 @@ int main(int argc, char const *argv[])
 
   // 1. create & run a sending pipeline
   raft::map sendingPipe;
-  mxre::pipeline::input_srcs::Camera cam(camera_no);
-  mxre::pipeline::network::RTPFrameSender rtpSender("mjpeg", "send.sdp", 49991, 800000, 10, WIDTH, HEIGHT);
+  mxre::kernels::CVCamera cam(camera_no);
+  mxre::kernels::RTPFrameSender rtpSender("mjpeg", "127.0.0.1", 49985, 800000, 10, WIDTH, HEIGHT);
   sendingPipe += cam["out_frame"] >> rtpSender["in_data"];
 #ifdef __PROFILE__
   TempSink tempSink;
   sendingPipe += cam["frame_stamp"] >> tempSink["frame_stamp"];
 #endif
+
+  mxre::kernels::Keyboard keyboard;
+  mxre::kernels::StaticSender<char> keySender("127.0.0.1", 49986, false);
+  sendingPipe += keyboard["out_keystroke"] >> keySender["in_data"];
+
   std::thread sendingThread(runPipeline, &sendingPipe);
 
   // 2. create & run a receiving pipeline
   raft::map receivingPipe;
-  mxre::pipeline::network::RTPFrameReceiver rtpReceiver("mjpeg", "recv.sdp", WIDTH, HEIGHT);
-  mxre::pipeline::output_sinks::CVDisplay cvDisplay;
+  mxre::kernels::RTPFrameReceiver rtpReceiver("mjpeg", 49987, WIDTH, HEIGHT);
+  mxre::kernels::CVDisplay cvDisplay;
   receivingPipe += rtpReceiver["out_data"] >> cvDisplay["in_frame"];
 #ifdef __PROFILE__
   TempSrc tempSrc;

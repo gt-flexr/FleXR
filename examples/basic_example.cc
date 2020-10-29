@@ -37,7 +37,7 @@ int main(int argc, char const *argv[])
 
   cv::Ptr<cv::ORB> orb = cv::ORB::create();
   cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
-  mxre::cv_units::ObjectTracker objTracker(orb, matcher);
+  mxre::cv_types::ORBMarkerTracker orbMarkerTracker(orb, matcher);
 
   cv::Mat frame;
   cv::namedWindow(video_name, cv::WINDOW_NORMAL);
@@ -69,39 +69,41 @@ int main(int argc, char const *argv[])
       if(roiRect.width == 0 || roiRect.height == 0)
         i--;
       else
-        objTracker.registerObject(frame, roiRect);
+        orbMarkerTracker.registerObject(frame, roiRect);
     }
   }
-  objTracker.printRegisteredObjects();
+  orbMarkerTracker.printRegisteredObjects();
   video_src.release();
 
-  mxre::pipeline::input_srcs::Camera cam(camera_no);
-  mxre::pipeline::ctx_understanding::ObjectDetector objDetector(objTracker.getRegisteredObjects(), orb, matcher);
-  mxre::pipeline::contextualizing::ObjectCtxExtractor objCtxExtractor(cam.getIntrinsic(), cam.getDistCoeffs(),
-      1280, 720);
-  mxre::pipeline::rendering::ObjectRenderer objRenderer(objTracker.getRegisteredObjects(), 1280, 720);
-  mxre::pipeline::output_sinks::CVDisplay cvDisplay;
+  mxre::kernels::CVCamera cam(camera_no, WIDTH, HEIGHT);
+  mxre::kernels::Keyboard keyboard;
+  mxre::kernels::ORBDetector orbDetector(orbMarkerTracker.getRegisteredObjects(), orb, matcher);
+  mxre::kernels::ObjectCtxExtractor objCtxExtractor(cam.getIntrinsic(), cam.getDistCoeffs(),
+      WIDTH, HEIGHT);
+  mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), WIDTH, HEIGHT);
+  mxre::kernels::CVDisplay cvDisplay;
 
   raft::map pipeline;
 
   // cam - obj detector
-  pipeline += cam["out_frame"] >> objDetector["in_frame"];
+  pipeline += cam["out_frame"] >> orbDetector["in_frame"];
 
   // obj detector - obj ctx extractor
-  pipeline += objDetector["out_frame"] >> objCtxExtractor["in_frame"];
-  pipeline += objDetector["out_obj_info"] >> objCtxExtractor["in_obj_info"];
+  pipeline += orbDetector["out_frame"] >> objCtxExtractor["in_frame"];
+  pipeline += orbDetector["out_obj_info"] >> objCtxExtractor["in_obj_info"];
 
 
   // obj ctx extractor - obj renderer
   pipeline += objCtxExtractor["out_frame"] >> objRenderer["in_frame"];
   pipeline += objCtxExtractor["out_obj_context"] >> objRenderer["in_obj_context"];
+  pipeline += keyboard["out_keystroke"] >> objRenderer["in_keystroke"];
 
   // obj renderer - test sink
   pipeline += objRenderer["out_frame"] >> cvDisplay["in_frame"];
 
 #ifdef __PROFILE__
-  pipeline += cam["frame_stamp"] >> objDetector["frame_stamp"];
-  pipeline += objDetector["frame_stamp"] >> objCtxExtractor["frame_stamp"];
+  pipeline += cam["frame_stamp"] >> orbDetector["frame_stamp"];
+  pipeline += orbDetector["frame_stamp"] >> objCtxExtractor["frame_stamp"];
   pipeline += objCtxExtractor["frame_stamp"] >> objRenderer["frame_stamp"];
   pipeline += objRenderer["frame_stamp"] >> cvDisplay["frame_stamp"];
 #endif
@@ -110,4 +112,3 @@ int main(int argc, char const *argv[])
   pipeline.exe();
   return 0;
 }
-

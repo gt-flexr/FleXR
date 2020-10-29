@@ -44,7 +44,7 @@ int main(int argc, char const *argv[])
   bool isVector = true;
 
   TestSink<int> testSink(isVector);
-  mxre::pipeline::network::StaticReceiver<int> staticReceiver(5555, isVector);
+  mxre::kernels::StaticReceiver<int> staticReceiver(5555, isVector);
   cout << "created pipeline elements" << endl;
 
   raft::map pipeline;
