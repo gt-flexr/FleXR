@@ -7,22 +7,22 @@
 #include <opencv2/video.hpp>
 #include <opencv2/highgui.hpp>
 #include "defs.h"
+#include "types/clock_types.h"
 
 namespace mxre
 {
-  namespace pipeline
+  namespace kernels
   {
-    namespace device
+
+    class CVDisplay : public raft::kernel
     {
-      class CVDisplay : public raft::kernel
-      {
-      public:
-        CVDisplay();
-        ~CVDisplay();
-        virtual raft::kstatus run();
-      };
-    } // namespace device
-  }   // namespace pipeline
+    public:
+      CVDisplay();
+      ~CVDisplay();
+      virtual raft::kstatus run();
+    };
+
+  }   // namespace kernels
 } // namespace mxre
 
 #endif
