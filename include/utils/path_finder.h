@@ -1,5 +1,5 @@
-#ifndef __MXRE_PATH_FINDER__
-#define __MXRE_PATH_FINDER__
+#ifndef __MXRE_UTILS_PATH_FINDER__
+#define __MXRE_UTILS_PATH_FINDER__
 
 #include <bits/stdc++.h>
 #include <cstdlib>
@@ -41,7 +41,7 @@ namespace mxre {
       }
     };
 
-  } // namespace utils
+  } // namespacet types
 } // namespace mxre
 
 #endif

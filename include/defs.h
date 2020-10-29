@@ -1,5 +1,5 @@
-#ifndef __DEFS__
-#define __DEFS__
+#ifndef __MXRE_DEFS__
+#define __MXRE_DEFS__
 
 #define MAX_OBJS 5
 #define TOTAL_FRAMES 1000
@@ -35,11 +35,5 @@
 #include <chrono>
 #define getExeTime(a,b) ( (double)(std::chrono::duration_cast<std::chrono::microseconds>(a-b).count()) / 1000 )
 #define getNow() std::chrono::high_resolution_clock::now()
-typedef std::chrono::high_resolution_clock::time_point TimeVal;
-typedef struct FrameStamp {
-  TimeVal st;
-  unsigned int index;
-} FrameStamp;
-
 #endif
 
