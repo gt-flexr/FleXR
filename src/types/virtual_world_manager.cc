@@ -1,24 +1,24 @@
-#include "ar/world_manager.h"
+#include <types/ar/virtual_world_manager.h>
 
 namespace mxre
 {
-  namespace ar
+  namespace ar_types
   {
 
-    WorldManager::WorldManager() {
+    VirtualWorldManager::VirtualWorldManager() {
       numOfWorlds = 0;
       currentWorld = 0;
     }
 
-    void WorldManager::initShader() {
+    void VirtualWorldManager::initShader() {
       stbi_set_flip_vertically_on_load(true);
       shader.init(mxre::utils::PathFinder::find("build/examples/model_loading.vs").c_str(),
           mxre::utils::PathFinder::find("build/examples/model_loading.fs").c_str());
     }
 
 
-    void WorldManager::addWorld(int index) {
-      mxre::ar::World newWorld(index);
+    void VirtualWorldManager::addWorld(int index) {
+      mxre::ar_types::VirtualWorld newWorld(index);
       printf("%dth world: register models", index);
       int modelIndex = index % 5;
       switch(modelIndex) {
@@ -43,14 +43,14 @@ namespace mxre
     }
 
 
-    void WorldManager::addObjectToWorld(int worldIndex) {
+    void VirtualWorldManager::addObjectToWorld(int worldIndex) {
       int objectIndex = worlds[worldIndex].objects.size();
-      mxre::ar::Object newObject(objectIndex);
+      mxre::ar_types::VirtualObject newObject(objectIndex);
       worlds[worldIndex].addObject(newObject);
     }
 
 
-    void WorldManager::handleKeystroke(char key) {
+    void VirtualWorldManager::handleKeystroke(char key) {
       // handle the keystroke to select the world
       if(key >= 48 && key <= 48 + MAX_OBJS) {
         std::cout << "set world as " << key << "th" << std::endl;
@@ -63,39 +63,39 @@ namespace mxre
           worlds[currentWorld].camera.resetCamera();
           break;
         case 'w': case 'W':
-          worlds[currentWorld].camera.processTranslation(gl::FORWARD);
+          worlds[currentWorld].camera.processTranslation(gl_types::FORWARD);
           break;
         case 's': case 'S':
-          worlds[currentWorld].camera.processTranslation(gl::BACKWARD);
+          worlds[currentWorld].camera.processTranslation(gl_types::BACKWARD);
           break;
         case 'a': case 'A':
-          worlds[currentWorld].camera.processTranslation(gl::LEFT);
+          worlds[currentWorld].camera.processTranslation(gl_types::LEFT);
           break;
         case 'd': case 'D':
-          worlds[currentWorld].camera.processTranslation(gl::RIGHT);
+          worlds[currentWorld].camera.processTranslation(gl_types::RIGHT);
           break;
 
         case 'i': case 'I': // pitch
-          worlds[currentWorld].camera.processRotation(gl::FORWARD);
+          worlds[currentWorld].camera.processRotation(gl_types::FORWARD);
           break;
         case 'k': case 'K': // pitch
-          worlds[currentWorld].camera.processRotation(gl::BACKWARD);
+          worlds[currentWorld].camera.processRotation(gl_types::BACKWARD);
           break;
         case 'j': case 'J': // yaw
-          worlds[currentWorld].camera.processRotation(gl::LEFT);
+          worlds[currentWorld].camera.processRotation(gl_types::LEFT);
           break;
         case 'l': case 'L': // yaw
-          worlds[currentWorld].camera.processRotation(gl::RIGHT);
+          worlds[currentWorld].camera.processRotation(gl_types::RIGHT);
           break;
       }
     }
 
 
-    void WorldManager::startWorlds(char key, std::vector<mxre::gl::ObjectContext> &objCtxs) {
+    void VirtualWorldManager::startWorlds(char key, std::vector<mxre::gl_types::ObjectContext> &objCtxs) {
       handleKeystroke(key);
 
       shader.use();
-      std::vector<mxre::gl::ObjectContext>::iterator objCtxIter;
+      std::vector<mxre::gl_types::ObjectContext>::iterator objCtxIter;
       for (objCtxIter = objCtxs.begin(); objCtxIter != objCtxs.end(); ++objCtxIter) {
         int detectedWorldIdx = objCtxIter->index;
         shader.setMat4("projection", worlds[detectedWorldIdx].projection);
@@ -112,6 +112,6 @@ namespace mxre
       glUseProgram(0);
     }
 
-  } // namespace ar
+  } // namespace ar_types
 } // namespace mxre
 

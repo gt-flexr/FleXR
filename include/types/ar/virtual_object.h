@@ -1,5 +1,5 @@
-#ifndef __MXRE_AR_OBJECT__
-#define __MXRE_AR_OBJECT__
+#ifndef __MXRE_AR_VIRTUAL_OBJECT__
+#define __MXRE_AR_VIRTUAL_OBJECT__
 
 #include <bits/stdc++.h>
 #include <glm/glm.hpp>
@@ -10,22 +10,22 @@
 #include <glm/gtx/string_cast.hpp>
 #endif
 
-#include "gl/model.h"
+#include "types/gl/model.h"
 
 namespace mxre
 {
-  namespace ar {
+  namespace ar_types {
 
-    class Object {
+    class VirtualObject {
     public:
       int modelIndex;
       glm::mat4 objectMat;
-      Object() {
+      VirtualObject() {
         modelIndex = 0;
         objectMat = glm::mat4(1.0f);
       }
 
-      Object(int modelIndex) : modelIndex(modelIndex) {
+      VirtualObject(int modelIndex) : modelIndex(modelIndex) {
         objectMat = glm::mat4(1.0f);
       }
 
@@ -44,7 +44,7 @@ namespace mxre
       }
     };
 
-  } // namespace ar
+  } // namespace ar_types
 } // namespace mxre
 
 #endif
