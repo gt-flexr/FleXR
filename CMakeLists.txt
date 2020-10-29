@@ -21,8 +21,8 @@ endif()
 build_option(DEBUG "Set Debug/Release" ON)
 build_option(PROFILE "Set kernel profiling" ON)
 
-mxre_option(USE_FFMPEG_NVCODEC "Use nvcodec with ffmpeg" OFF)
-mxre_option(USE_OPENCV_CUDA "Use cuda-accelerated functions of OpenCV" OFF)
+mxre_option(USE_FFMPEG_NVCODEC "Use nvcodec with ffmpeg" ON)
+mxre_option(USE_OPENCV_CUDA "Use cuda-accelerated functions of OpenCV" ON)
 
 # Source codes & headers
 configure_file(config/root_directory.h.in config/root_directory.h)

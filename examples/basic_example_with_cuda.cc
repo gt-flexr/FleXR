@@ -38,7 +38,7 @@ int main(int argc, char const *argv[])
 
   cv::Ptr<cv::ORB> orb = cv::ORB::create();
   cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
-  mxre::cv_units::ObjectTracker objTracker(orb, matcher);
+  mxre::cv_types::ORBMarkerTracker orbMarkerTracker(orb, matcher);
 
   cv::Mat frame;
   cv::namedWindow(video_name, cv::WINDOW_NORMAL);
@@ -70,19 +70,19 @@ int main(int argc, char const *argv[])
       if(roiRect.width == 0 || roiRect.height == 0)
         i--;
       else
-        objTracker.registerObject(frame, roiRect);
+        orbMarkerTracker.registerObject(frame, roiRect);
     }
   }
-  objTracker.printRegisteredObjects();
+  orbMarkerTracker.printRegisteredObjects();
   video_src.release();
 
-  mxre::pipeline::device::CVCamera cam(camera_no, WIDTH, HEIGHT);
-  mxre::pipeline::device::Keyboard keyboard;
-  mxre::pipeline::ctx_understanding::CudaORBDetector cudaORBDetector(objTracker.getRegisteredObjects());
-  mxre::pipeline::contextualizing::ObjectCtxExtractor objCtxExtractor(cam.getIntrinsic(), cam.getDistCoeffs(),
+  mxre::kernels::CVCamera cam(camera_no, WIDTH, HEIGHT);
+  mxre::kernels::Keyboard keyboard;
+  mxre::kernels::CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
+  mxre::kernels::ObjectCtxExtractor objCtxExtractor(cam.getIntrinsic(), cam.getDistCoeffs(),
       WIDTH, HEIGHT);
-  mxre::pipeline::rendering::ObjectRenderer objRenderer(objTracker.getRegisteredObjects(), WIDTH, HEIGHT);
-  mxre::pipeline::device::CVDisplay cvDisplay;
+  mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), WIDTH, HEIGHT);
+  mxre::kernels::CVDisplay cvDisplay;
 
   raft::map pipeline;
 

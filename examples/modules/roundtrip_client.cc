@@ -16,13 +16,13 @@ class TempSrc : public raft::kernel {
   TempSrc() : raft::kernel() {
 #ifdef __PROFILE__
     frame_idx=0;
-    output.addPort<FrameStamp>("frame_stamp");
+    output.addPort<mxre::types::FrameStamp>("frame_stamp");
 #endif
   }
 
   raft::kstatus run() {
 #ifdef __PROFILE__
-    auto &outFrameStamp( output["frame_stamp"].allocate<FrameStamp>() );
+    auto &outFrameStamp( output["frame_stamp"].allocate<mxre::types::FrameStamp>() );
     outFrameStamp.index = frame_idx++;
     outFrameStamp.st = getNow();
     output["frame_stamp"].send();
@@ -37,13 +37,13 @@ class TempSink : public raft::kernel {
   public:
   TempSink() : raft::kernel() {
 #ifdef __PROFILE__
-    input.addPort<FrameStamp>("frame_stamp");
+    input.addPort<mxre::types::FrameStamp>("frame_stamp");
 #endif
   }
 
   raft::kstatus run() {
 #ifdef __PROFILE__
-    auto &inFrameStamp( input["frame_stamp"].peek<FrameStamp>() );
+    auto &inFrameStamp( input["frame_stamp"].peek<mxre::types::FrameStamp>() );
     input["frame_stamp"].recycle();
 #endif
     return raft::proceed;
@@ -63,8 +63,8 @@ int main(int argc, char const *argv[])
 
   debug_print("sendingPipe");
   raft::map sendingPipe;
-  mxre::pipeline::device::CVCamera cam(camera_no);
-  mxre::pipeline::network::RTPFrameSender rtpSender("mjpeg", "127.0.0.1", 49981, 800000, 30, WIDTH, HEIGHT);
+  mxre::kernels::CVCamera cam(camera_no);
+  mxre::kernels::RTPFrameSender rtpSender("mjpeg", "127.0.0.1", 49981, 800000, 30, WIDTH, HEIGHT);
   sendingPipe += cam["out_frame"] >> rtpSender["in_data"];
 #ifdef __PROFILE__
   TempSink tempSink;
@@ -74,8 +74,8 @@ int main(int argc, char const *argv[])
 
   debug_print("receivingPipe");
   raft::map receivingPipe;
-  mxre::pipeline::network::RTPFrameReceiver rtpReceiver("mjpeg", 49983, WIDTH, HEIGHT);
-  mxre::pipeline::device::CVDisplay cvDisplay;
+  mxre::kernels::RTPFrameReceiver rtpReceiver("mjpeg", 49983, WIDTH, HEIGHT);
+  mxre::kernels::CVDisplay cvDisplay;
   receivingPipe += rtpReceiver["out_data"] >> cvDisplay["in_frame"];
 #ifdef __PROFILE__
   TempSrc tempSrc;
@@ -89,4 +89,3 @@ int main(int argc, char const *argv[])
 
   return 0;
 }
-

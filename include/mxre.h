@@ -8,63 +8,56 @@
 /* defs */
 #include "defs.h"
 
-/* AR */
-#include "ar/world.h"
-#include "ar/object.h"
+/* Types */
+#include "types/clock_types.h"
+#include "types/complex_yolo_types.h"
 
-/* ogl egl */
-#include "gl/shader.h"
-#include "gl/mesh.h"
-#include "gl/model.h"
-#include "gl/camera.h"
-#include "gl/gl_utils.h"
-#include "gl/gl_objects.h"
-#include "gl/gl_types.h"
-#include "gl/egl_utils.h"
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include "types/cv/types.h"
+#include "types/cv/orb_marker_tracker.h"
 
+#include "types/gl/types.h"
+#include "types/gl/mesh.h"
+#include "types/gl/model.h"
+#include "types/gl/camera.h"
+#include "types/gl/shader.h"
 
-/* cv_units */
-#include "cv_types.h"
-#include "object_tracker.h"
+#include "types/ar/virtual_world.h"
+#include "types/ar/virtual_object.h"
+#include "types/ar/virtual_world_manager.h"
 
 
-/* pipeline */
-/** device **/
-#include "image_loader.h"
-#include "device/cv_camera.h"
-#include "device/cv_display.h"
-#include "device/keyboard.h"
+/* Utils */
+#include "utils/getch.h"
+#include "utils/path_finder.h"
+#include "utils/cv_utils.h"
+#include "utils/gl_utils.h"
+#include "utils/egl_utils.h"
+//#include <glm/gtc/matrix_transform.hpp>
+//#include <glm/gtc/type_ptr.hpp>
 
-/** ctx_understanding **/
-#include "object_detector.h"
-#include "cuda_orb_detector.h"
+/* Kernels */
+#include "kernels/sources/cv_camera.h"
+#include "kernels/sources/keyboard.h"
+#include "kernels/sources/image_loader.h"
 
-/** contextualizing **/
-#include "object_ctx_extractor.h"
+#include "kernels/sinks/cv_display.h"
 
-/** rendering **/
-#include "object_renderer.h"
-#include "complexyolo_renderer.h"
+#include "kernels/perceptions/prediction_receiver.h"
+#include "kernels/perceptions/orb/orb_detector.h"
+#include "kernels/perceptions/orb/cuda_orb_detector.h"
+#include "kernels/perceptions/orb/object_ctx_extractor.h"
 
-/** network **/
-#include "network/message_sender.h"
-#include "network/message_receiver.h"
+#include "kernels/offloading/message_sender.h"
+#include "kernels/offloading/message_receiver.h"
+#include "kernels/offloading/cvmat_sender.h"
+#include "kernels/offloading/cvmat_receiver.h"
+#include "kernels/offloading/static_sender.h"
+#include "kernels/offloading/static_receiver.h"
+#include "kernels/offloading/rtp_frame_sender.h"
+#include "kernels/offloading/rtp_frame_receiver.h"
 
-#include "network/static_sender.h"
-#include "network/static_receiver.h"
-
-#include "network/cvmat_receiver.h"
-#include "network/cvmat_sender.h"
-
-#include "network/rtp_frame_sender.h"
-#include "network/rtp_frame_receiver.h"
-
-/* Perceptions */
-/** Complex YOLO **/
-#include "perceptions/complex_yolo/prediction_receiver.h"
-#include "perceptions/complex_yolo/types.h"
+#include "kernels/app/object_renderer.h"
+#include "kernels/app/complexyolo_renderer.h"
 
 #endif
 

@@ -3,6 +3,7 @@ list(APPEND EXAMPLE_SRCS
   basic_example.cc
   fulloff_client.cc
   fulloff_server.cc
+  complex_yolo.cc
 )
 
 if(${USE_OPENCV_CUDA})
