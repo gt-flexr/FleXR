@@ -6,7 +6,7 @@
 #include <bits/stdc++.h>
 
 namespace mxre {
-  namespace gl {
+  namespace gl_types {
     enum camera_movement {
       FORWARD, BACKWARD, LEFT, RIGHT
     };
@@ -119,7 +119,7 @@ namespace mxre {
         }
     };
 
-  } // namespace gl
+  } // namespace gl_types
 } // namespace mxre
 
 #endif

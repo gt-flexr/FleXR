@@ -9,7 +9,7 @@
 #include <sstream>
 #include <iostream>
 namespace mxre {
-  namespace gl {
+  namespace gl_types {
     class Shader
     {
     public:
@@ -193,7 +193,7 @@ namespace mxre {
         }
       }
     };
-  } // namespace gl
+  } // namespace gl_types
 } // namespace mxre
 #endif
 

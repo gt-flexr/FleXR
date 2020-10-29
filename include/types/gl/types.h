@@ -14,7 +14,7 @@
 
 namespace mxre
 {
-  namespace gl
+  namespace gl_types
   {
     typedef struct Vector2
     {
@@ -1566,7 +1566,8 @@ namespace mxre
       glm::vec3 tvec;
     } ObjectContext;
 
-  } // namespace gl
+  } // namespace gl_types
 } // namespace mxre
 
 #endif
+

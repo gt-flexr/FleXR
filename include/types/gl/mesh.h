@@ -6,12 +6,12 @@
 #include <string>
 #include <vector>
 
-#include "shader.h"
+#include "types/gl/shader.h"
 
 using namespace std;
 
 namespace mxre {
-  namespace gl {
+  namespace gl_types {
     struct Vertex {
       glm::vec3 position;
       glm::vec3 normal;
@@ -77,7 +77,7 @@ namespace mxre {
       Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures):
         vertices(vertices), indices(indices), textures(textures) {
           setupMesh();
-        }
+      }
 
       void draw(Shader &shader) {
         unsigned int diffuseNum = 1;
@@ -118,7 +118,7 @@ namespace mxre {
         glActiveTexture(GL_TEXTURE0);
       }
     };
-  } // namespace gl
+  } // namespace gl_types
 } // namespace mxre
 
 #endif

@@ -4,34 +4,16 @@
 #include <EGL/egl.h>
 #include <opencv2/opencv.hpp>
 #include "defs.h"
+#include "types/gl/egl_types.h"
 
 
 namespace mxre
 {
-  namespace egl
+  namespace egl_utils
   {
+    using namespace egl_types;
 
-    static const EGLint configAttribs[] = {
-        EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
-        EGL_BLUE_SIZE, 8,
-        EGL_GREEN_SIZE, 8,
-        EGL_RED_SIZE, 8,
-        EGL_DEPTH_SIZE, 8,
-        EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
-        EGL_NONE};
-
-
-    typedef struct EGLPbuffer
-    {
-      EGLDisplay eglDpy;
-      EGLint major, minor, numConfigs;
-      EGLConfig eglCfg;
-      EGLSurface eglSurf;
-      EGLContext eglCtx;
-    } EGLPbuffer;
-
-
-    static void initEGLPbuffer(EGLPbuffer &pbuf, int width, int height)
+    static void initPbuffer(pbuffer &pbuf, int width, int height)
     {
       // 1. get & init EGL Display
       pbuf.eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -51,23 +33,22 @@ namespace mxre
     }
 
 
-    static void bindPbuffer(EGLPbuffer &pbuf) {
+    static void bindPbuffer(pbuffer &pbuf) {
       if (eglMakeCurrent(pbuf.eglDpy, pbuf.eglSurf, pbuf.eglSurf, pbuf.eglCtx) == EGL_FALSE)
         debug_print("Failed to bind");
     }
 
 
-    static void unbindPbuffer(EGLPbuffer &pbuf) {
+    static void unbindPbuffer(pbuffer &pbuf) {
       if (eglMakeCurrent(pbuf.eglDpy, NULL, NULL, NULL) == EGL_FALSE)
         debug_print("Failed to unbind");
     }
 
 
-    static void terminatePbuffer(EGLPbuffer &pbuf) {
+    static void terminatePbuffer(pbuffer &pbuf) {
       eglTerminate(pbuf.eglDpy);
     }
 
-  } // namespace egl
+  } // namespace utils
 } // namespace mxre
 #endif
-

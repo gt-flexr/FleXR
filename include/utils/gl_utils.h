@@ -6,7 +6,7 @@
 #endif
 
 #include "defs.h"
-#include "cv_types.h"
+#include "types/cv/types.h"
 
 #include <GL/glew.h>
 #include <GL/glut.h>
@@ -16,7 +16,7 @@
 
 namespace mxre
 {
-  namespace gl
+  namespace gl_utils
   {
     static void initLights()
     {
@@ -82,7 +82,7 @@ namespace mxre
     }
 
 
-    static mxre::cv_units::Mat exportGLBufferToCV(int width, int height)
+    static mxre::cv_types::Mat exportGLBufferToCV(int width, int height)
     {
       glReadBuffer(GL_FRONT);
       glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -91,7 +91,7 @@ namespace mxre
       glReadPixels(0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, pixels);
       debug_print("allocated pixel addr: %p", static_cast<void*>(pixels));
 
-      mxre::cv_units::Mat mat(height, width, CV_8UC3, pixels);
+      mxre::cv_types::Mat mat(height, width, CV_8UC3, pixels);
       debug_print("width, height: %dx%d, %dx%d", width, height, mat.cvMat.cols, mat.cvMat.rows);
 
       return mat;
@@ -112,7 +112,7 @@ namespace mxre
     }
 
 
-    static void makeTextureFromCVFrame(mxre::cv_units::Mat &mat, GLuint &tex)
+    static void makeTextureFromCVFrame(mxre::cv_types::Mat &mat, GLuint &tex)
     {
       if (mat.cvMat.empty())
       {
@@ -130,7 +130,7 @@ namespace mxre
     }
 
 
-    static void updateTextureFromCVFrame(mxre::cv_units::Mat &mat, GLuint &tex)
+    static void updateTextureFromCVFrame(mxre::cv_types::Mat &mat, GLuint &tex)
     {
       glBindTexture(GL_TEXTURE_2D, tex);
       glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mat.cols, mat.rows, GL_BGR, GL_UNSIGNED_BYTE, mat.data);

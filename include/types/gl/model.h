@@ -11,13 +11,13 @@
 
 #include <stb/stb_image.h>
 #include "defs.h"
-#include "mesh.h"
-#include "shader.h"
+#include "types/gl/mesh.h"
+#include "types/gl/shader.h"
 
 using namespace std;
 
 namespace mxre {
-  namespace gl {
+  namespace gl_types {
     inline unsigned int readTextureFromFile(const char *path, const string directory, bool gamma = false);
 
     class Model {
@@ -215,7 +215,7 @@ namespace mxre {
 
       return textureID;
     }
-  } // namespace gl
+  } // namespace gl_types
 } // namespace mxre
 #endif
 
