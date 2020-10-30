@@ -25,6 +25,8 @@
 #include "types/ar/virtual_object.h"
 #include "types/ar/virtual_world_manager.h"
 
+#include "types/plugin/illixr_source.h"
+#include "types/plugin/illixr_sink.h"
 
 /* Utils */
 #include "utils/getch.h"
@@ -39,8 +41,10 @@
 #include "kernels/sources/cv_camera.h"
 #include "kernels/sources/keyboard.h"
 #include "kernels/sources/image_loader.h"
+#include "kernels/sources/appsource.h"
 
 #include "kernels/sinks/cv_display.h"
+#include "kernels/sinks/appsink.h"
 
 #include "kernels/perceptions/prediction_receiver.h"
 #include "kernels/perceptions/orb/orb_detector.h"
