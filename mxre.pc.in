@@ -1,0 +1,13 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+libdir=@CMAKE_INSTALL_PREFIX@/lib
+includedir=@CMAKE_INSTALL_PREFIX@/include
+
+Name: mxre
+URL: https://github.com/jheo4/mxre
+Description: MIXER: an edge-friendly XR platform
+Version: 2020.10
+Requires: raftlib glew glm libavcodec libavutil libswresample libswscale libzmq opencv
+Conflicts:
+Libs:  -L${libdir} -lmxre @MXRE_LINKER_FLAGS@ @MXRE_THIRD_PARTIES@
+Libs.private: raftlib glew glm libavcodec libavutil libswresample libswscale libzmq opencv
+Cflags:  -std=c++14 -I${includedir} -I${includedir}/mxreinc @MXRE_CXX_FLAGS@

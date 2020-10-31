@@ -19,7 +19,7 @@ foreach(EXAMPLE_SRC ${EXAMPLE_SRCS})
 
   add_executable(${EXAMPLE_NAME} ${EXAMPLE_SRC})
   target_include_directories(${EXAMPLE_NAME} PUBLIC
-                               "${PROJECT_SOURCE_DIR}/include"
+                               "${PROJECT_SOURCE_DIR}/mxreinc"
                                "${CMAKE_BINARY_DIR}/config")
 
   target_compile_options(${EXAMPLE_NAME} PUBLIC ${MXRE_CXX_FLAGS})
