@@ -1,5 +1,5 @@
 #include <raft>
-#include <mxre.h>
+#include <mxre>
 #include <bits/stdc++.h>
 
 #define WIDTH 1280

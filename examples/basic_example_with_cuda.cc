@@ -1,6 +1,6 @@
 #ifdef __USE_OPENCV_CUDA__
 #include <raft>
-#include <mxre.h>
+#include <mxre>
 #include <bits/stdc++.h>
 
 #define WIDTH 1280

@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#include <mxre.h>
+#include <mxre>
 #include <unistd.h>
 
 using namespace std;
