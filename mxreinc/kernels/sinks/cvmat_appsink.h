@@ -1,5 +1,5 @@
-#ifndef __MXRE_APP_SINK__
-#define __MXRE_APP_SINK__
+#ifndef __MXRE_CVMAT_APP_SINK__
+#define __MXRE_CVMAT_APP_SINK__
 
 #include <bits/stdc++.h>
 #include <raft>
@@ -18,8 +18,7 @@ namespace mxre
   namespace kernels
   {
 
-    template<typename IN_T>
-    class AppSink : public raft::kernel
+    class CVMatAppSink : public raft::kernel
     {
     protected:
       void *ctx;
@@ -27,7 +26,7 @@ namespace mxre
       char ack[3];
 
     public:
-      AppSink(std::string id) {
+      CVMatAppSink(std::string id) {
         ctx = zmq_ctx_new();
         sock = zmq_socket(ctx, ZMQ_REQ);
 
@@ -36,11 +35,11 @@ namespace mxre
 
         debug_print("connectAddr: %s bound\n", connectAddr.c_str());
 
-        input.addPort<IN_T>("in_data");
+        input.addPort<mxre::cv_types::Mat>("in_data");
       }
 
 
-      ~AppSink() {
+      ~CVMatAppSink() {
         zmq_close(sock);
         zmq_ctx_destroy(ctx);
       }
@@ -51,10 +50,16 @@ namespace mxre
         mxre::types::TimeVal start = getNow();
 #endif
 
-        auto &inData( input["in_data"].template peek<IN_T>() );
-        zmq_send(sock, &inData, sizeof(IN_T), 0);
+        auto &inData( input["in_data"].template peek<mxre::cv_types::Mat>() );
+        uint matInfo[MX_MAT_ATTR_NUM];
+        matInfo[MX_MAT_SIZE_IDX] = inData.total * inData.elemSize;
+        matInfo[MX_MAT_ROWS_IDX] = inData.rows;
+        matInfo[MX_MAT_COLS_IDX] = inData.cols;
+        matInfo[MX_MAT_TYPE_IDX] = inData.type;
+
+        zmq_send(sock, matInfo, sizeof(matInfo), ZMQ_SNDMORE);
+        zmq_send(sock, inData.data, matInfo[MX_MAT_SIZE_IDX], 0);
         zmq_recv(sock, ack, sizeof(ack), 0);
-        debug_print("%d \n" , inData);
 
 #ifdef __PROFILE__
         mxre::types::TimeVal end = getNow();
@@ -65,7 +70,6 @@ namespace mxre
         return raft::proceed;
       }
     };
-
   }   // namespace kernels
 } // namespace mxre
 
