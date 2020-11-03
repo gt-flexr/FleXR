@@ -9,7 +9,7 @@ target_include_directories(mxre PUBLIC
                            "${CMAKE_BINARY_DIR}/config")
 
 
-#target_compile_options(mxre PUBLIC "-W" "-Wall" "-Wextra" "-Wpedantic")
+target_compile_options(mxre PUBLIC "-W" "-Wall" "-Wextra" "-Wpedantic" "-fPIC")
 target_compile_options(mxre PUBLIC ${MXRE_CXX_FLAGS})
 target_link_libraries(mxre ${MXRE_THIRD_PARTIES})
 target_link_libraries(mxre ${MXRE_LINKER_FLAGS})
