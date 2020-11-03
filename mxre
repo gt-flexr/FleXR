@@ -42,9 +42,11 @@
 #include "./mxreinc/kernels/sources/keyboard.h"
 #include "./mxreinc/kernels/sources/image_loader.h"
 #include "./mxreinc/kernels/sources/appsource.h"
+#include "./mxreinc/kernels/sources/cvmat_appsource.h"
 
 #include "./mxreinc/kernels/sinks/cv_display.h"
 #include "./mxreinc/kernels/sinks/appsink.h"
+#include "./mxreinc/kernels/sinks/cvmat_appsink.h"
 
 #include "./mxreinc/kernels/perceptions/prediction_receiver.h"
 #include "./mxreinc/kernels/perceptions/orb/orb_detector.h"
