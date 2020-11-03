@@ -5,11 +5,11 @@
 using namespace std;
 
 int main() {
-  mxre::types::ILLIXRSink<int> illixrSink;
   mxre::types::ILLIXRSource<int> illixrSource;
+  mxre::types::ILLIXRSink<int> illixrSink;
 
-  illixrSource.setup("source");
-  illixrSink.setup("sink");
+  illixrSource.setup("source", MX_DTYPE_PRIMITIVE);
+  illixrSink.setup("sink", MX_DTYPE_PRIMITIVE);
 
   int j;
   for(int i = 0; i < 100; i++) {
