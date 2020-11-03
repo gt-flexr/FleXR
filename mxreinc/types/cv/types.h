@@ -67,8 +67,7 @@ namespace mxre
 
       Mat& operator=(const Mat& ref) {
         release();
-        isExt = false; // ??
-        std::cout << ref.cvMat.cols << "x" << ref.cvMat.rows << std::endl;
+        isExt = false; // false, because of cloning
         cvMat = ref.cvMat.clone();
         setMatInfo();
         return *this;
