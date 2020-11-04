@@ -25,10 +25,10 @@ int main() {
     cap.read(sendFrame);
     illixrSource.send(&sendFrame);
     illixrSink.recv(&recvFrame);
-    //cv::imshow("test", recvFrame);
-    //if(cv::waitKey(5) >= 0) {
-    //  break;
-   // }
+    cv::imshow("test", recvFrame);
+    if(cv::waitKey(5) >= 0) {
+      break;
+    }
   }
 }
 
