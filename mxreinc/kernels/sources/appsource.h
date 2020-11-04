@@ -36,6 +36,10 @@ namespace mxre
         debug_print("bindingAddr: %s connected\n", bindingAddr.c_str());
 
         output.addPort<OUT_T>("out_data");
+#ifdef __PROFILE__
+        output.addPort<mxre::types::FrameStamp>("frame_stamp");
+#endif
+
       }
 
 
@@ -58,8 +62,12 @@ namespace mxre
 #ifdef __PROFILE__
         mxre::types::TimeVal end = getNow();
         profile_print("Exe Time: %lfms", getExeTime(end, start));
-#endif
 
+        auto &frameStamp( output["frame_stamp"].template allocate<mxre::types::FrameStamp>() );
+        frameStamp.index = 0;
+        frameStamp.st = getNow();
+        output["frame_stamp"].send();
+#endif
         output["out_data"].send();
         return raft::proceed;
       }

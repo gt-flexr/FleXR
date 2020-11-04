@@ -4,6 +4,7 @@ list(APPEND EXAMPLE_SRCS
   fulloff_client.cc
   fulloff_server.cc
   complex_yolo.cc
+  illixr_local_server.cc
 )
 
 if(${USE_OPENCV_CUDA})

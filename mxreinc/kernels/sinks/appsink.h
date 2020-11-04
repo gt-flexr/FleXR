@@ -37,6 +37,9 @@ namespace mxre
         debug_print("connectAddr: %s bound\n", connectAddr.c_str());
 
         input.addPort<IN_T>("in_data");
+#ifdef __PROFILE__
+        input.addPort<mxre::types::FrameStamp>("frame_stamp");
+#endif
       }
 
 
@@ -59,6 +62,10 @@ namespace mxre
 #ifdef __PROFILE__
         mxre::types::TimeVal end = getNow();
         profile_print("Exe Time: %lfms", getExeTime(end, start));
+
+        auto &inFrameStamp( input["frame_stamp"].template peek<mxre::types::FrameStamp>() );
+        profile_print("Frame(%d) Processing Time %lfms", inFrameStamp.index, getExeTime(end, inFrameStamp.st));
+        input["frame_stamp"].recycle();
 #endif
 
         input["in_data"].recycle();
