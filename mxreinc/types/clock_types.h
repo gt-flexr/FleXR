@@ -7,10 +7,11 @@ namespace mxre {
   namespace types {
 
     typedef std::chrono::high_resolution_clock::time_point TimeVal;
-    typedef struct FrameStamp {
-      TimeVal st;
+
+    typedef struct Profile {
       unsigned int index;
-    } FrameStamp;
+      TimeVal st;
+    } Profile;
 
   } // namespace types
 } // namespace mxre

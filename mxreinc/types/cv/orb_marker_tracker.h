@@ -22,8 +22,7 @@ namespace mxre
       int numOfObjs;
 
     public:
-      ORBMarkerTracker(cv::Ptr<cv::Feature2D> _detector, cv::Ptr<cv::DescriptorMatcher> _matcher):
-        detector(_detector), matcher(_matcher), numOfObjs(0) {}
+      ORBMarkerTracker();
       void registerObject(const cv::Mat frame, cv::Rect roiRect);
       void printRegisteredObjects();
       std::vector<ObjectInfo> getRegisteredObjects() { return objInfo; }

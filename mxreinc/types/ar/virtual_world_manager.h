@@ -26,7 +26,7 @@ namespace mxre
       void addWorld(int index);
       void addObjectToWorld(int worldIndex);
       void handleKeystroke(char key);
-      void startWorlds(char key, std::vector<mxre::gl_types::ObjectContext> &objCtxs);
+      void startWorlds(char key, std::vector<mxre::gl_types::ObjectContext> objCtxs);
     };
 
   } // namespace ar
