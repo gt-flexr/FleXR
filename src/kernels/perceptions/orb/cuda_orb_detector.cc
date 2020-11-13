@@ -7,52 +7,36 @@ namespace mxre
   namespace kernels
   {
     CudaORBDetector::CudaORBDetector(std::vector<mxre::cv_types::ObjectInfo> registeredObjVec) :
-      objInfoVec(registeredObjVec), raft::kernel()
+      MXREKernel(), objInfoVec(registeredObjVec)
     {
-      input.addPort<mxre::cv_types::Mat>("in_frame");
-
-      output.addPort<mxre::cv_types::Mat>("out_frame");
-      output.addPort<std::vector<mxre::cv_types::ObjectInfo>>("out_obj_info");
-
-#ifdef __PROFILE__
-      input.addPort<mxre::types::FrameStamp>("frame_stamp");
-      output.addPort<mxre::types::FrameStamp>("frame_stamp");
-#endif
+      addInputPort<mxre::types::Frame>("in_frame");
+      addOutputPort<std::vector<mxre::cv_types::ObjectInfo>>("out_obj_info");
 
       // Object Detection Parameters
       knnMatchRatio = 0.8f;
       knnParam = 5;
       ransacThresh = 2.5f;
-      minInlierThresh = 10;
+      minInlierThresh = 50;
 
       detector = cv::cuda::ORB::create();
       matcher = cv::cuda::DescriptorMatcher::createBFMatcher(cv::NORM_HAMMING);
     }
 
 
-    CudaORBDetector::~CudaORBDetector() {}
-
-
-    raft::kstatus CudaORBDetector::run() {
-#ifdef __PROFILE__
-      mxre::types::TimeVal start = getNow();
-#endif
-      auto &frame( input["in_frame"].peek<mxre::cv_types::Mat>() );
-
-      auto &out_frame( output["out_frame"].allocate<mxre::cv_types::Mat>() );
-      auto &out_obj_info( output["out_obj_info"].allocate<std::vector<mxre::cv_types::ObjectInfo>>() );
-
-      cv::Mat grayFrame;
+    bool CudaORBDetector::logic(mxre::types::Frame *inFrame, std::vector<mxre::cv_types::ObjectInfo> *outObjInfo)
+    {
       std::vector<cv::KeyPoint> frameKps;
 
       // 1. prepare gary frame
-      cv::cvtColor(frame.cvMat, grayFrame, CV_BGR2GRAY);
+      cv::Mat grayFrame = inFrame->useAsCVMat();
+      cv::cvtColor(grayFrame, grayFrame, CV_BGR2GRAY);
       cuFrame.upload(grayFrame);
 
       // 2. run CUDA ORB & convert the GPU result into CPU; cpu kps & gpu desc are ready
       detector->detectAndComputeAsync(cuFrame, cv::noArray(), cuKp, cuDesc, false, stream);
       stream.waitForCompletion();
       detector->convert(cuKp, frameKps);
+      inFrame->release(); // deallocate the frame memory
 
       // 3. multi-obj detection
       std::vector<mxre::cv_types::ObjectInfo>::iterator objIter;
@@ -92,29 +76,38 @@ namespace mxre
         if(objMatch.size()>4 && !homography.empty()) {
           objIter->isDetected = true;
           cv::perspectiveTransform(objIter->rect2D, objIter->location2D, homography);
-          mxre::cv_utils::drawBoundingBox(frame.cvMat, objIter->location2D);
+          //mxre::cv_utils::drawBoundingBox(inFrame, objIter->location2D); TODO Move this to rendering...
         }
         else objIter->isDetected = false;
       }
 
-      out_frame = frame;
-      out_obj_info = objInfoVec;
+      *outObjInfo = objInfoVec;
+      return true;
+    }
 
-      input["in_frame"].recycle();
+
+    raft::kstatus CudaORBDetector::run() {
+#ifdef __PROFILE__
+      mxre::types::TimeVal start = getNow();
+#endif
+      debug_print("START");
+
+      auto &inFrame( input["in_frame"].peek<mxre::types::Frame>() );
+      auto &outObjInfo( output["out_obj_info"].allocate<std::vector<mxre::cv_types::ObjectInfo>>() );
+
+      if(logic(&inFrame, &outObjInfo)) {
+        output["out_obj_info"].send();
+        sendPrimitiveCopy("out_obj_info", &outObjInfo);
+      }
+
+      recyclePort("in_frame");
+      debug_print("END");
 
 #ifdef __PROFILE__
       mxre::types::TimeVal end = getNow();
       profile_print("Exe Time: %lfms", getExeTime(end, start));
-
-      auto &inFrameStamp( input["frame_stamp"].peek<mxre::types::FrameStamp>() );
-      auto &outFrameStamp( output["frame_stamp"].allocate<mxre::types::FrameStamp>() );
-      outFrameStamp = inFrameStamp;
-      input["frame_stamp"].recycle();
-      output["frame_stamp"].send();
 #endif
 
-      output["out_frame"].send();
-      output["out_obj_info"].send();
       return raft::proceed;
     }
 

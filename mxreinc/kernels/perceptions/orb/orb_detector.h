@@ -12,13 +12,16 @@
 #include "utils/cv_utils.h"
 #include "types/cv/types.h"
 #include "types/clock_types.h"
+#include "types/frame.h"
+
+#include "kernels/kernel.h"
 
 namespace mxre
 {
   namespace kernels
   {
 
-    class ORBDetector : public raft::kernel
+    class ORBDetector : public MXREKernel
     {
       private:
         std::vector<mxre::cv_types::ObjectInfo> objInfos;
@@ -34,6 +37,7 @@ namespace mxre
         ORBDetector(std::vector<mxre::cv_types::ObjectInfo> registeredObjs, cv::Ptr<cv::Feature2D> _detector,
                        cv::Ptr<cv::DescriptorMatcher> _matcher);
         ~ORBDetector();
+        bool logic(mxre::types::Frame *inFrame, std::vector<mxre::cv_types::ObjectInfo> *outObjInfo);
         virtual raft::kstatus run();
     };
 

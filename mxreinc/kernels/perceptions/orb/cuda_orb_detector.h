@@ -11,16 +11,18 @@
 #include <opencv2/highgui.hpp>
 
 #include "defs.h"
+#include "kernels/kernel.h"
 #include "utils/cv_utils.h"
 #include "types/cv/types.h"
 #include "types/clock_types.h"
+#include "types/frame.h"
 
 namespace mxre
 {
   namespace kernels
   {
 
-    class CudaORBDetector : public raft::kernel
+    class CudaORBDetector : public MXREKernel
     {
       private:
         std::vector<mxre::cv_types::ObjectInfo> objInfoVec;
@@ -38,8 +40,8 @@ namespace mxre
 
       public:
         CudaORBDetector(std::vector<mxre::cv_types::ObjectInfo> registeredObjs);
-        ~CudaORBDetector();
         virtual raft::kstatus run();
+        bool logic(mxre::types::Frame *inFrame, std::vector<mxre::cv_types::ObjectInfo> *outObjInfo);
     };
 
   }   // namespace kernels
@@ -47,3 +49,4 @@ namespace mxre
 
 #endif
 #endif
+

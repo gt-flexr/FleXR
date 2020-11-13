@@ -1,50 +1,25 @@
 #include <kernels/perceptions/orb/object_ctx_extractor.h>
-#include <types/gl/types.h>
 
 namespace mxre
 {
   namespace kernels
   {
     ObjectCtxExtractor::ObjectCtxExtractor(cv::Mat intrinsic, cv::Mat distCoeffs, int width, int height) :
-        raft::kernel(), width(width), height(height)
+      MXREKernel(), width(width), height(height)
     {
       camIntrinsic = intrinsic.clone();
       camDistCoeffs = distCoeffs.clone();
 
-      input.addPort<mxre::cv_types::Mat>("in_frame");
-      input.addPort<std::vector<mxre::cv_types::ObjectInfo>>("in_obj_info");
-
-      // output..
-      output.addPort<mxre::cv_types::Mat>("out_frame");
+      addInputPort<std::vector<mxre::cv_types::ObjectInfo>>("in_obj_info");
       output.addPort<std::vector<mxre::gl_types::ObjectContext>>("out_obj_context");
-
-#ifdef __PROFILE__
-      input.addPort<mxre::types::FrameStamp>("frame_stamp");
-      output.addPort<mxre::types::FrameStamp>("frame_stamp");
-#endif
     }
 
-    ObjectCtxExtractor::~ObjectCtxExtractor() {}
 
-    raft::kstatus ObjectCtxExtractor::run()
+    bool ObjectCtxExtractor::logic(std::vector<mxre::cv_types::ObjectInfo> *inObjInfo,
+               std::vector<mxre::gl_types::ObjectContext> *outObjContext)
     {
-
-#ifdef __PROFILE__
-      mxre::types::TimeVal start = getNow();
-#endif
-
-      // get inputs from the previous kernel: ObjectDetector
-      auto &frame( input["in_frame"].peek<mxre::cv_types::Mat>() );
-      auto &objInfoVec( input["in_obj_info"].peek<std::vector<mxre::cv_types::ObjectInfo>>() );
-
-      // set outputs
-      auto &out_frame( output["out_frame"].template allocate<mxre::cv_types::Mat>() );
-      auto &out_obj_context(
-          output["out_obj_context"].template allocate<std::vector<mxre::gl_types::ObjectContext>>() );
-
-      std::vector<mxre::gl_types::ObjectContext> objCtxVec;
       std::vector<mxre::cv_types::ObjectInfo>::iterator objIter;
-      for (objIter = objInfoVec.begin(); objIter != objInfoVec.end(); ++objIter)
+      for (objIter = inObjInfo->begin(); objIter != inObjInfo->end(); ++objIter)
       {
         if (objIter->location2D.size() == 4 && objIter->isDetected)
         {
@@ -67,66 +42,36 @@ namespace mxre
           objCtx.rvec.x = rotX;   objCtx.rvec.y = -rotY;   objCtx.rvec.z = -rotZ;
           //objCtx.tvec.x = transY; objCtx.tvec.y = -transZ; objCtx.tvec.z = transX;
           objCtx.tvec.x = transX; objCtx.tvec.y = transY; objCtx.tvec.z = -transZ;
-
-          //def draw_axis(img, R, t, K):
-          //  rotV, _ = cv2.Rodrigues(R)
-          //    points = np.float32([[100, 0, 0], [0, 100, 0], [0, 0, 100], [0, 0, 0]]).reshape(-1, 3)
-          //    axisPoints, _ = cv2.projectPoints(points, rotV, t, K, (0, 0, 0, 0))
-          //    img = cv2.line(img, tuple(axisPoints[3].ravel()), tuple(axisPoints[0].ravel()), (255,0,0), 3)
-          //    img = cv2.line(img, tuple(axisPoints[3].ravel()), tuple(axisPoints[1].ravel()), (0,255,0), 3)
-          //    img = cv2.line(img, tuple(axisPoints[3].ravel()), tuple(axisPoints[2].ravel()), (0,0,255), 3)
-          //    return img
-
-          /*
-          cv::Mat rvecMat;
-          cv::Rodrigues(rvec, rvecMat);
-          cv::Mat cvViewMat(4, 4, CV_64F);
-          cvViewMat.at<double>(3, 3) = 1.0f;
-
-          // opencv x-y-z == opengl x-z-y
-          cv::Mat yzSwapMat = cv::Mat::zeros(4, 4, CV_64F);
-          yzSwapMat.at<double>(0, 0) = 1.0f;
-          yzSwapMat.at<double>(1, 1) = -1.0f; // Invert the y axis
-          yzSwapMat.at<double>(2, 2) = -1.0f; // invert the z axis
-          yzSwapMat.at<double>(3, 3) = 1.0f;
-          cvViewMat = yzSwapMat * cvViewMat;
-          cv::transpose(cvViewMat, cvViewMat); */
-
-          /*
-          for (unsigned int row = 0; row < 4; ++row) {
-            for (unsigned int col = 0; col < 4; ++col) {
-              objCtx.modelMat[row * 4 + col] = cvViewMat.at<double>(row, col);
-              printf("%f ", cvViewMat.at<double>(row, col));
-            }
-            printf("\n");
-          }
-          printf("\n");
-          */
-
-          // objCtx.modelMat.translate(transX * SCALE_FACTOR, transY * SCALE_FACTOR, -SCALE_FACTOR - transZ * SCALE_FACTOR);
-
-          objCtxVec.push_back(objCtx);
+          outObjContext->push_back(objCtx);
         }
       }
-      out_frame = frame;
-      out_obj_context = objCtxVec;
 
-      input["in_frame"].recycle();
-      input["in_obj_info"].recycle();
+      return true;
+    }
 
+
+    raft::kstatus ObjectCtxExtractor::run()
+    {
+
+#ifdef __PROFILE__
+      mxre::types::TimeVal start = getNow();
+#endif
+      debug_print("START");
+      auto &inObjInfo( input["in_obj_info"].peek<std::vector<mxre::cv_types::ObjectInfo>>() );
+      auto &outObjContext( output["out_obj_context"].template allocate<std::vector<mxre::gl_types::ObjectContext>>() );
+
+      if(logic(&inObjInfo, &outObjContext)) {
+        output["out_obj_context"].send();
+        sendPrimitiveCopy("out_obj_context", &outObjContext);
+      }
+
+      recyclePort("in_obj_info");
+
+      debug_print("END");
 #ifdef __PROFILE__
       mxre::types::TimeVal end = getNow();
       profile_print("Exe Time: %lfms", getExeTime(end, start));
-
-      auto &inFrameStamp( input["frame_stamp"].peek<mxre::types::FrameStamp>() );
-      auto &outFrameStamp( output["frame_stamp"].allocate<mxre::types::FrameStamp>() );
-      outFrameStamp = inFrameStamp;
-      input["frame_stamp"].recycle();
-      output["frame_stamp"].send();
 #endif
-
-      output["out_frame"].send();
-      output["out_obj_context"].send();
 
       return raft::proceed;
     }
