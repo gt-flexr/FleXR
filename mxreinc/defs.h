@@ -8,8 +8,8 @@
 #define SCALE_FACTOR 10
 
 // Index for attributes of cvMat
-#define MX_DTYPE_PRIMITIVE 0
-#define MX_DTYPE_CVMAT 1
+#define MXRE_DTYPE_PRIMITIVE 0
+#define MXRE_DTYPE_FRAME 1
 
 #define MX_MAT_ATTR_NUM 4
 #define MX_MAT_SIZE_IDX 0

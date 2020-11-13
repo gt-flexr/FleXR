@@ -7,6 +7,7 @@
 
 #include "defs.h"
 #include "types/cv/types.h"
+#include "types/frame.h"
 
 #include <GL/glew.h>
 #include <GL/glut.h>
@@ -82,7 +83,7 @@ namespace mxre
     }
 
 
-    static mxre::cv_types::Mat exportGLBufferToCV(int width, int height)
+    static mxre::types::Frame exportGLBufferToCV(int width, int height)
     {
       glReadBuffer(GL_FRONT);
       glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -91,10 +92,9 @@ namespace mxre
       glReadPixels(0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, pixels);
       debug_print("allocated pixel addr: %p", static_cast<void*>(pixels));
 
-      mxre::cv_types::Mat mat(height, width, CV_8UC3, pixels);
-      debug_print("width, height: %dx%d, %dx%d", width, height, mat.cvMat.cols, mat.cvMat.rows);
+      mxre::types::Frame frame(height, width, CV_8UC3, pixels);
 
-      return mat;
+      return frame;
     }
 
 
@@ -112,9 +112,27 @@ namespace mxre
     }
 
 
-    static void makeTextureFromCVFrame(mxre::cv_types::Mat &mat, GLuint &tex)
+    static void makeTextureFromFrame(mxre::types::Frame *frame, GLuint &tex)
     {
-      if (mat.cvMat.empty())
+      if (frame->totalElem == 0)
+      {
+        std::cout << "image empty" << std::endl;
+        return;
+      }
+
+      glGenTextures(1, &tex);
+      glBindTexture(GL_TEXTURE_2D, tex);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame->cols, frame->rows, 0, GL_BGR, GL_UNSIGNED_BYTE, frame->data);
+      glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+
+    static void makeTextureFromCVFrame(cv::Mat mat, GLuint &tex)
+    {
+      if (mat.empty())
       {
         std::cout << "image empty" << std::endl;
         return;
@@ -130,7 +148,15 @@ namespace mxre
     }
 
 
-    static void updateTextureFromCVFrame(mxre::cv_types::Mat &mat, GLuint &tex)
+    static void updateTextureFromFrame(mxre::types::Frame *frame, GLuint &tex)
+    {
+      glBindTexture(GL_TEXTURE_2D, tex);
+      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frame->cols, frame->rows, GL_BGR, GL_UNSIGNED_BYTE, frame->data);
+      glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+
+    static void updateTextureFromCVFrame(cv::Mat mat, GLuint &tex)
     {
       glBindTexture(GL_TEXTURE_2D, tex);
       glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mat.cols, mat.rows, GL_BGR, GL_UNSIGNED_BYTE, mat.data);

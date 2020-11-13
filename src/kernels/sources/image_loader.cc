@@ -5,8 +5,9 @@ namespace mxre
 {
   namespace kernels
   {
+    /* Constructor */
     ImageLoader::ImageLoader(std::string path, std::string stemName, int startIndex, int maxPlaceValue,
-        int width, int height): raft::kernel() {
+        int width, int height): MXREKernel() {
       frame_idx = startIndex;
       this->maxPlaceValue = maxPlaceValue;
       this->path = path;
@@ -14,46 +15,49 @@ namespace mxre
       this->width = width;
       this->height = height;
 
-      output.addPort<mxre::cv_types::Mat>("out_frame");
-#ifdef __PROFILE__
-      output.addPort<mxre::types::FrameStamp>("frame_stamp");
-#endif
-
+      addOutputPort<mxre::types::Frame>("out_frame");
     }
 
 
+    /* Destructor */
     ImageLoader::~ImageLoader() { }
 
 
+    /* Kernel Run */
     raft::kstatus ImageLoader::run() {
+#ifdef __PROFILE__
+      start = getNow();
+#endif
+
       std::stringstream ss;
       ss << std::setfill('0') << std::setw(maxPlaceValue);
       ss << frame_idx++;
       std::string imagePath = path + stemName + ss.str() + ".png";
 
-      auto &frame( output["out_frame"].allocate<mxre::cv_types::Mat>() );
-      cv::Mat image = cv::imread(imagePath);
-
-      if(image.empty()) {
+      auto &outFrame( output["out_frame"].allocate<mxre::types::Frame>() );
+      outFrame = mxre::types::Frame(height, width, CV_8UC3);
+      cv::Mat outFrameAsCVMat = outFrame.useAsCVMat();
+      outFrameAsCVMat = cv::imread(imagePath);
+      if(outFrameAsCVMat.empty()) {
         debug_print("Could not read the image: %s", imagePath.c_str());
         return raft::stop;
       }
 
-      int rowPadding = height - image.rows;
-      int colPadding = width - image.cols;
-      cv::copyMakeBorder(image, image, 0, rowPadding, 0, colPadding, cv::BORDER_CONSTANT, cv::Scalar::all(0));
+      int rowPadding = height - outFrameAsCVMat.rows;
+      int colPadding = width - outFrameAsCVMat.cols;
+      cv::copyMakeBorder(outFrameAsCVMat, outFrameAsCVMat, 0, rowPadding, 0, colPadding, cv::BORDER_CONSTANT,
+          cv::Scalar::all(0));
       //std::string ty =  cv_types::type2str( image.type() );
       //printf("Matrix: %s %dx%d \n", ty.c_str(), image.cols, image.rows );
 
-      frame = mxre::cv_types::Mat(image);
-      printf("IMG LOADER %d %d / %d %d\n", frame.cols, frame.rows, frame.cvMat.cols, frame.cvMat.rows);
+      printf("IMG LOADER %d %d / %d %d\n", (int)outFrame.cols, (int)outFrame.rows,
+             outFrameAsCVMat.cols, outFrameAsCVMat.rows);
       output["out_frame"].send();
+      sendFrameCopy("out_frame", &outFrame);
 
 #ifdef __PROFILE__
-      auto &frameStamp( output["frame_stamp"].allocate<mxre::types::FrameStamp>() );
-      frameStamp.index = frame_idx;
-      frameStamp.st = getNow();
-      output["frame_stamp"].send();
+      end = getNow();
+      profile_print("Exe Time: %lf ms", getExeTime(end, start));
 #endif
 
       return raft::proceed;

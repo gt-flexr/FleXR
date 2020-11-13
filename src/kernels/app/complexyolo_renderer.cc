@@ -12,10 +12,10 @@ namespace mxre
         camera(glm::vec3(0.0f, -2.5f, 3.0f), glm::vec3(0, 1, 0), -90, 0, 50), width(width), height(height),
         depth(depth), worldMap(0), raft::kernel()
     {
-      input.addPort<mxre::cv_types::Mat>("in_frame");
+      input.addPort<mxre::types::Frame>("in_frame");
       input.addPort<std::vector<mxre::types::ComplexYoloPrediction>>("in_obj_context");
 
-      output.addPort<mxre::cv_types::Mat>("out_frame");
+      output.addPort<mxre::types::Frame>("out_frame");
 
       // 0. Create pbuf as a context
       pbuf = new mxre::egl_types::pbuffer;
@@ -39,11 +39,6 @@ namespace mxre
       // 5. Unbind the pbuf context in init thread
       mxre::egl_utils::unbindPbuffer(*pbuf);
       binding = false;
-
-#ifdef __PROFILE__
-      input.addPort<mxre::types::FrameStamp>("frame_stamp");
-      output.addPort<mxre::types::FrameStamp>("frame_stamp");
-#endif
     }
 
 
@@ -65,7 +60,7 @@ namespace mxre
 #endif
 
       // get inputs from the previous kernel: ObjectDetector
-      auto &frame( input["in_frame"].peek<mxre::cv_types::Mat>() );
+      auto &frame( input["in_frame"].peek<mxre::types::Frame>() );
       auto objCtxVec( input["in_obj_context"].peek<std::vector<mxre::types::ComplexYoloPrediction>>() );
 
       for(unsigned int i = 0; i < objCtxVec.size(); i++) {
@@ -74,13 +69,13 @@ namespace mxre
       }
 
       // set outputs
-      auto &out_frame( output["out_frame"].allocate<mxre::cv_types::Mat>() );
+      auto &out_frame( output["out_frame"].allocate<mxre::types::Frame>() );
 
       // 1. Create/update background texture & release previous CV frame
       if(glIsTexture(backgroundTexture))
-        mxre::gl_utils::updateTextureFromCVFrame(frame, backgroundTexture);
+        mxre::gl_utils::updateTextureFromFrame(&frame, backgroundTexture);
       else
-        mxre::gl_utils::makeTextureFromCVFrame(frame, backgroundTexture);
+        mxre::gl_utils::makeTextureFromFrame(&frame, backgroundTexture);
       frame.release();
 
 
@@ -91,11 +86,11 @@ namespace mxre
       {
         int clsPred = (int)objCtxVec[i].cls_pred;
         float normX = objCtxVec[i].x / width;
-        float scaledX, scaledY, scaledZ;
+        float scaledX = 0, scaledY = 0, scaledZ = 0;
 
         float normY = objCtxVec[i].y / height;
 
-        double scaleFactor;
+        double scaleFactor = 0;
         float normZ = objCtxVec[i].z / depth;
 
         float ry = objCtxVec[i].ry;
@@ -178,12 +173,6 @@ namespace mxre
 #ifdef __PROFILE__
       mxre::types::TimeVal end = getNow();
       debug_print("Exe Time: %lfms", getExeTime(end, start));
-
-      auto &inFrameStamp( input["frame_stamp"].peek<mxre::types::FrameStamp>() );
-      auto &outFrameStamp( output["frame_stamp"].allocate<mxre::types::FrameStamp>() );
-      outFrameStamp = inFrameStamp;
-      input["frame_stamp"].recycle();
-      output["frame_stamp"].send();
 #endif
 
       output["out_frame"].send();

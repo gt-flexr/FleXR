@@ -9,14 +9,16 @@
 #include <opencv2/imgproc.hpp>
 
 #include "defs.h"
+#include "types/frame.h"
 #include "types/clock_types.h"
+#include "kernels/kernel.h"
 
 namespace mxre
 {
   namespace kernels
   {
 
-    class ImageLoader: public raft::kernel
+    class ImageLoader: public MXREKernel
     {
     private:
       unsigned int frame_idx;
