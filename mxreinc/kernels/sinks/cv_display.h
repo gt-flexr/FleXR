@@ -6,20 +6,22 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/video.hpp>
 #include <opencv2/highgui.hpp>
+#include "kernels/kernel.h"
 #include "defs.h"
 #include "types/clock_types.h"
+#include "types/frame.h"
 
 namespace mxre
 {
   namespace kernels
   {
 
-    class CVDisplay : public raft::kernel
+    class CVDisplay : public MXREKernel
     {
     public:
       CVDisplay();
-      ~CVDisplay();
-      virtual raft::kstatus run();
+      virtual raft::kstatus run() override;
+      bool logic(mxre::types::Frame *inFrame);
     };
 
   }   // namespace kernels

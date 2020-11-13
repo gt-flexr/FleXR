@@ -5,9 +5,9 @@ namespace mxre
 {
   namespace kernels
   {
-
-    CVCamera::CVCamera(int dev_idx, int width, int height) : intrinsic(3, 3, CV_64FC1),
-        distCoeffs(4, 1, CV_64FC1, {0, 0, 0, 0}), width(width), height(height), raft::kernel()
+    /* Constructor */
+    CVCamera::CVCamera(int dev_idx, int width, int height) : MXREKernel(), intrinsic(3, 3, CV_64FC1),
+        distCoeffs(4, 1, CV_64FC1, {0, 0, 0, 0}), width(width), height(height)
     {
       cam.open(dev_idx, cv::CAP_ANY);
       cam.set(cv::CAP_PROP_FRAME_WIDTH, width);
@@ -30,49 +30,50 @@ namespace mxre
       this->intrinsic.at<double>(2, 1) = 0;
       this->intrinsic.at<double>(2, 2) = 1;
 
-      output.addPort<mxre::cv_types::Mat>("out_frame");
-#ifdef __PROFILE__
-      output.addPort<mxre::types::FrameStamp>("frame_stamp");
-#endif
+      addOutputPort<mxre::types::Frame>("out_frame");
     }
 
 
-    CVCamera::~CVCamera()
-    {
-      if (cam.isOpened())
-        cam.release();
+    /* Destructor */
+    CVCamera::~CVCamera() {
+      if (cam.isOpened()) cam.release();
     }
 
 
+    /* Kernel Logic */
+    bool CVCamera::logic(mxre::types::Frame *outFrame) {
+      *outFrame = mxre::types::Frame(height, width, CV_8UC3);
+      cv::Mat outFrameAsCVMat = outFrame->useAsCVMat();
+      cam.read(outFrameAsCVMat);
+      debug_print("%p %p", outFrame->data, outFrameAsCVMat.data);
+      if(outFrameAsCVMat.empty()) {
+        std::cerr << "ERROR: blank frame grabbed" << std::endl;
+        return false;
+      }
+      return true;
+    }
+
+
+    /* Kernel Run */
     raft::kstatus CVCamera::run()
     {
-      auto &frame( output["out_frame"].allocate<mxre::cv_types::Mat>() );
-      frame = mxre::cv_types::Mat(height, width, CV_8UC3);
-      cam.read(frame.cvMat);
+#ifdef __PROFILE__
+      start = getNow();
+#endif
+      debug_print("START");
+      auto &outFrame(output["out_frame"].allocate<mxre::types::Frame>());
 
-      std::string ty =  mxre::cv_utils::type2str( frame.cvMat.type() );
-      printf("Matrix: %s %dx%d \n", ty.c_str(), frame.cols, frame.rows );
-
-      if (frame.cvMat.empty())
-      {
-        std::cerr << "ERROR: blank frame grabbed" << std::endl;
-        exit(1);
+      if(logic(&outFrame)) {
+        output["out_frame"].send();
+        sendFrameCopy("out_frame", &outFrame);
       }
 
+      debug_print("END");
 #ifdef __PROFILE__
-      auto &frameStamp( output["frame_stamp"].allocate<mxre::types::FrameStamp>() );
-      frameStamp.index = frame_idx;
-      frameStamp.st = getNow();
-      output["frame_stamp"].send();
+      end = getNow();
+      profile_print("Exe Time: %lf ms", getExeTime(end, start));
 #endif
-
-      output["out_frame"].send();
-
-      frame_idx++;
-      if(frame_idx < TOTAL_FRAMES)
-        return raft::proceed;
-      else
-        return raft::stop;
+      return raft::proceed;
     }
 
   } // namespace device

@@ -8,7 +8,9 @@
 #include <opencv2/highgui.hpp>
 
 #include "defs.h"
+#include "kernels/kernel.h"
 #include "types/clock_types.h"
+#include "types/frame.h"
 #include "utils/cv_utils.h"
 
 namespace mxre
@@ -16,7 +18,7 @@ namespace mxre
   namespace kernels
   {
 
-    class CVCamera : public raft::kernel
+    class CVCamera : public MXREKernel
     {
     private:
       cv::VideoCapture cam;
@@ -32,7 +34,8 @@ namespace mxre
       void setDistCoeffs(cv::Mat inDistCoeffs) {distCoeffs = inDistCoeffs;}
       cv::Mat getIntrinsic() {return intrinsic;}
       cv::Mat getDistCoeffs() {return distCoeffs;}
-      virtual raft::kstatus run();
+      virtual raft::kstatus run() override;
+      bool logic(mxre::types::Frame *outFrame);
     };
 
   }   // namespace kernels

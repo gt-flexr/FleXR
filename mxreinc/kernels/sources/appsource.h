@@ -12,6 +12,7 @@
 #include "types/clock_types.h"
 #include "types/cv/types.h"
 #include "utils/cv_utils.h"
+#include "kernels/kernel.h"
 
 namespace mxre
 {
@@ -19,27 +20,16 @@ namespace mxre
   {
 
     template<typename OUT_T>
-    class AppSource : public raft::kernel
+    class AppSource : public MXREKernel
     {
     protected:
       void *ctx;
       void *sock;
+      int dtype;
 
     public:
-      AppSource(std::string id) {
-        ctx = zmq_ctx_new();
-        sock = zmq_socket(ctx, ZMQ_REP);
-
-        std::string bindingAddr = "ipc:///tmp/" + id;
-        zmq_bind(sock, bindingAddr.c_str());
-
-        debug_print("bindingAddr: %s connected\n", bindingAddr.c_str());
-
-        output.addPort<OUT_T>("out_data");
-#ifdef __PROFILE__
-        output.addPort<mxre::types::FrameStamp>("frame_stamp");
-#endif
-
+      AppSource() {
+        addOutputPort<OUT_T>("out_data");
       }
 
 
@@ -49,26 +39,73 @@ namespace mxre
       }
 
 
+      void setup(std::string id, int dtype=MXRE_DTYPE_PRIMITIVE) {
+        this->dtype = dtype;
+        ctx = zmq_ctx_new();
+        sock = zmq_socket(ctx, ZMQ_REP);
+        std::string bindingAddr = "ipc:///tmp/" + id;
+        zmq_bind(sock, bindingAddr.c_str());
+
+        debug_print("bindingAddr: %s connected\n", bindingAddr.c_str());
+      }
+
+
+      int recvPrimitive(OUT_T *data) {
+        zmq_recv(sock, data, sizeof(OUT_T), 0);
+        debug_print("%d \n", *data);
+        return true;
+      }
+
+
+      int recvFrame(OUT_T *data) {
+        mxre::types::Frame *frame = (mxre::types::Frame*)data;
+        zmq_recv(sock, frame, sizeof(mxre::types::Frame), 0);
+        frame->data = new unsigned char[frame->dataSize];
+
+        zmq_recv(sock, frame->data, frame->dataSize, 0);
+
+        return true;
+      }
+
+
       virtual raft::kstatus run() {
 #ifdef __PROFILE__
         mxre::types::TimeVal start = getNow();
 #endif
-        auto &outData( output["out_data"].template allocate<OUT_T>() );
+        if(sock == NULL || ctx == NULL) {
+          debug_print("AppSource is not set");
+          return raft::stop;
+        }
 
-        zmq_recv(sock, &outData, sizeof(OUT_T), 0);
+        auto &outData( output["out_data"].template allocate<OUT_T>() );
+        int recvFlag = false;
+
+        switch(dtype) {
+          case MXRE_DTYPE_PRIMITIVE:
+            recvFlag = recvPrimitive(&outData);
+            break;
+          case MXRE_DTYPE_FRAME:
+            recvFlag = recvFrame(&outData);
+            break;
+        }
         zmq_send(sock, "ack", 3, 0);
-        debug_print("outData %d", outData);
+
+        if(recvFlag) {
+          output["out_data"].send();
+          switch(dtype) {
+            case MXRE_DTYPE_PRIMITIVE:
+              sendPrimitiveCopy("out_data", &outData);
+              break;
+            case MXRE_DTYPE_FRAME:
+              sendFrameCopy("out_data", &outData);
+              break;
+          }
+        }
 
 #ifdef __PROFILE__
         mxre::types::TimeVal end = getNow();
         profile_print("Exe Time: %lfms", getExeTime(end, start));
-
-        auto &frameStamp( output["frame_stamp"].template allocate<mxre::types::FrameStamp>() );
-        frameStamp.index = 0;
-        frameStamp.st = getNow();
-        output["frame_stamp"].send();
 #endif
-        output["out_data"].send();
         return raft::proceed;
       }
     };

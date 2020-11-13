@@ -91,7 +91,7 @@ namespace mxre
     }
 
 
-    void VirtualWorldManager::startWorlds(char key, std::vector<mxre::gl_types::ObjectContext> &objCtxs) {
+    void VirtualWorldManager::startWorlds(char key, std::vector<mxre::gl_types::ObjectContext> objCtxs) {
       handleKeystroke(key);
 
       shader.use();

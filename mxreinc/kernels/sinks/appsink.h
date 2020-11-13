@@ -12,6 +12,7 @@
 #include "types/clock_types.h"
 #include "types/cv/types.h"
 #include "utils/cv_utils.h"
+#include "kernels/kernel.h"
 
 namespace mxre
 {
@@ -19,27 +20,17 @@ namespace mxre
   {
 
     template<typename IN_T>
-    class AppSink : public raft::kernel
+    class AppSink : public MXREKernel
     {
     protected:
       void *ctx;
       void *sock;
+      int dtype;
       char ack[3];
 
     public:
-      AppSink(std::string id) {
-        ctx = zmq_ctx_new();
-        sock = zmq_socket(ctx, ZMQ_REQ);
-
-        std::string connectAddr = "ipc:///tmp/" + id;
-        zmq_connect(sock, connectAddr.c_str());
-
-        debug_print("connectAddr: %s bound\n", connectAddr.c_str());
-
-        input.addPort<IN_T>("in_data");
-#ifdef __PROFILE__
-        input.addPort<mxre::types::FrameStamp>("frame_stamp");
-#endif
+      AppSink() {
+        addInputPort<IN_T>("in_data");
       }
 
 
@@ -49,23 +40,59 @@ namespace mxre
       }
 
 
+      void setup(std::string id, int dtype=MXRE_DTYPE_PRIMITIVE) {
+        this->dtype = dtype;
+        ctx = zmq_ctx_new();
+        sock = zmq_socket(ctx, ZMQ_REQ);
+        std::string connectAddr = "ipc:///tmp/" + id;
+        zmq_connect(sock, connectAddr.c_str());
+
+        debug_print("connectAddr: %s bound\n", connectAddr.c_str());
+      }
+
+
+      void sendPrimitive(IN_T *data) {
+        zmq_send(sock, data, sizeof(IN_T), 0);
+      }
+
+
+      void sendFrame(IN_T *data) {
+        mxre::types::Frame *frame = (mxre::types::Frame*)data;
+        //cv::Mat *mat = (cv::Mat*)data;
+        //mxre::types::Frame frame;
+        //frame.setFrameAttribFromCVMat(*mat);
+        debug_print("%d %d %d %d", frame->cols, frame->rows, frame->dataSize, frame->totalElem);
+
+        zmq_send(sock, frame, sizeof(mxre::types::Frame), ZMQ_SNDMORE);
+        zmq_send(sock, frame->data, frame->dataSize, 0);
+        frame->release();
+      }
+
+
       virtual raft::kstatus run() {
 #ifdef __PROFILE__
         mxre::types::TimeVal start = getNow();
 #endif
+        if(sock == NULL || ctx == NULL) {
+          debug_print("AppSource is not set");
+          return raft::stop;
+        }
 
         auto &inData( input["in_data"].template peek<IN_T>() );
-        zmq_send(sock, &inData, sizeof(IN_T), 0);
+
+        switch(dtype) {
+          case MXRE_DTYPE_PRIMITIVE:
+            sendPrimitive(&inData);
+            break;
+          case MXRE_DTYPE_FRAME:
+            sendFrame(&inData);
+            break;
+        }
         zmq_recv(sock, ack, sizeof(ack), 0);
-        debug_print("%d \n" , inData);
 
 #ifdef __PROFILE__
         mxre::types::TimeVal end = getNow();
         profile_print("Exe Time: %lfms", getExeTime(end, start));
-
-        auto &inFrameStamp( input["frame_stamp"].template peek<mxre::types::FrameStamp>() );
-        profile_print("Frame(%d) Processing Time %lfms", inFrameStamp.index, getExeTime(end, inFrameStamp.st));
-        input["frame_stamp"].recycle();
 #endif
 
         input["in_data"].recycle();
