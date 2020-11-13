@@ -7,17 +7,14 @@ namespace mxre
   namespace kernels
   {
 
+    /* Constructor */
     ObjectRenderer::ObjectRenderer(std::vector<mxre::cv_types::ObjectInfo> registeredObjs, int width, int height) :
-      width(width), height(height), raft::kernel()
+      MXREKernel(), width(width), height(height)
     {
-      // ObjectCtxExtractor inputs
-      input.addPort<mxre::cv_types::Mat>("in_frame");
-      input.addPort<std::vector<mxre::gl_types::ObjectContext>>("in_obj_context");
-
-      // Keyboard input
-      input.addPort<char>("in_keystroke");
-
-      output.addPort<mxre::cv_types::Mat>("out_frame");
+      addInputPort<mxre::types::Frame>("in_frame");
+      addInputPort<std::vector<mxre::gl_types::ObjectContext>>("in_obj_context");
+      addInputPort<char>("in_keystroke");
+      addOutputPort<mxre::types::Frame>("out_frame");
 
       // 0. Create pbuf as a context
       pbuf = new mxre::egl_types::pbuffer;
@@ -42,54 +39,26 @@ namespace mxre
       // 3. Unbind the pbuf context in init thread
       mxre::egl_utils::unbindPbuffer(*pbuf);
       binding = false;
-
-#ifdef __PROFILE__
-      input.addPort<mxre::types::FrameStamp>("frame_stamp");
-      output.addPort<mxre::types::FrameStamp>("frame_stamp");
-#endif
     }
 
 
+    /* Destructor */
     ObjectRenderer::~ObjectRenderer() {
       mxre::egl_utils::terminatePbuffer(*pbuf);
       delete [] pbuf;
     }
 
 
-    raft::kstatus ObjectRenderer::run()
+    /* Kernel Logic */
+    bool ObjectRenderer::logic(mxre::types::Frame *inFrame, std::vector<mxre::gl_types::ObjectContext> *inObjContext,
+                               char inKey, mxre::types::Frame *outFrame)
     {
-      if(!binding) {
-        mxre::egl_utils::bindPbuffer(*pbuf);
-        binding = true;
-      }
-
-#ifdef __PROFILE__
-      mxre::types::TimeVal start = getNow();
-#endif
-
-      // 0.0.Get inputs from the previous kernel: ObjectDetector
-      auto &frame( input["in_frame"].peek<mxre::cv_types::Mat>() );
-      auto objCtxVec( input["in_obj_context"].peek<std::vector<mxre::gl_types::ObjectContext>>() );
-
-      // 0.1.Get input keystroke from Keyboard
-      auto &keyPort(input["in_keystroke"]);
-      char key;
-      if(keyPort.size() > 0) {
-        key = input ["in_keystroke"].peek<char>();
-        std::cout << "Input Key captured object_renderer: " << key << std::endl;
-        keyPort.recycle(1);
-      }
-      else key = 0;
-
-      // 0.2.Set output
-      auto &out_frame( output["out_frame"].allocate<mxre::cv_types::Mat>() );
-
       // 1. Create/update background texture & release previous CV frame
       if(glIsTexture(backgroundTexture))
-        mxre::gl_utils::updateTextureFromCVFrame(frame, backgroundTexture);
+        mxre::gl_utils::updateTextureFromFrame(inFrame, backgroundTexture);
       else
-        mxre::gl_utils::makeTextureFromCVFrame(frame, backgroundTexture);
-      frame.release();
+        mxre::gl_utils::makeTextureFromFrame(inFrame, backgroundTexture);
+      inFrame->release();
 
       // 2. Draw background frame
       glClearColor(1.0, 1.0, 1.0, 1.0);
@@ -106,25 +75,56 @@ namespace mxre
       glEnd();
       mxre::gl_utils::endBackground();
 
-      worldManager.startWorlds(key, objCtxVec);
+      worldManager.startWorlds(inKey, *inObjContext);
 
-      out_frame = mxre::gl_utils::exportGLBufferToCV(width, height);
+      *outFrame = mxre::gl_utils::exportGLBufferToCV(width, height);
+      return true;
+    }
 
-      input["in_frame"].recycle();
-      input["in_obj_context"].recycle();
 
+    /* Kernel Run */
+    raft::kstatus ObjectRenderer::run()
+    {
+      if(!binding) {
+        mxre::egl_utils::bindPbuffer(*pbuf);
+        binding = true;
+      }
+
+#ifdef __PROFILE__
+      mxre::types::TimeVal start = getNow();
+#endif
+      debug_print("START");
+
+      // 0.0.Get inputs from the previous kernel: ObjectDetector
+      auto &inFrame( input["in_frame"].peek<mxre::types::Frame>() );
+      auto &inObjContext( input["in_obj_context"].peek<std::vector<mxre::gl_types::ObjectContext>>() );
+
+      // 0.1.Get input keystroke from Keyboard
+      char inKey;
+      if(checkPort("in_keystroke")) {
+        inKey = input ["in_keystroke"].peek<char>();
+        std::cout << "Input Key captured object_renderer: " << inKey << std::endl;
+        recyclePort("in_keystroke");
+      }
+      else inKey = 0;
+
+      // 0.2.Set output
+      auto &outFrame( output["out_frame"].allocate<mxre::types::Frame>() );
+
+      if(logic(&inFrame, &inObjContext, inKey, &outFrame)) {
+        output["out_frame"].send();
+        sendFrameCopy("out_frame", &outFrame);
+      }
+
+      recyclePort("in_frame");
+      recyclePort("in_obj_context");
+
+      debug_print("END");
 #ifdef __PROFILE__
       mxre::types::TimeVal end = getNow();
       profile_print("Exe Time: %lfms", getExeTime(end, start));
-
-      auto &inFrameStamp( input["frame_stamp"].peek<mxre::types::FrameStamp>() );
-      auto &outFrameStamp( output["frame_stamp"].allocate<mxre::types::FrameStamp>() );
-      outFrameStamp = inFrameStamp;
-      input["frame_stamp"].recycle();
-      output["frame_stamp"].send();
 #endif
 
-      output["out_frame"].send();
       return raft::proceed;
     }
 
