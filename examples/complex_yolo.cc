@@ -5,15 +5,11 @@
 using namespace std;
 
 
-class TestSink : public raft::kernel {
+class TestSink : public mxre::kernels::MXREKernel {
   public:
-    TestSink() : raft::kernel() {
-      input.addPort<std::vector<mxre::types::ComplexYoloPrediction>>("in_data");
-      input.addPort<mxre::cv_types::Mat>("in_frame");
-
-#ifdef __PROFILE__
-      input.addPort<mxre::types::FrameStamp>("frame_stamp");
-#endif
+    TestSink() : MXREKernel() {
+      addInputPort<std::vector<mxre::types::ComplexYoloPrediction>>("in_data");
+      addInputPort<mxre::types::Frame>("in_frame");
     }
 
     raft::kstatus run() {
@@ -23,21 +19,14 @@ class TestSink : public raft::kernel {
         printf("Object: %f %f %f %f %f\n", data[i].cls_pred, data[i].x, data[i].y, data[i].z, data[i].ry);
       }
 
-      auto &frame( input["in_frame"].peek<mxre::cv_types::Mat>() );
+      auto &frame( input["in_frame"].peek<mxre::types::Frame>() );
 
-      cv::imshow("CVDisplay", frame.cvMat);
+      cv::imshow("CVDisplay", frame.useAsCVMat());
       int inKey = cv::waitKey(10) & 0xFF;
       frame.release();
 
-      input["in_frame"].recycle();
-
-#ifdef __PROFILE__
-      auto &inFrameStamp( input["frame_stamp"].peek<mxre::types::FrameStamp>() );
-      input["frame_stamp"].recycle();
-#endif
-
-
-      input["in_data"].recycle();
+      recyclePort("in_frame");
+      recyclePort("in_data");
       return raft::proceed;
     }
     std::vector<int> test;
