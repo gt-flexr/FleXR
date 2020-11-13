@@ -9,6 +9,7 @@
 #include "./mxreinc/defs.h"
 
 /* Types */
+#include "./mxreinc/types/frame.h"
 #include "./mxreinc/types/clock_types.h"
 #include "./mxreinc/types/complex_yolo_types.h"
 
@@ -24,10 +25,7 @@
 #include "./mxreinc/types/ar/virtual_world.h"
 #include "./mxreinc/types/ar/virtual_object.h"
 #include "./mxreinc/types/ar/virtual_world_manager.h"
-
-#include "./mxreinc/types/plugin/illixr_source.h"
-#include "./mxreinc/types/plugin/illixr_sink.h"
-
+#
 /* Utils */
 #include "./mxreinc/utils/getch.h"
 #include "./mxreinc/utils/path_finder.h"
@@ -38,6 +36,11 @@
 //#include <glm/gtc/type_ptr.hpp>
 
 /* Kernels */
+#include "./mxreinc/kernels/kernel.h"
+
+#include "./mxreinc/kernels/plugin/illixr_source.h"
+#include "./mxreinc/kernels/plugin/illixr_sink.h"
+
 #include "./mxreinc/kernels/sources/cv_camera.h"
 #include "./mxreinc/kernels/sources/keyboard.h"
 #include "./mxreinc/kernels/sources/image_loader.h"
