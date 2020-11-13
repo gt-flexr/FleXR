@@ -30,9 +30,9 @@ namespace mxre
         MessageSender(addr, port) {
       this->isVector = isVector;
       if(isVector)
-        input.addPort<std::vector<mxre::cv_types::Mat>>("in_data");
+        input.addPort<std::vector<cv::Mat>>("in_data");
       else
-        input.addPort<mxre::cv_types::Mat>("in_data");
+        input.addPort<cv::Mat>("in_data");
     }
 
 
@@ -43,12 +43,12 @@ namespace mxre
       mxre::types::TimeVal start = getNow();
 #endif
       char ackMsg[4];
-      std::vector<mxre::cv_types::Mat> inMat;
+      std::vector<cv::Mat> inMat;
       if(isVector) {
-        inMat = input["in_data"].template peek<std::vector<mxre::cv_types::Mat>>();
+        inMat = input["in_data"].template peek<std::vector<cv::Mat>>();
       }
       else {
-        auto &inData( input["in_data"].template peek<mxre::cv_types::Mat>() );
+        auto &inData( input["in_data"].template peek<cv::Mat>() );
         inMat.push_back(inData);
       }
 
@@ -59,10 +59,10 @@ namespace mxre
       // 2. Send each Mat info & data (iteration) & end flag
       for(uint i = 0; i < inMat.size(); i++) {
         uint matInfo[MX_MAT_ATTR_NUM];
-        matInfo[MX_MAT_SIZE_IDX] = inMat[i].total * inMat[i].elemSize;
+        matInfo[MX_MAT_SIZE_IDX] = inMat[i].total() * inMat[i].elemSize();
         matInfo[MX_MAT_ROWS_IDX] = inMat[i].rows;
         matInfo[MX_MAT_COLS_IDX] = inMat[i].cols;
-        matInfo[MX_MAT_TYPE_IDX] = inMat[i].type;
+        matInfo[MX_MAT_TYPE_IDX] = inMat[i].type();
         zmq_send(sock, matInfo, sizeof(uint)*MX_MAT_ATTR_NUM, ZMQ_SNDMORE);
         zmq_send(sock, inMat[i].data, matInfo[0], ZMQ_SNDMORE);
       }

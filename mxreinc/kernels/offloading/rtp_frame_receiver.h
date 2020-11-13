@@ -7,8 +7,10 @@
 #include <zmq.h>
 
 #include "defs.h"
+#include "kernels/kernel.h"
 #include "types/cv/types.h"
 #include "types/clock_types.h"
+#include "types/frame.h"
 
 extern "C" {
 #include <libavformat/avformat.h>
@@ -23,7 +25,7 @@ namespace mxre
   {
 
     /* Class Deifinition */
-    class RTPFrameReceiver : public raft::kernel
+    class RTPFrameReceiver : public MXREKernel
     {
       private:
         int width, height;

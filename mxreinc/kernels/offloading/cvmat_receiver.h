@@ -31,9 +31,9 @@ namespace mxre
     MatReceiver::MatReceiver(int port, bool isVector) : MessageReceiver(port) {
       this->isVector = isVector;
       if(isVector)
-        output.addPort<std::vector<mxre::cv_types::Mat>>("out_data");
+        output.addPort<std::vector<cv::Mat>>("out_data");
       else
-        output.addPort<mxre::cv_types::Mat>("out_data");
+        output.addPort<cv::Mat>("out_data");
     }
 
 
@@ -50,7 +50,7 @@ namespace mxre
       memcpy(ackMsg, "ACK\0", 4);
 
       if(isVector) {
-        auto &outData( output["out_data"].allocate<std::vector<mxre::cv_types::Mat>>() );
+        auto &outData( output["out_data"].allocate<std::vector<cv::Mat>>() );
         // 1. Recv num of Matricies
         zmq_recv(sock, &vecSize, sizeof(vecSize), 0);
 
@@ -67,7 +67,7 @@ namespace mxre
           }
 
           zmq_recv(sock, inData, matInfo[MX_MAT_SIZE_IDX], 0);
-          mxre::cv_types::Mat newMat(matInfo[MX_MAT_ROWS_IDX], matInfo[MX_MAT_COLS_IDX], matInfo[MX_MAT_TYPE_IDX], inData);
+          cv::Mat newMat(matInfo[MX_MAT_ROWS_IDX], matInfo[MX_MAT_COLS_IDX], matInfo[MX_MAT_TYPE_IDX], inData);
           outData.push_back(newMat);
           // delete [] inData;
         }
@@ -78,7 +78,7 @@ namespace mxre
       }
       else {
         debug_print("isVector == FALSE");
-        auto &outData( output["out_data"].allocate<mxre::cv_types::Mat>() );
+        auto &outData( output["out_data"].allocate<cv::Mat>() );
         // 1. Recv num of Matricies
         zmq_recv(sock, &vecSize, sizeof(vecSize), 0);
 
@@ -93,8 +93,8 @@ namespace mxre
 
         zmq_recv(sock, inData, matInfo[MX_MAT_SIZE_IDX], 0);
         zmq_recv(sock, endMsg, 4, 0);
-        debug_print("outData init %p, total %d \n", outData.data, outData.total);
-        outData = mxre::cv_types::Mat(matInfo[MX_MAT_ROWS_IDX], matInfo[MX_MAT_COLS_IDX], matInfo[MX_MAT_TYPE_IDX], inData);
+        debug_print("outData init %p, total %d \n", outData.data, outData.total());
+        outData = cv::Mat(matInfo[MX_MAT_ROWS_IDX], matInfo[MX_MAT_COLS_IDX], matInfo[MX_MAT_TYPE_IDX], inData);
         debug_print("received %p, matdata %p \n", inData, reinterpret_cast<float*>(outData.data));
         //delete [] inData;
       }

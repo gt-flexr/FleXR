@@ -10,6 +10,7 @@
 #include "defs.h"
 #include "types/cv/types.h"
 #include "types/clock_types.h"
+#include "types/frame.h"
 
 extern "C" {
 #include <libavformat/avformat.h>
