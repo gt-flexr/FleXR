@@ -1,0 +1,70 @@
+#ifndef __MXRE__
+#define __MXRE__
+
+#ifndef STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#endif
+
+/* defs */
+#include "./mxreinc/defs.h"
+
+/* Types */
+#include "./mxreinc/types/frame.h"
+#include "./mxreinc/types/clock_types.h"
+#include "./mxreinc/types/complex_yolo_types.h"
+
+#include "./mxreinc/types/cv/types.h"
+#include "./mxreinc/types/cv/orb_marker_tracker.h"
+
+#include "./mxreinc/types/gl/types.h"
+#include "./mxreinc/types/gl/mesh.h"
+#include "./mxreinc/types/gl/model.h"
+#include "./mxreinc/types/gl/camera.h"
+#include "./mxreinc/types/gl/shader.h"
+
+#include "./mxreinc/types/ar/virtual_world.h"
+#include "./mxreinc/types/ar/virtual_object.h"
+#include "./mxreinc/types/ar/virtual_world_manager.h"
+#
+/* Utils */
+#include "./mxreinc/utils/getch.h"
+#include "./mxreinc/utils/path_finder.h"
+#include "./mxreinc/utils/cv_utils.h"
+#include "./mxreinc/utils/gl_utils.h"
+#include "./mxreinc/utils/egl_utils.h"
+//#include <glm/gtc/matrix_transform.hpp>
+//#include <glm/gtc/type_ptr.hpp>
+
+/* Kernels */
+#include "./mxreinc/kernels/kernel.h"
+
+#include "./mxreinc/kernels/plugin/illixr_source.h"
+#include "./mxreinc/kernels/plugin/illixr_sink.h"
+
+#include "./mxreinc/kernels/sources/cv_camera.h"
+#include "./mxreinc/kernels/sources/keyboard.h"
+#include "./mxreinc/kernels/sources/image_loader.h"
+#include "./mxreinc/kernels/sources/appsource.h"
+
+#include "./mxreinc/kernels/sinks/cv_display.h"
+#include "./mxreinc/kernels/sinks/appsink.h"
+
+#include "./mxreinc/kernels/perceptions/prediction_receiver.h"
+#include "./mxreinc/kernels/perceptions/orb/orb_detector.h"
+#include "./mxreinc/kernels/perceptions/orb/cuda_orb_detector.h"
+#include "./mxreinc/kernels/perceptions/orb/object_ctx_extractor.h"
+
+#include "./mxreinc/kernels/offloading/message_sender.h"
+#include "./mxreinc/kernels/offloading/message_receiver.h"
+#include "./mxreinc/kernels/offloading/cvmat_sender.h"
+#include "./mxreinc/kernels/offloading/cvmat_receiver.h"
+#include "./mxreinc/kernels/offloading/static_sender.h"
+#include "./mxreinc/kernels/offloading/static_receiver.h"
+#include "./mxreinc/kernels/offloading/rtp_frame_sender.h"
+#include "./mxreinc/kernels/offloading/rtp_frame_receiver.h"
+
+#include "./mxreinc/kernels/app/object_renderer.h"
+#include "./mxreinc/kernels/app/complexyolo_renderer.h"
+
+#endif
+

@@ -7,40 +7,38 @@ namespace mxre
   {
     CVDisplay::CVDisplay()
     {
-      input.addPort<mxre::cv_types::Mat>("in_frame");
-
-#ifdef __PROFILE__
-      input.addPort<mxre::types::FrameStamp>("frame_stamp");
-#endif
+      addInputPort<mxre::types::Frame>("in_frame");
     }
 
-    CVDisplay::~CVDisplay() {}
+
+    bool CVDisplay::logic(mxre::types::Frame *inFrame) {
+      cv::imshow("CVDisplay", inFrame->useAsCVMat());
+      int inKey = cv::waitKey(2) & 0xFF;
+
+      inFrame->release();
+      return true;
+    }
+
 
     raft::kstatus CVDisplay::run()
     {
+#ifdef __PROFILE__
+      start = getNow();
+#endif
+      auto &frame( input["in_frame"].peek<mxre::types::Frame>() );
+      debug_print("START");
+
+      logic(&frame);
+
+      recyclePort("in_frame");
+      debug_print("END");
 
 #ifdef __PROFILE__
-      mxre::types::TimeVal start = getNow();
+      end = getNow();
+      profile_print("Exe Time: %lf ms", getExeTime(end, start));
 #endif
-
-      auto &frame( input["in_frame"].peek<mxre::cv_types::Mat>() );
-
-      cv::imshow("CVDisplay", frame.cvMat);
-      int inKey = cv::waitKey(10) & 0xFF;
-      frame.release();
-
-      input["in_frame"].recycle();
-
-#ifdef __PROFILE__
-      mxre::types::TimeVal end = getNow();
-      profile_print("Exe Time: %lfms", getExeTime(end, start));
-
-      auto &inFrameStamp( input["frame_stamp"].peek<mxre::types::FrameStamp>() );
-      profile_print("Frame(%d) Processing Time %lfms", inFrameStamp.index, getExeTime(end, inFrameStamp.st));
-      input["frame_stamp"].recycle();
-#endif
-
       return raft::proceed;
     }
   } // namespace kernels
 } // namespace mxre
+

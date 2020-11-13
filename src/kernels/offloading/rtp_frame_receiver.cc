@@ -6,9 +6,9 @@ namespace mxre
   {
     /* Constructor() */
     RTPFrameReceiver::RTPFrameReceiver(std::string decoder, int srcPort, int width, int height) :
-      decoder(decoder),width(width), height(height), raft::kernel()
+      MXREKernel(), decoder(decoder),width(width), height(height)
     {
-      output.addPort<mxre::cv_types::Mat>("out_data");
+      output.addPort<mxre::types::Frame>("out_data");
 
       av_register_all();
       avcodec_register_all();
@@ -175,7 +175,7 @@ namespace mxre
       mxre::types::TimeVal start = getNow();
 #endif
 
-      auto &outData( output["out_data"].allocate<mxre::cv_types::Mat>() );
+      auto &outData( output["out_data"].allocate<mxre::types::Frame>() );
       int ret = 0, receivedFrame = 0, readSuccess = -1;
 
       AVPacket packet;
@@ -189,9 +189,12 @@ namespace mxre
           sws_scale(swsContext, rtpFrame->data, rtpFrame->linesize, 0, rtpFrame->height,
               convertingFrame->data, convertingFrame->linesize);
 
-          outData = mxre::cv_types::Mat(cv::Mat(rtpCodecContext->height, rtpCodecContext->width, CV_8UC3,
-                                                convertingFrameBuf.data(), convertingFrame->linesize[0]));
+          cv::Mat temp = cv::Mat(rtpCodecContext->height, rtpCodecContext->width, CV_8UC3,
+                                 convertingFrameBuf.data(), convertingFrame->linesize[0]);
+          outData = mxre::types::Frame(temp);
+
           output["out_data"].send();
+          sendFrameCopy("out_data", &outData);
         }
       }
       av_free_packet(&packet);

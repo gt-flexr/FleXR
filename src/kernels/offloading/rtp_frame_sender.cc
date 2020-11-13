@@ -10,7 +10,7 @@ namespace mxre
         int destPort, int bitrate, int fps, int width, int height) : encoder(encoder), bitrate(bitrate),
         fps(fps), width(width), height(height), framePts(0), raft::kernel()
     {
-      input.addPort<mxre::cv_types::Mat>("in_data");
+      input.addPort<mxre::types::Frame>("in_data");
       this->filename = "rtp://" + destAddr + ":" + std::to_string(destPort);
 
       av_register_all();
@@ -194,8 +194,8 @@ namespace mxre
       mxre::types::TimeVal start = getNow();
 #endif
 
-      auto &inData( input["in_data"].template peek<mxre::cv_types::Mat>() );
-      if(inData.rows != height || inData.cols != width) {
+      auto &inData( input["in_data"].template peek<mxre::types::Frame>() );
+      if(inData.rows != (size_t)height || inData.cols != (size_t)width) {
         clearSession();
         debug_print("inMat size is not compatible.");
         exit(1);
@@ -204,7 +204,7 @@ namespace mxre
       int ret=0, gotPkt=0;
 
       // convert cvframe into ffmpeg frame
-      const int stride[] = {static_cast<int>(inData.cvMat.step[0])};
+      const int stride[] = {static_cast<int>(inData.useAsCVMat().step[0])};
       sws_scale(swsContext, &inData.data, stride, 0, inData.rows, rtpFrame->data, rtpFrame->linesize);
       rtpFrame->pts = framePts++;
 

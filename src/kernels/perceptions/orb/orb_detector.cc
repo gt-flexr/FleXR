@@ -4,21 +4,16 @@ namespace mxre
 {
   namespace kernels
   {
+    /* Constructor */
     ORBDetector::ORBDetector(std::vector<mxre::cv_types::ObjectInfo> registeredObjs,
                                     cv::Ptr<cv::Feature2D> _detector,
-                                    cv::Ptr<cv::DescriptorMatcher> _matcher) : objInfos(registeredObjs),
+                                    cv::Ptr<cv::DescriptorMatcher> _matcher): MXREKernel(),
+                                                                              objInfos(registeredObjs),
                                                                               detector(_detector),
-                                                                              matcher(_matcher), raft::kernel()
+                                                                              matcher(_matcher)
     {
-      input.addPort<mxre::cv_types::Mat>("in_frame");
-
-      output.addPort<mxre::cv_types::Mat>("out_frame");
-      output.addPort<std::vector<mxre::cv_types::ObjectInfo>>("out_obj_info");
-
-#ifdef __PROFILE__
-      input.addPort<mxre::types::FrameStamp>("frame_stamp");
-      output.addPort<mxre::types::FrameStamp>("frame_stamp");
-#endif
+      addInputPort<mxre::types::Frame>("in_frame");
+      addOutputPort<std::vector<mxre::cv_types::ObjectInfo>>("out_obj_info");
 
       // Object Detection Parameters
       knnMatchRatio = 0.8f;
@@ -28,25 +23,23 @@ namespace mxre
     }
 
 
+    /* Destructor */
     ORBDetector::~ORBDetector() {}
 
 
-    raft::kstatus ORBDetector::run() {
-
-#ifdef __PROFILE__
-      mxre::types::TimeVal start = getNow();
-#endif
-
+    /* Kernel Logic */
+    bool ORBDetector::logic(mxre::types::Frame *inFrame, std::vector<mxre::cv_types::ObjectInfo> *outObjInfo) {
       std::vector<cv::KeyPoint> frameKps;
       cv::Mat frameDesc;
-      auto &frame( input["in_frame"].peek<mxre::cv_types::Mat>() );
 
-      // prepare output for the next kernel
-      auto &out_frame( output["out_frame"].allocate<mxre::cv_types::Mat>() );
-      auto &out_obj_info( output["out_obj_info"].allocate<std::vector<mxre::cv_types::ObjectInfo>>() );
+      // 0. prepare gary frame
+      cv::Mat grayFrame = inFrame->useAsCVMat();
+      cv::cvtColor(grayFrame, grayFrame, CV_BGR2GRAY);
+
 
       // 1. figure out frame keypoints and descriptors to detect objects in the frame
-      detector->detectAndCompute(frame.cvMat, cv::noArray(), frameKps, frameDesc);
+      detector->detectAndCompute(grayFrame, cv::noArray(), frameKps, frameDesc);
+      inFrame->release(); // deallocate the frame memory
 
       // multiple object detection
       std::vector<mxre::cv_types::ObjectInfo>::iterator objIter;
@@ -78,8 +71,8 @@ namespace mxre
         if (objMatch.size() >= 4)
         {
           homography = findHomography(mxre::cv_utils::convertKpsToPts(objMatch),
-                                      mxre::cv_utils::convertKpsToPts(frameMatch),
-                                      cv::RANSAC, ransacThresh, inlierMask);
+              mxre::cv_utils::convertKpsToPts(frameMatch),
+              cv::RANSAC, ransacThresh, inlierMask);
         }
 
         // 4. if there is an object in the frame, check the inlier points and save matched inlier points
@@ -102,31 +95,39 @@ namespace mxre
           {
             objIter->isDetected = true;
             perspectiveTransform(objIter->rect2D, objIter->location2D, homography);
-            mxre::cv_utils::drawBoundingBox(frame.cvMat, objIter->location2D);
+            //mxre::cv_utils::drawBoundingBox(frame.cvMat, objIter->location2D);
           }
           else
             objIter->isDetected = false;
         }
       }
 
-      out_frame = frame;
-      out_obj_info = objInfos;
+      *outObjInfo = objInfos;
+      return true;
+    }
 
-      input["in_frame"].recycle();
+
+    /* Kernel Run */
+    raft::kstatus ORBDetector::run() {
+
+#ifdef __PROFILE__
+      mxre::types::TimeVal start = getNow();
+#endif
+
+      auto &inFrame( input["in_frame"].peek<mxre::types::Frame>() );
+      auto &outObjInfo( output["out_obj_info"].allocate<std::vector<mxre::cv_types::ObjectInfo>>() );
+
+      if(logic(&inFrame, &outObjInfo)) {
+        output["out_obj_info"].send();
+        sendPrimitiveCopy("out_obj_info", &outObjInfo);
+      }
+
+      recyclePort("in_frame");
 
 #ifdef __PROFILE__
       mxre::types::TimeVal end = getNow();
       profile_print("Exe Time: %lfms", getExeTime(end, start));
-
-      auto &inFrameStamp( input["frame_stamp"].peek<mxre::types::FrameStamp>() );
-      auto &outFrameStamp( output["frame_stamp"].allocate<mxre::types::FrameStamp>() );
-      outFrameStamp = inFrameStamp;
-      input["frame_stamp"].recycle();
-      output["frame_stamp"].send();
 #endif
-
-      output["out_frame"].send();
-      output["out_obj_info"].send();
 
       return raft::proceed;
     }

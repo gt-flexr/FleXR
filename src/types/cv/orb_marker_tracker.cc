@@ -4,6 +4,11 @@ namespace mxre
 {
   namespace cv_types
   {
+    ORBMarkerTracker::ORBMarkerTracker(): numOfObjs(0) {
+      detector = cv::ORB::create();
+      matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
+    }
+
 
     void ORBMarkerTracker::registerObject(const cv::Mat frame, cv::Rect roiRect) {
       // get the object mask

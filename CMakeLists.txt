@@ -33,7 +33,7 @@ set(MXRE_LINKER_FLAGS "")
 set(MXRE_LINKER_LIBS "")
 
 # Include cmake modules
-include_directories("include")
+include_directories("mxreinc")
 include(cmake/modules/OpenGL.cmake)
 include(cmake/modules/OpenCV.cmake)
 include(cmake/modules/RaftLib.cmake)
@@ -42,6 +42,7 @@ include(cmake/modules/GStreamer.cmake)
 include(cmake/modules/FFmpeg.cmake)
 
 message(STATUS "[MXRE COMPILE INFO]")
+
 message("\t MXRE_CXX_FLAGS: ${MXRE_CXX_FLAGS}")
 message("\t MXRE_LINKER_FLAGS: ${MXRE_LINKER_FLAGS}")
 message("\t MXRE_LINKER_LIBS: ${MXRE_LINKER_LIBS}")
@@ -49,5 +50,30 @@ message("\t MXRE_SRCS: ${MXRE_SRCS}")
 
 add_subdirectory(third-party)
 add_subdirectory(src)
+add_subdirectory(mxreinc)
 add_subdirectory(examples)
+
+# Install
+string(REPLACE ";" " " MXRE_CXX_FLAGS "${MXRE_CXX_FLAGS}")
+string(REPLACE ";" " " MXRE_LINKER_FLAGS "${MXRE_LINKER_FLAGS}")
+string(REPLACE ";" " " MXRE_LINKER_LIBS "${MXRE_LINKER_LIBS}")
+
+set(MXRE_HEADER mxre)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/${MXRE_HEADER} DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+
+if(NOT WIN32)
+  mark_as_advanced( PKG_CONFIG_PATHWAY )
+  set( PKG_CONFIG_PATH "/usr/local/lib/pkgconfig")
+
+  string(REPLACE ":" ";" PREFIX_LIST "${CMAKE_SYSTEM_PREFIX_PATH}")
+  list(FIND PREFIX_LIST ${CMAKE_INSTALL_PREFIX}  INSTALL_PREFIX_INDEX)
+
+  #if(${INSTALL_PREFIX_INDEX} GREATER 0)
+  #  file( MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/pkgconfig )
+  #  set( PKG_CONFIG_PATH ${CMAKE_INSTALL_PREFIX}/pkgconfig )
+  #endif()
+
+  configure_file("mxre.pc.in" "mxre.pc" @ONLY)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mxre.pc DESTINATION ${PKG_CONFIG_PATH}/)
+endif(NOT WIN32)
 

@@ -1,6 +1,6 @@
 #ifdef __USE_OPENCV_CUDA__
 #include <raft>
-#include <mxre.h>
+#include <mxre>
 #include <bits/stdc++.h>
 
 #define WIDTH 1280
@@ -36,9 +36,9 @@ int main(int argc, char const *argv[])
     return 1;
   }
 
-  cv::Ptr<cv::ORB> orb = cv::ORB::create();
-  cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
-  mxre::cv_types::ORBMarkerTracker orbMarkerTracker(orb, matcher);
+  //cv::Ptr<cv::ORB> orb = cv::ORB::create();
+  //cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
+  mxre::cv_types::ORBMarkerTracker orbMarkerTracker;
 
   cv::Mat frame;
   cv::namedWindow(video_name, cv::WINDOW_NORMAL);
@@ -77,6 +77,7 @@ int main(int argc, char const *argv[])
   video_src.release();
 
   mxre::kernels::CVCamera cam(camera_no, WIDTH, HEIGHT);
+  cam.duplicateOutPort<mxre::types::Frame>("out_frame", "out_frame2");
   mxre::kernels::Keyboard keyboard;
   mxre::kernels::CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
   mxre::kernels::ObjectCtxExtractor objCtxExtractor(cam.getIntrinsic(), cam.getDistCoeffs(),
@@ -90,23 +91,15 @@ int main(int argc, char const *argv[])
   pipeline += cam["out_frame"] >> cudaORBDetector["in_frame"];
 
   // obj detector - obj ctx extractor
-  pipeline += cudaORBDetector["out_frame"] >> objCtxExtractor["in_frame"];
   pipeline += cudaORBDetector["out_obj_info"] >> objCtxExtractor["in_obj_info"];
 
   // obj ctx extractor - obj renderer
-  pipeline += objCtxExtractor["out_frame"] >> objRenderer["in_frame"];
+  pipeline += cam["out_frame2"] >> objRenderer["in_frame"];
   pipeline += objCtxExtractor["out_obj_context"] >> objRenderer["in_obj_context"];
   pipeline += keyboard["out_keystroke"] >> objRenderer["in_keystroke"];
 
   // obj renderer - test sink
   pipeline += objRenderer["out_frame"] >> cvDisplay["in_frame"];
-
-#ifdef __PROFILE__
-  pipeline += cam["frame_stamp"] >> cudaORBDetector["frame_stamp"];
-  pipeline += cudaORBDetector["frame_stamp"] >> objCtxExtractor["frame_stamp"];
-  pipeline += objCtxExtractor["frame_stamp"] >> objRenderer["frame_stamp"];
-  pipeline += objRenderer["frame_stamp"] >> cvDisplay["frame_stamp"];
-#endif
 
   pipeline.exe();
   return 0;

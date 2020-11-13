@@ -1,51 +1,11 @@
 #include <raft>
-#include <mxre.h>
+#include <mxre>
 #include <bits/stdc++.h>
 
 #define WIDTH 1280
 #define HEIGHT 720
 
 using namespace std;
-
-class TempSrc : public raft::kernel {
-  public:
-  int frame_idx;
-  TempSrc() : raft::kernel() {
-#ifdef __PROFILE__
-    frame_idx=0;
-    output.addPort<mxre::types::FrameStamp>("frame_stamp");
-#endif
-  }
-
-  raft::kstatus run() {
-#ifdef __PROFILE__
-    auto &outFrameStamp( output["frame_stamp"].allocate<mxre::types::FrameStamp>() );
-    outFrameStamp.index = frame_idx++;
-    outFrameStamp.st = getNow();
-    output["frame_stamp"].send();
-#endif
-
-    return raft::proceed;
-  }
-};
-
-
-class TempSink : public raft::kernel {
-  public:
-  TempSink() : raft::kernel() {
-#ifdef __PROFILE__
-    input.addPort<mxre::types::FrameStamp>("frame_stamp");
-#endif
-  }
-
-  raft::kstatus run() {
-#ifdef __PROFILE__
-    auto &inFrameStamp( input["frame_stamp"].peek<mxre::types::FrameStamp>() );
-    input["frame_stamp"].recycle();
-#endif
-    return raft::proceed;
-  }
-};
 
 
 int main(int argc, char const *argv[])
@@ -79,7 +39,7 @@ int main(int argc, char const *argv[])
 
   cv::Ptr<cv::ORB> orb = cv::ORB::create();
   cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
-  mxre::cv_types::ORBMarkerTracker orbMarkerTracker(orb, matcher);
+  mxre::cv_types::ORBMarkerTracker orbMarkerTracker;
 
   cv::Mat frame;
   cv::namedWindow(video_name, cv::WINDOW_NORMAL);
@@ -128,6 +88,7 @@ int main(int argc, char const *argv[])
   mxre::kernels::ObjectCtxExtractor objCtxExtractor(defaultIntrinsic, defaultDistCoeffs, WIDTH, HEIGHT);
   mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), WIDTH, HEIGHT);
   mxre::kernels::RTPFrameReceiver rtpReceiver("mjpeg", 49985, WIDTH, HEIGHT);
+  rtpReceiver.duplicateOutPort<mxre::types::Frame>("out_data", "out_data2");
   mxre::kernels::StaticReceiver<char> keyReceiver(49986, false);
   mxre::kernels::RTPFrameSender rtpSender("mjpeg", "127.0.0.1", 49987, 800000, 10, WIDTH, HEIGHT);
 
@@ -135,22 +96,13 @@ int main(int argc, char const *argv[])
 
   servingPipeline += rtpReceiver["out_data"] >> orbDetector["in_frame"];
 
-  servingPipeline += orbDetector["out_frame"] >> objCtxExtractor["in_frame"];
   servingPipeline += orbDetector["out_obj_info"] >> objCtxExtractor["in_obj_info"];
 
-  servingPipeline += objCtxExtractor["out_frame"] >> objRenderer["in_frame"];
+  servingPipeline += rtpReceiver["out_data2"] >> objRenderer["in_frame"];
   servingPipeline += objCtxExtractor["out_obj_context"] >> objRenderer["in_obj_context"];
   servingPipeline += keyReceiver["out_data"] >> objRenderer["in_keystroke"];
 
   servingPipeline += objRenderer["out_frame"] >> rtpSender["in_data"];
-#ifdef __PROFILE__
-  TempSink tempSink;
-  TempSrc tempSrc;
-  servingPipeline += tempSrc["frame_stamp"] >> orbDetector["frame_stamp"];
-  servingPipeline += orbDetector["frame_stamp"] >> objCtxExtractor["frame_stamp"];
-  servingPipeline += objCtxExtractor["frame_stamp"] >> objRenderer["frame_stamp"];
-  servingPipeline += objRenderer["frame_stamp"] >> tempSink["frame_stamp"];
-#endif
 
   servingPipeline.exe();
   return 0;
