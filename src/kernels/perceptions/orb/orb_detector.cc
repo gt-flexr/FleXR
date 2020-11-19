@@ -5,12 +5,8 @@ namespace mxre
   namespace kernels
   {
     /* Constructor */
-    ORBDetector::ORBDetector(std::vector<mxre::cv_types::ObjectInfo> registeredObjs,
-                                    cv::Ptr<cv::Feature2D> _detector,
-                                    cv::Ptr<cv::DescriptorMatcher> _matcher): MXREKernel(),
-                                                                              objInfos(registeredObjs),
-                                                                              detector(_detector),
-                                                                              matcher(_matcher)
+    ORBDetector::ORBDetector(std::vector<mxre::cv_types::ObjectInfo> registeredObjs):
+      MXREKernel(), objInfos(registeredObjs)
     {
       addInputPort<mxre::types::Frame>("in_frame");
       addOutputPort<std::vector<mxre::cv_types::ObjectInfo>>("out_obj_info");
@@ -20,6 +16,9 @@ namespace mxre
       knnParam = 5;
       ransacThresh = 2.5f;
       minInlierThresh = 10;
+
+      detector = cv::ORB::create();
+      matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
     }
 
 

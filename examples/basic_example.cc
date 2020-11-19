@@ -35,8 +35,6 @@ int main(int argc, char const *argv[])
     return 1;
   }
 
-  cv::Ptr<cv::ORB> orb = cv::ORB::create();
-  cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
   mxre::cv_types::ORBMarkerTracker orbMarkerTracker;
 
   cv::Mat frame;
@@ -78,9 +76,8 @@ int main(int argc, char const *argv[])
   mxre::kernels::CVCamera cam(camera_no, WIDTH, HEIGHT);
   cam.duplicateOutPort<mxre::types::Frame>("out_frame", "out_frame2");
   mxre::kernels::Keyboard keyboard;
-  mxre::kernels::ORBDetector orbDetector(orbMarkerTracker.getRegisteredObjects(), orb, matcher);
-  mxre::kernels::ObjectCtxExtractor objCtxExtractor(cam.getIntrinsic(), cam.getDistCoeffs(),
-      WIDTH, HEIGHT);
+  mxre::kernels::ORBDetector orbDetector(orbMarkerTracker.getRegisteredObjects());
+  mxre::kernels::ObjectCtxExtractor objCtxExtractor(WIDTH, HEIGHT, cam.getIntrinsic(), cam.getDistCoeffs());
   mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), WIDTH, HEIGHT);
   mxre::kernels::CVDisplay cvDisplay;
 

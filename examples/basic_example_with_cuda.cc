@@ -80,8 +80,7 @@ int main(int argc, char const *argv[])
   cam.duplicateOutPort<mxre::types::Frame>("out_frame", "out_frame2");
   mxre::kernels::Keyboard keyboard;
   mxre::kernels::CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
-  mxre::kernels::ObjectCtxExtractor objCtxExtractor(cam.getIntrinsic(), cam.getDistCoeffs(),
-      WIDTH, HEIGHT);
+  mxre::kernels::ObjectCtxExtractor objCtxExtractor(WIDTH, HEIGHT, cam.getIntrinsic(), cam.getDistCoeffs());
   mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), WIDTH, HEIGHT);
   mxre::kernels::CVDisplay cvDisplay;
 

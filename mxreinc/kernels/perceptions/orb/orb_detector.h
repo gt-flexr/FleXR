@@ -34,8 +34,7 @@ namespace mxre
         int minInlierThresh;
 
       public:
-        ORBDetector(std::vector<mxre::cv_types::ObjectInfo> registeredObjs, cv::Ptr<cv::Feature2D> _detector,
-                       cv::Ptr<cv::DescriptorMatcher> _matcher);
+        ORBDetector(std::vector<mxre::cv_types::ObjectInfo> registeredObjs);
         ~ORBDetector();
         bool logic(mxre::types::Frame *inFrame, std::vector<mxre::cv_types::ObjectInfo> *outObjInfo);
         virtual raft::kstatus run();

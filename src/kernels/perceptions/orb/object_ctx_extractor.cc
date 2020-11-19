@@ -4,14 +4,33 @@ namespace mxre
 {
   namespace kernels
   {
-    ObjectCtxExtractor::ObjectCtxExtractor(cv::Mat intrinsic, cv::Mat distCoeffs, int width, int height) :
+    ObjectCtxExtractor::ObjectCtxExtractor(int width, int height): MXREKernel(), width(width), height(height) {
+      camIntrinsic = cv::Mat(3, 3, CV_64FC1);
+      camDistCoeffs = cv::Mat(4, 1, CV_64FC1, {0, 0, 0, 0});
+
+      camIntrinsic.at<double>(0, 0) = width;
+      camIntrinsic.at<double>(0, 1) = 0;
+      camIntrinsic.at<double>(0, 2) = width/2;
+      camIntrinsic.at<double>(1, 0) = 0;
+      camIntrinsic.at<double>(1, 1) = width;
+      camIntrinsic.at<double>(1, 2) = height/2;
+      camIntrinsic.at<double>(2, 0) = 0;
+      camIntrinsic.at<double>(2, 1) = 0;
+      camIntrinsic.at<double>(2, 2) = 1;
+
+      addInputPort<std::vector<mxre::cv_types::ObjectInfo>>("in_obj_info");
+      addOutputPort<std::vector<mxre::gl_types::ObjectContext>>("out_obj_context");
+    }
+
+
+    ObjectCtxExtractor::ObjectCtxExtractor(int width, int height, cv::Mat intrinsic, cv::Mat distCoeffs) :
       MXREKernel(), width(width), height(height)
     {
       camIntrinsic = intrinsic.clone();
       camDistCoeffs = distCoeffs.clone();
 
       addInputPort<std::vector<mxre::cv_types::ObjectInfo>>("in_obj_info");
-      output.addPort<std::vector<mxre::gl_types::ObjectContext>>("out_obj_context");
+      addOutputPort<std::vector<mxre::gl_types::ObjectContext>>("out_obj_context");
     }
 
 
@@ -39,8 +58,8 @@ namespace mxre
 
           // Convert the OCV coordinate system into the OGL coordinate system
           //objCtx.rvec.x = -rotY;   objCtx.rvec.y = -rotZ;   objCtx.rvec.z = rotX;
-          objCtx.rvec.x = rotX;   objCtx.rvec.y = -rotY;   objCtx.rvec.z = -rotZ;
           //objCtx.tvec.x = transY; objCtx.tvec.y = -transZ; objCtx.tvec.z = transX;
+          objCtx.rvec.x = rotX;   objCtx.rvec.y = -rotY;   objCtx.rvec.z = -rotZ;
           objCtx.tvec.x = transX; objCtx.tvec.y = transY; objCtx.tvec.z = -transZ;
           outObjContext->push_back(objCtx);
         }

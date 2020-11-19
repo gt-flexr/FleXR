@@ -29,7 +29,10 @@ namespace mxre
       int width, height;
 
     public:
-      ObjectCtxExtractor(cv::Mat intrinsic, cv::Mat distCoeffs, int width, int height);
+      ObjectCtxExtractor(int width=1280, int height=720);
+      ObjectCtxExtractor(int width, int height, cv::Mat intrinsic, cv::Mat distCoeffs);
+      void setIntrinsic(cv::Mat inIntrinsic) {camIntrinsic = inIntrinsic.clone();}
+      void setDistCoeffs(cv::Mat inDistCoeffs) {camDistCoeffs = inDistCoeffs.clone();}
       virtual raft::kstatus run();
       bool logic(std::vector<mxre::cv_types::ObjectInfo> *inObjInfo,
           std::vector<mxre::gl_types::ObjectContext> *outObjContext);
