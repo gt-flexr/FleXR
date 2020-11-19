@@ -15,7 +15,7 @@ namespace mxre
       knnMatchRatio = 0.8f;
       knnParam = 5;
       ransacThresh = 2.5f;
-      minInlierThresh = 10;
+      minInlierThresh = 20;
 
       detector = cv::ORB::create();
       matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
@@ -99,6 +99,7 @@ namespace mxre
           else
             objIter->isDetected = false;
         }
+        else objIter->isDetected = false;
       }
 
       *outObjInfo = objInfos;

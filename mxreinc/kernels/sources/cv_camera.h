@@ -30,8 +30,8 @@ namespace mxre
     public:
       CVCamera(int dev_idx=0, int width=1280, int height=720);
       ~CVCamera();
-      void setIntrinsic(cv::Mat inIntrinsic) {intrinsic = inIntrinsic;}
-      void setDistCoeffs(cv::Mat inDistCoeffs) {distCoeffs = inDistCoeffs;}
+      void setIntrinsic(cv::Mat inIntrinsic) {intrinsic = inIntrinsic.clone();}
+      void setDistCoeffs(cv::Mat inDistCoeffs) {distCoeffs = inDistCoeffs.clone();}
       cv::Mat getIntrinsic() {return intrinsic;}
       cv::Mat getDistCoeffs() {return distCoeffs;}
       virtual raft::kstatus run() override;

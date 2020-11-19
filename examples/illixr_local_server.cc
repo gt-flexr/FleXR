@@ -47,8 +47,7 @@ int main(int argc, char const *argv[])
   mxre::kernels::Keyboard keyboard;
 
   mxre::kernels::CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
-  mxre::kernels::ObjectCtxExtractor objCtxExtractor(cv::Mat(3, 3, CV_64FC1), cv::Mat(4, 1, CV_64FC1, {0, 0, 0, 0}),
-      WIDTH, HEIGHT);
+  mxre::kernels::ObjectCtxExtractor objCtxExtractor(WIDTH, HEIGHT);
   mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), WIDTH, HEIGHT);
 
   mxre::kernels::AppSink<mxre::types::Frame> appsink;

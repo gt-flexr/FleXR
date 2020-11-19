@@ -16,7 +16,7 @@ namespace mxre
       knnMatchRatio = 0.8f;
       knnParam = 5;
       ransacThresh = 2.5f;
-      minInlierThresh = 50;
+      minInlierThresh = 20;
 
       detector = cv::cuda::ORB::create();
       matcher = cv::cuda::DescriptorMatcher::createBFMatcher(cv::NORM_HAMMING);
@@ -61,9 +61,10 @@ namespace mxre
           }
         }
 
-        cv::Mat inlierMask, homography;
-        std::vector<cv::KeyPoint> objKpInlier, frameKpInlier;
-        std::vector<cv::DMatch> kpInlierMatch;
+        cv::Mat homography;
+        cv::Mat inlierMask;
+        std::vector<cv::KeyPoint> objInlier, frameInlier;
+        std::vector<cv::DMatch> inlierMatches;
 
         // 4. Find the homography with matched kps (at least 4kps for planar obj)
         if(objMatch.size() > 4) {
@@ -74,9 +75,26 @@ namespace mxre
 
         // 5. handle the detected object
         if(objMatch.size()>4 && !homography.empty()) {
-          objIter->isDetected = true;
-          cv::perspectiveTransform(objIter->rect2D, objIter->location2D, homography);
-          //mxre::cv_utils::drawBoundingBox(inFrame, objIter->location2D); TODO Move this to rendering...
+          for (unsigned i = 0; i < objMatch.size(); i++)
+          {
+            if (inlierMask.at<uchar>(i))
+            {
+              int new_i = static_cast<int>(objInlier.size());
+              objInlier.push_back(objMatch[i]);
+              frameInlier.push_back(frameMatch[i]);
+              inlierMatches.push_back(cv::DMatch(new_i, new_i, 0));
+            }
+          }
+
+          // 5. Draw the object rectangle in the frame via homography and inliers
+          if (objInlier.size() >= minInlierThresh)
+          {
+            objIter->isDetected = true;
+            perspectiveTransform(objIter->rect2D, objIter->location2D, homography);
+            //mxre::cv_utils::drawBoundingBox(frame.cvMat, objIter->location2D);
+          }
+          else
+            objIter->isDetected = false;
         }
         else objIter->isDetected = false;
       }
