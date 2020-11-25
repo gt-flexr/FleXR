@@ -8,11 +8,11 @@ namespace mxre
   {
 
     /* Constructor */
-    ObjectRenderer::ObjectRenderer(std::vector<mxre::cv_types::ObjectInfo> registeredObjs, int width, int height) :
+    ObjectRenderer::ObjectRenderer(std::vector<mxre::cv_types::MarkerInfo> registeredMarkers, int width, int height) :
       MXREKernel(), width(width), height(height)
     {
       addInputPort<mxre::types::Frame>("in_frame");
-      addInputPort<std::vector<mxre::gl_types::ObjectContext>>("in_obj_context");
+      addInputPort<std::vector<mxre::gl_types::ObjectContext>>("in_marker_contexts");
       addInputPort<char>("in_keystroke");
       addOutputPort<mxre::types::Frame>("out_frame");
 
@@ -28,9 +28,9 @@ namespace mxre
       // 2.1. Init shader
       worldManager.initShader();
       // 2.2. Add new worlds
-      std::vector<mxre::cv_types::ObjectInfo>::iterator objIter;
-      for(objIter = registeredObjs.begin(); objIter != registeredObjs.end(); ++objIter) {
-        worldManager.addWorld(objIter->index);
+      std::vector<mxre::cv_types::MarkerInfo>::iterator markerInfo;
+      for(markerInfo = registeredMarkers.begin(); markerInfo != registeredMarkers.end(); ++markerInfo) {
+        worldManager.addWorld(markerInfo->index);
       }
       // 2.3. Add an object to each world (temporarily)
       for(int i = 0; i < worldManager.numOfWorlds; i++)
@@ -50,7 +50,8 @@ namespace mxre
 
 
     /* Kernel Logic */
-    bool ObjectRenderer::logic(mxre::types::Frame *inFrame, std::vector<mxre::gl_types::ObjectContext> *inObjContext,
+    bool ObjectRenderer::logic(mxre::types::Frame *inFrame,
+                               std::vector<mxre::gl_types::ObjectContext> *inMarkerContexts,
                                char inKey, mxre::types::Frame *outFrame)
     {
       // 1. Create/update background texture & release previous CV frame
@@ -75,7 +76,7 @@ namespace mxre
       glEnd();
       mxre::gl_utils::endBackground();
 
-      worldManager.startWorlds(inKey, *inObjContext);
+      worldManager.startWorlds(inKey, *inMarkerContexts);
 
       *outFrame = mxre::gl_utils::exportGLBufferToCV(width, height);
       return true;
@@ -97,7 +98,7 @@ namespace mxre
 
       // 0.0.Get inputs from the previous kernel: ObjectDetector
       auto &inFrame( input["in_frame"].peek<mxre::types::Frame>() );
-      auto &inObjContext( input["in_obj_context"].peek<std::vector<mxre::gl_types::ObjectContext>>() );
+      auto &inMarkerContexts( input["in_marker_contexts"].peek<std::vector<mxre::gl_types::ObjectContext>>() );
 
       // 0.1.Get input keystroke from Keyboard
       char inKey;
@@ -111,13 +112,13 @@ namespace mxre
       // 0.2.Set output
       auto &outFrame( output["out_frame"].allocate<mxre::types::Frame>() );
 
-      if(logic(&inFrame, &inObjContext, inKey, &outFrame)) {
+      if(logic(&inFrame, &inMarkerContexts, inKey, &outFrame)) {
         output["out_frame"].send();
         sendFrameCopy("out_frame", &outFrame);
       }
 
       recyclePort("in_frame");
-      recyclePort("in_obj_context");
+      recyclePort("in_marker_contexts");
 
       debug_print("END");
 #ifdef __PROFILE__

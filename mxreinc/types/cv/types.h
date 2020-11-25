@@ -12,17 +12,33 @@ namespace mxre
 {
   namespace cv_types
   {
-    typedef struct ObjectInfo
+
+    typedef struct MarkerInfo
     {
       int index;
       cv::Mat img;
       cv::Mat desc;
       std::vector<cv::KeyPoint> kps;
-      std::vector<cv::Point3f> rect3D;
-      std::vector<cv::Point2f> rect2D;
-      std::vector<cv::Point2f> location2D;
-      bool isDetected;
-    } ObjectInfo;
+      std::vector<cv::Point3f> defaultLocationIn3D;
+      std::vector<cv::Point2f> defaultLocationIn2D;
+    } MarkerInfo;
+
+
+    typedef struct DetectedMarker {
+      int index;
+      std::vector<cv::Point3f> defaultLocationIn3D;
+      std::vector<cv::Point2f> locationIn2D;
+    } DetectedMarker;
+
+
+    typedef struct Point3fForCommunication {
+      float x, y, z;
+    } Point3fForCommunication;
+
+
+    typedef struct Point2fForCommunication {
+      float x, y;
+    } Point2fForCommunication;
 
   } // namespace cv_types
 } // namespace mxre

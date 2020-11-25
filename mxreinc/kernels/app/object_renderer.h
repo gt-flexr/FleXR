@@ -38,10 +38,10 @@ namespace mxre
       int width, height;
 
     public:
-      ObjectRenderer(std::vector<mxre::cv_types::ObjectInfo> registeredObjs, int width, int height);
+      ObjectRenderer(std::vector<mxre::cv_types::MarkerInfo> registeredMarkers, int width, int height);
       ~ObjectRenderer();
       virtual raft::kstatus run();
-      bool logic(mxre::types::Frame *inFrame, std::vector<mxre::gl_types::ObjectContext> *inObjContext, char inKey,
+      bool logic(mxre::types::Frame *inFrame, std::vector<mxre::gl_types::ObjectContext> *inMarkerContexts, char inKey,
                  mxre::types::Frame *outFrame);
     };
 

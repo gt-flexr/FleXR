@@ -6,11 +6,11 @@ namespace mxre
 {
   namespace kernels
   {
-    CudaORBDetector::CudaORBDetector(std::vector<mxre::cv_types::ObjectInfo> registeredObjVec) :
-      MXREKernel(), objInfoVec(registeredObjVec)
+    CudaORBDetector::CudaORBDetector(std::vector<mxre::cv_types::MarkerInfo> registeredMarkers) :
+      MXREKernel(), registeredMarkers(registeredMarkers)
     {
       addInputPort<mxre::types::Frame>("in_frame");
-      addOutputPort<std::vector<mxre::cv_types::ObjectInfo>>("out_obj_info");
+      addOutputPort<std::vector<mxre::cv_types::DetectedMarker>>("out_detected_markers");
 
       // Object Detection Parameters
       knnMatchRatio = 0.8f;
@@ -23,7 +23,8 @@ namespace mxre
     }
 
 
-    bool CudaORBDetector::logic(mxre::types::Frame *inFrame, std::vector<mxre::cv_types::ObjectInfo> *outObjInfo)
+    bool CudaORBDetector::logic(mxre::types::Frame *inFrame,
+                                std::vector<mxre::cv_types::DetectedMarker> *outDetectedMarkers)
     {
       std::vector<cv::KeyPoint> frameKps;
 
@@ -39,14 +40,14 @@ namespace mxre
       inFrame->release(); // deallocate the frame memory
 
       // 3. multi-obj detection
-      std::vector<mxre::cv_types::ObjectInfo>::iterator objIter;
-      for(objIter = objInfoVec.begin(); objIter!=objInfoVec.end(); ++objIter) {
+      std::vector<mxre::cv_types::MarkerInfo>::iterator markerInfo;
+      for(markerInfo = registeredMarkers.begin(); markerInfo!=registeredMarkers.end(); ++markerInfo){
         cv::cuda::GpuMat cuObjDesc;
-        std::vector< std::vector<cv::DMatch> > matches;
+        std::vector<std::vector<cv::DMatch>> matches;
         std::vector<cv::KeyPoint> objMatch, frameMatch;
 
         // 3-1. upload each objDesc into cuDesc
-        cuObjDesc.upload(objIter->desc);
+        cuObjDesc.upload(markerInfo->desc);
 
         // 3-2. find matched descs for finding matching kps
         matcher->knnMatchAsync(cuObjDesc, cuDesc, cuMatches, 2, cv::noArray(), stream);
@@ -56,7 +57,7 @@ namespace mxre
         // 3-3. with matched descs, find corresponding keypoints
         for(unsigned i = 0; i < matches.size(); i++) {
           if(matches[i][0].distance < knnMatchRatio * matches[i][1].distance) {
-            objMatch.push_back(objIter->kps[matches[i][0].queryIdx]);
+            objMatch.push_back(markerInfo->kps[matches[i][0].queryIdx]);
             frameMatch.push_back(frameKps[matches[i][0].trainIdx]);
           }
         }
@@ -89,17 +90,15 @@ namespace mxre
           // 5. Draw the object rectangle in the frame via homography and inliers
           if (objInlier.size() >= minInlierThresh)
           {
-            objIter->isDetected = true;
-            perspectiveTransform(objIter->rect2D, objIter->location2D, homography);
-            //mxre::cv_utils::drawBoundingBox(frame.cvMat, objIter->location2D);
+            cv_types::DetectedMarker detectedMarker;
+            detectedMarker.index = markerInfo->index;
+            detectedMarker.defaultLocationIn3D = markerInfo->defaultLocationIn3D;
+            perspectiveTransform(markerInfo->defaultLocationIn2D, detectedMarker.locationIn2D, homography);
+            outDetectedMarkers->push_back(detectedMarker);
           }
-          else
-            objIter->isDetected = false;
         }
-        else objIter->isDetected = false;
       }
 
-      *outObjInfo = objInfoVec;
       return true;
     }
 
@@ -110,12 +109,12 @@ namespace mxre
 #endif
       debug_print("START");
 
-      auto &inFrame( input["in_frame"].peek<mxre::types::Frame>() );
-      auto &outObjInfo( output["out_obj_info"].allocate<std::vector<mxre::cv_types::ObjectInfo>>() );
+      auto &inFrame(input["in_frame"].peek<mxre::types::Frame>());
+      auto &outDetectedMarkers(output["out_detected_markers"].allocate<std::vector<mxre::cv_types::DetectedMarker>>());
 
-      if(logic(&inFrame, &outObjInfo)) {
-        output["out_obj_info"].send();
-        sendPrimitiveCopy("out_obj_info", &outObjInfo);
+      if(logic(&inFrame, &outDetectedMarkers)) {
+        output["out_detected_markers"].send();
+        sendPrimitiveCopy("out_detected_markers", &outDetectedMarkers);
       }
 
       recyclePort("in_frame");

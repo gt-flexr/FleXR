@@ -18,14 +18,14 @@ namespace mxre
     private:
       cv::Ptr<cv::Feature2D> detector;
       cv::Ptr<cv::DescriptorMatcher> matcher;
-      std::vector<ObjectInfo> objInfo;
+      std::vector<MarkerInfo> markerInfo;
       int numOfObjs;
 
     public:
       ORBMarkerTracker();
       void registerObject(const cv::Mat frame, cv::Rect roiRect);
       void printRegisteredObjects();
-      std::vector<ObjectInfo> getRegisteredObjects() { return objInfo; }
+      std::vector<MarkerInfo> getRegisteredObjects() { return markerInfo; }
     };
 
   } // namespace cv_types

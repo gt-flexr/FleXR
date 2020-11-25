@@ -11,59 +11,51 @@ namespace mxre
 
 
     void ORBMarkerTracker::registerObject(const cv::Mat frame, cv::Rect roiRect) {
-      // get the object mask
-      std::vector<cv::Point2f> roiPoints;
-      roiPoints.push_back(cv::Point2f(static_cast<float>(roiRect.x), static_cast<float>(roiRect.y)));
-      roiPoints.push_back(cv::Point2f(static_cast<float>(roiRect.x + roiRect.width), static_cast<float>(roiRect.y)));
-      roiPoints.push_back(cv::Point2f(static_cast<float>(roiRect.x + roiRect.width),
-                                      static_cast<float>(roiRect.y + roiRect.height)));
-      roiPoints.push_back(cv::Point2f(static_cast<float>(roiRect.x), static_cast<float>(roiRect.y + roiRect.height)));
+      cv::Point roiMask[4];
 
-      cv::Point *roiMask = new cv::Point[roiPoints.size()];
-      const cv::Point *roiMaskHead = {&roiMask[0]};
-      int roiPointNum = static_cast<int>(roiPoints.size());
+      roiMask[0] = cv::Point2f(static_cast<float>(roiRect.x), static_cast<float>(roiRect.y));
+      roiMask[1] = cv::Point2f(static_cast<float>(roiRect.x + roiRect.width), static_cast<float>(roiRect.y));
+      roiMask[2] = cv::Point2f(static_cast<float>(roiRect.x + roiRect.width), static_cast<float>(roiRect.y + roiRect.height));
+      roiMask[3] = cv::Point2f(static_cast<float>(roiRect.x), static_cast<float>(roiRect.y + roiRect.height));
 
-      for (size_t i = 0; i < roiPoints.size(); i++)
-      {
-        roiMask[i].x = static_cast<int>(roiPoints[i].x);
-        roiMask[i].y = static_cast<int>(roiPoints[i].y);
-      }
+      const cv::Point *roiMaskHead = roiMask;
+      int roiPointNum = 4;
       cv::Mat maskFrame = cv::Mat::zeros(frame.size(), CV_8UC1);
       cv::fillPoly(maskFrame, &roiMaskHead, &roiPointNum, 1, cv::Scalar::all(255));
 
-      std::vector<cv::Point3f> rect3D;
-      rect3D.push_back(cv::Point3f(0, 0, 0));
-      rect3D.push_back(cv::Point3f(roiRect.width, 0, 0));
-      rect3D.push_back(cv::Point3f(roiRect.width, roiRect.height, 0));
-      rect3D.push_back(cv::Point3f(0, roiRect.height, 0));
+      MarkerInfo newMarker;
+      newMarker.defaultLocationIn3D.push_back(cv::Point3f(0, 0, 0));
+      newMarker.defaultLocationIn3D.push_back(cv::Point3f(roiRect.width, 0, 0));
+      newMarker.defaultLocationIn3D.push_back(cv::Point3f(roiRect.width, roiRect.height, 0));
+      newMarker.defaultLocationIn3D.push_back(cv::Point3f(0, roiRect.height, 0));
 
-      ObjectInfo newInfo;
-      newInfo.img = frame(roiRect);
-      newInfo.rect3D = rect3D;
-      newInfo.rect2D = roiPoints;
-      detector->detectAndCompute(frame, maskFrame, newInfo.kps, newInfo.desc);
-      newInfo.index = numOfObjs++;
+      newMarker.defaultLocationIn2D.push_back(cv::Point2f(0, 0));
+      newMarker.defaultLocationIn2D.push_back(cv::Point2f(roiRect.width, 0));
+      newMarker.defaultLocationIn2D.push_back(cv::Point2f(roiRect.width, roiRect.height));
+      newMarker.defaultLocationIn2D.push_back(cv::Point2f(0, roiRect.height));
 
-      objInfo.push_back(newInfo);
+      newMarker.img = frame(roiRect);
+      detector->detectAndCompute(frame, maskFrame, newMarker.kps, newMarker.desc);
+      newMarker.index = numOfObjs++;
 
-      delete[] roiMask;
+      markerInfo.push_back(newMarker);
     }
 
 
     void ORBMarkerTracker::printRegisteredObjects() {
       std::cout << "===== printRegisteredObjects =====" << std::endl;
-      for(std::vector<ObjectInfo>::iterator it = objInfo.begin(); it != objInfo.end(); ++it) {
+      for(std::vector<MarkerInfo>::iterator it = markerInfo.begin(); it != markerInfo.end(); ++it) {
         printf("%dth Object Info \n", it->index);
         std::cout << "\tROI size: " << it->img.size() << std::endl;
-        if (it->location2D.size() == 4)
+        if (it->defaultLocationIn2D.size() == 4)
         {
           printf("\tROI Location: 0(%f, %f), 1(%f, %f), 2(%f, %f), 3(%f, %f) \n",
-                 it->location2D[0].x, it->location2D[0].y,
-                 it->location2D[1].x, it->location2D[1].y,
-                 it->location2D[2].x, it->location2D[2].y,
-                 it->location2D[3].x, it->location2D[3].y);
+                 it->defaultLocationIn2D[0].x, it->defaultLocationIn2D[0].y,
+                 it->defaultLocationIn2D[1].x, it->defaultLocationIn2D[1].y,
+                 it->defaultLocationIn2D[2].x, it->defaultLocationIn2D[2].y,
+                 it->defaultLocationIn2D[3].x, it->defaultLocationIn2D[3].y);
         }
-        printf("\t# of kps: %d\n", (int)it->kps.size());
+        printf("\tkps: %d, descs: %d\n", (int)it->kps.size(), (int)it->desc.total());
       }
       std::cout << "==================================" << std::endl;
     }
