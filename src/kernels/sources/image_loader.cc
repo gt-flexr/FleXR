@@ -1,4 +1,5 @@
 #include <kernels/sources/image_loader.h>
+#include <opencv2/highgui.hpp>
 #include <types/cv/types.h>
 
 namespace mxre
@@ -14,6 +15,7 @@ namespace mxre
       this->stemName = stemName;
       this->width = width;
       this->height = height;
+      this->periodMS = 0;
 
       addOutputPort<mxre::types::Frame>("out_frame");
     }
@@ -25,6 +27,8 @@ namespace mxre
 
     /* Kernel Run */
     raft::kstatus ImageLoader::run() {
+      sleepForMS(periodMS); // control read frequency
+
 #ifdef __PROFILE__
       start = getNow();
 #endif
@@ -35,23 +39,22 @@ namespace mxre
       std::string imagePath = path + stemName + ss.str() + ".png";
 
       auto &outFrame( output["out_frame"].allocate<mxre::types::Frame>() );
-      outFrame = mxre::types::Frame(height, width, CV_8UC3);
-      cv::Mat outFrameAsCVMat = outFrame.useAsCVMat();
-      outFrameAsCVMat = cv::imread(imagePath);
-      if(outFrameAsCVMat.empty()) {
+      cv::Mat image = cv::imread(imagePath);
+      if(image.empty()) {
         debug_print("Could not read the image: %s", imagePath.c_str());
         return raft::stop;
       }
 
-      int rowPadding = height - outFrameAsCVMat.rows;
-      int colPadding = width - outFrameAsCVMat.cols;
-      cv::copyMakeBorder(outFrameAsCVMat, outFrameAsCVMat, 0, rowPadding, 0, colPadding, cv::BORDER_CONSTANT,
-          cv::Scalar::all(0));
-      //std::string ty =  cv_types::type2str( image.type() );
-      //printf("Matrix: %s %dx%d \n", ty.c_str(), image.cols, image.rows );
+      int rowPadding = height - image.rows;
+      int colPadding = width - image.cols;
+      if(rowPadding > 0 && colPadding > 0) {
+        //debug_print("padding : %d %d", rowPadding, colPadding);
+        cv::copyMakeBorder(image, image, 0, rowPadding, 0, colPadding, cv::BORDER_CONSTANT,
+            cv::Scalar::all(0));
+      }
 
-      printf("IMG LOADER %d %d / %d %d\n", (int)outFrame.cols, (int)outFrame.rows,
-             outFrameAsCVMat.cols, outFrameAsCVMat.rows);
+      outFrame = mxre::types::Frame(image);
+      //debug_print("IMG LOADER %d %d from image %d %d\n", (int)outFrame.cols, (int)outFrame.rows, image.cols, image.rows);
       output["out_frame"].send();
       sendFrameCopy("out_frame", &outFrame);
 
