@@ -12,14 +12,15 @@ namespace mxre {
   namespace kernels {
 
     template<typename RECV_T>
-    class PredictionReceiver : public kernels::MessageReceiver {
+    class PredictionReceiver : public MXREKernel{
       public:
-      PredictionReceiver(int port=5555) : kernels::MessageReceiver(port){
+      PredictionReceiver(int port=5555) : MXREKernel(){
         output.addPort<std::vector<RECV_T>>("out_predictions");
       }
 
       raft::kstatus run() {
         int num;
+        /*
         zmq_recv(sock, &num, sizeof(int), 0);
         zmq_send(sock, "ack", strlen("ack"), 0);
 
@@ -35,7 +36,7 @@ namespace mxre {
           predictions.push_back(pred);
         }
 
-        output["out_predictions"].send();
+        output["out_predictions"].send();*/
         return raft::proceed;
       }
     };
