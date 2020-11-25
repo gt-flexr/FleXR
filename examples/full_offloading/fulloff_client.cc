@@ -27,7 +27,7 @@ int main(int argc, char const *argv[])
   sendingPipe += cam["out_frame"] >> rtpSender["in_data"];
 
   mxre::kernels::Keyboard keyboard;
-  mxre::kernels::StaticSender<char> keySender("127.0.0.1", 49986, false);
+  mxre::kernels::MessageSender<char> keySender("127.0.0.1", 49986, mxre::utils::sendPrimitive<char>);
   sendingPipe += keyboard["out_keystroke"] >> keySender["in_data"];
 
   std::thread sendingThread(runPipeline, &sendingPipe);
