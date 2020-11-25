@@ -8,6 +8,8 @@ list(APPEND EXAMPLE_SRCS
   full_offloading/fulloff_server.cc
   partial_offloading/detector_only_client.cc
   partial_offloading/detector_only_server.cc
+  partial_offloading/perception_only_client.cc
+  partial_offloading/perception_only_server.cc
 )
 
 if(${USE_OPENCV_CUDA})
@@ -16,6 +18,7 @@ list(APPEND EXAMPLE_SRCS
   imgloader_example_with_cuda.cc
   full_offloading/fulloff_server_with_cuda.cc
   partial_offloading/detector_only_server_with_cuda.cc
+  partial_offloading/perception_only_server_with_cuda.cc
 )
 endif(${USE_OPENCV_CUDA})
 
