@@ -2,7 +2,6 @@ file(GLOB_RECURSE EXAMPLE_SRCS modules/*.cc)
 list(APPEND EXAMPLE_SRCS
   basic_example.cc
   complex_yolo.cc
-  illixr_local_server.cc
 
   full_offloading/fulloff_client.cc
   full_offloading/fulloff_server.cc
@@ -16,6 +15,7 @@ if(${USE_OPENCV_CUDA})
 list(APPEND EXAMPLE_SRCS
   basic_example_with_cuda.cc
   imgloader_example_with_cuda.cc
+  illixr_local_server.cc
   full_offloading/fulloff_server_with_cuda.cc
   partial_offloading/detector_only_server_with_cuda.cc
   partial_offloading/perception_only_server_with_cuda.cc
