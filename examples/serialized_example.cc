@@ -12,6 +12,7 @@ int main(int argc, char const *argv[])
 {
   mxre::cv_types::ORBMarkerTracker orbMarkerTracker;
   mxre::cv_utils::setMarkerFromImages("/home/jin/github/mxre/resources/markers/", "720p_marker", 0, 1, orbMarkerTracker);
+  //mxre::cv_utils::setMarkerFromImages("/home/jin/github/mxre/resources/markers/", "1080p_marker", 0, 1, orbMarkerTracker);
   std::vector<mxre::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
 
   int frame_idx = 1;
@@ -58,11 +59,16 @@ int main(int argc, char const *argv[])
     ss << std::setfill('0') << std::setw(6);
     ss << frame_idx++;
     std::string imagePath = "/home/jin/github/mxre/resources/video/720p/video_" + ss.str() + ".png";
+    //std::string imagePath = "/home/jin/github/mxre/resources/video/1080p/video_" + ss.str() + ".png";
     cv::Mat image = cv::imread(imagePath);
     if(image.empty()) {
       debug_print("Could not read the image: %s", imagePath.c_str());
       break;
     }
+
+#ifdef __PROFILE__
+    mxre::types::TimeVal start = getNow();
+#endif
 
     /********************************
                Detect Markers
@@ -190,10 +196,22 @@ int main(int argc, char const *argv[])
 
     worldManager.startWorlds('f', markerContexts);
 
+#ifdef __PROFILE__
+    mxre::types::TimeVal eglCost = getNow();
+#endif
     mxre::types::Frame resultFrame = mxre::gl_utils::exportGLBufferToCV(WIDTH, HEIGHT);
 
-    cv::imshow("CVDisplay", resultFrame.useAsCVMat());
-    int inKey = cv::waitKey(100) & 0xFF;
+#ifdef __PROFILE__
+    mxre::types::TimeVal end = getNow();
+    double exeTime = getExeTime(end, start);
+    double fps = 1000 / exeTime;
+
+    profile_print("eglCost: %lfms", getExeTime(end, eglCost));
+    profile_print("Exe Time: %lfms fps: %f", exeTime, fps);
+#endif
+
+    //cv::imshow("CVDisplay", resultFrame.useAsCVMat());
+    //int inKey = cv::waitKey(100) & 0xFF;
     resultFrame.release();
   }
 

@@ -23,7 +23,8 @@ int main(int argc, char const *argv[])
   mxre::kernels::CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
   mxre::kernels::MarkerCtxExtractor markerCtxExtractor(WIDTH, HEIGHT);
   mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), WIDTH, HEIGHT);
-  mxre::kernels::CVDisplay cvDisplay;
+  //mxre::kernels::CVDisplay cvDisplay;
+  mxre::kernels::NonDisplay nonDisplay;
 
   raft::map pipeline;
 
@@ -39,7 +40,7 @@ int main(int argc, char const *argv[])
   pipeline += keyboard["out_keystroke"] >> objRenderer["in_keystroke"];
 
   // obj renderer - test sink
-  pipeline += objRenderer["out_frame"] >> cvDisplay["in_frame"];
+  pipeline += objRenderer["out_frame"] >> nonDisplay["in_frame"];
 
   pipeline.exe();
   return 0;

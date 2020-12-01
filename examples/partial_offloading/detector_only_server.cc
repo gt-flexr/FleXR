@@ -11,7 +11,7 @@ using namespace std;
 int main(int argc, char const *argv[])
 {
   mxre::cv_types::ORBMarkerTracker orbMarkerTracker;
-  mxre::cv_utils::setMarkerFromImages("/home/jin/github/mxre/resources/markers/", "marker", 0, 1, orbMarkerTracker);
+  mxre::cv_utils::setMarkerFromImages("/home/jin/github/mxre/resources/markers/", "720p_marker", 0, 1, orbMarkerTracker);
 
   raft::map servingPipeline;
   mxre::kernels::RTPFrameReceiver rtpReceiver("mjpeg", 49985, WIDTH, HEIGHT);
