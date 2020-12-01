@@ -1,43 +1,78 @@
-#ifndef __MXRE_MSG_SENDER__
-#define __MXRE_MSG_SENDER__
+#ifndef __MXRE_MESSAGE_SENDER__
+#define __MXRE_MESSAGE_SENDER__
 
 #include <bits/stdc++.h>
 #include <raft>
-#include <zmq.h>
-
+#include <zmq.hpp>
 #include "defs.h"
+#include "kernels/kernel.h"
+#include "types/clock_types.h"
 
 namespace mxre
 {
   namespace kernels
   {
-
-    class MessageSender : public raft::kernel
+    /* Class Deifinition */
+    template<typename IN_T>
+    class MessageSender : public mxre::kernels::MXREKernel
     {
-      protected:
-        void *ctx;
-        void *sock;
+      private:
+        void (*send)(IN_T*, zmq::socket_t*);
+        zmq::context_t ctx;
+        zmq::socket_t sock;
       public:
-        MessageSender(std::string addr="localhost", int port=5555);
+        MessageSender(std::string addr="localhost", int port=5555, void (*send)(IN_T*, zmq::socket_t*)=NULL);
         ~MessageSender();
+        virtual raft::kstatus run();
     };
 
 
-    MessageSender::MessageSender(std::string addr, int port) : raft::kernel() {
-      ctx = zmq_ctx_new();
-      sock = zmq_socket(ctx, ZMQ_REQ);
-
+    /* Constructor */
+    template<typename IN_T>
+    MessageSender<IN_T>::MessageSender(std::string addr, int port, void (*send)(IN_T*, zmq::socket_t*)): MXREKernel() {
+      sock = zmq::socket_t(ctx, zmq::socket_type::req);
       std::string connectingAddr = "tcp://" + addr + ":" + std::to_string(port);
-      debug_print("[MessageSender] connect to %s", connectingAddr.c_str());
-      zmq_connect(sock, connectingAddr.c_str());
+      sock.connect(connectingAddr);
+
+      this->send = send;
+      addInputPort<IN_T>("in_data");
     }
 
-    MessageSender::~MessageSender() {
-      zmq_close(sock);
-      zmq_ctx_destroy(ctx);
+
+    /* Destructor */
+    template<typename IN_T>
+    MessageSender<IN_T>::~MessageSender() {
+      sock.close();
+      ctx.shutdown();
+      ctx.close();
     }
 
-  }   // namespace kernels
+
+    /* Run */
+    template<typename IN_T>
+    raft::kstatus MessageSender<IN_T>::run() {
+#ifdef __PROFILE__
+      mxre::types::TimeVal start = getNow();
+#endif
+
+      auto &inData( input["in_data"].template peek<IN_T>() );
+
+      if(send != NULL) send(&inData, &sock);
+      else {
+        debug_print("send function pointer is invalid.");
+      }
+
+      recyclePort("in_data");
+
+#ifdef __PROFILE__
+      mxre::types::TimeVal end = getNow();
+      profile_print("Exe Time: %lfms", getExeTime(end, start));
+#endif
+
+      return raft::proceed;
+    }
+
+  } // namespace kernels
 } // namespace mxre
 
 #endif

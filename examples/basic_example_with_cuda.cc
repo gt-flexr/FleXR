@@ -80,8 +80,7 @@ int main(int argc, char const *argv[])
   cam.duplicateOutPort<mxre::types::Frame>("out_frame", "out_frame2");
   mxre::kernels::Keyboard keyboard;
   mxre::kernels::CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
-  mxre::kernels::ObjectCtxExtractor objCtxExtractor(cam.getIntrinsic(), cam.getDistCoeffs(),
-      WIDTH, HEIGHT);
+  mxre::kernels::MarkerCtxExtractor markerCtxExtractor(WIDTH, HEIGHT, cam.getIntrinsic(), cam.getDistCoeffs());
   mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), WIDTH, HEIGHT);
   mxre::kernels::CVDisplay cvDisplay;
 
@@ -91,11 +90,11 @@ int main(int argc, char const *argv[])
   pipeline += cam["out_frame"] >> cudaORBDetector["in_frame"];
 
   // obj detector - obj ctx extractor
-  pipeline += cudaORBDetector["out_obj_info"] >> objCtxExtractor["in_obj_info"];
+  pipeline += cudaORBDetector["out_detected_markers"] >> markerCtxExtractor["in_detected_markers"];
 
   // obj ctx extractor - obj renderer
   pipeline += cam["out_frame2"] >> objRenderer["in_frame"];
-  pipeline += objCtxExtractor["out_obj_context"] >> objRenderer["in_obj_context"];
+  pipeline += markerCtxExtractor["out_marker_contexts"] >> objRenderer["in_marker_contexts"];
   pipeline += keyboard["out_keystroke"] >> objRenderer["in_keystroke"];
 
   // obj renderer - test sink

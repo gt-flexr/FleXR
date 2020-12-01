@@ -24,7 +24,7 @@ namespace mxre
     class ORBDetector : public MXREKernel
     {
       private:
-        std::vector<mxre::cv_types::ObjectInfo> objInfos;
+        std::vector<mxre::cv_types::MarkerInfo> registeredMarkers;
         cv::Ptr<cv::Feature2D> detector;
         cv::Ptr<cv::DescriptorMatcher> matcher;
 
@@ -34,10 +34,9 @@ namespace mxre
         int minInlierThresh;
 
       public:
-        ORBDetector(std::vector<mxre::cv_types::ObjectInfo> registeredObjs, cv::Ptr<cv::Feature2D> _detector,
-                       cv::Ptr<cv::DescriptorMatcher> _matcher);
+        ORBDetector(std::vector<mxre::cv_types::MarkerInfo> registeredMarkers);
         ~ORBDetector();
-        bool logic(mxre::types::Frame *inFrame, std::vector<mxre::cv_types::ObjectInfo> *outObjInfo);
+        bool logic(mxre::types::Frame *inFrame, std::vector<mxre::cv_types::DetectedMarker> *outDetectedMarkers);
         virtual raft::kstatus run();
     };
 

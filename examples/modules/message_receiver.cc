@@ -41,16 +41,18 @@ class TestSink : public raft::kernel {
 int main(int argc, char const *argv[])
 {
   cout << "server start!" << endl;
-  bool isVector = true;
+  bool isVector = false;
 
   TestSink<int> testSink(isVector);
-  mxre::kernels::StaticReceiver<int> staticReceiver(5555, isVector);
+  //mxre::kernels::MessageReceiver<std::vector<int>> messageReceiver(5555, mxre::utils::recvPrimitiveVector<std::vector<int>>);
+  mxre::kernels::MessageReceiver<int> messageReceiver(5555, mxre::utils::recvPrimitive<int>);
   cout << "created pipeline elements" << endl;
 
   raft::map pipeline;
 
-  pipeline += staticReceiver["out_data"] >> testSink["in_data"];
+  pipeline += messageReceiver["out_data"] >> testSink["in_data"];
   cout << "\tpipeline.exe" << endl;
   pipeline.exe();
   return 0;
 }
+

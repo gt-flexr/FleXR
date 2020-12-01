@@ -5,6 +5,8 @@
 #include <iostream>
 #include <raft>
 #include <cv.hpp>
+#include <chrono>
+#include <thread>
 #include <raftinc/rafttypes.hpp>
 
 #include "defs.h"
@@ -18,9 +20,15 @@ namespace mxre
     class MXREKernel : public raft::kernel
     {
       protected:
+        unsigned int periodMS;
         std::multimap<std::string, std::string> oPortMap;
         template<typename T> void addInputPort(std::string id) { input.addPort<T>(id); }
         template<typename T> void addOutputPort(std::string id) { output.addPort<T>(id); }
+        void sleepForMS(int period) {
+          if(period > 0) std::this_thread::sleep_for(std::chrono::milliseconds(period));
+        }
+
+
 #ifdef __PROFILE__
         mxre::types::TimeVal start, end;
 #endif
@@ -32,6 +40,10 @@ namespace mxre
 
         /* Destructor */
         ~MXREKernel(){ };
+
+
+        /* setSleepPeriodMS() */
+        void setSleepPeriodMS(int period) { periodMS = period; }
 
 
         /* run(): set in/out ports and call logic() */

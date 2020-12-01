@@ -25,7 +25,7 @@ namespace mxre
     class CudaORBDetector : public MXREKernel
     {
       private:
-        std::vector<mxre::cv_types::ObjectInfo> objInfoVec;
+        std::vector<mxre::cv_types::MarkerInfo> registeredMarkers;
         cv::Ptr<cv::cuda::ORB> detector;
         cv::Ptr<cv::cuda::DescriptorMatcher> matcher;
         cv::cuda::Stream stream;
@@ -39,9 +39,9 @@ namespace mxre
         int minInlierThresh;
 
       public:
-        CudaORBDetector(std::vector<mxre::cv_types::ObjectInfo> registeredObjs);
+        CudaORBDetector(std::vector<mxre::cv_types::MarkerInfo> registeredObjs);
         virtual raft::kstatus run();
-        bool logic(mxre::types::Frame *inFrame, std::vector<mxre::cv_types::ObjectInfo> *outObjInfo);
+        bool logic(mxre::types::Frame *inFrame, std::vector<mxre::cv_types::DetectedMarker> *outDetectedMarkers);
     };
 
   }   // namespace kernels

@@ -47,8 +47,7 @@ int main(int argc, char const *argv[])
   mxre::kernels::Keyboard keyboard;
 
   mxre::kernels::CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
-  mxre::kernels::ObjectCtxExtractor objCtxExtractor(cv::Mat(3, 3, CV_64FC1), cv::Mat(4, 1, CV_64FC1, {0, 0, 0, 0}),
-      WIDTH, HEIGHT);
+  mxre::kernels::MarkerCtxExtractor markerCtxExtractor(WIDTH, HEIGHT);
   mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), WIDTH, HEIGHT);
 
   mxre::kernels::AppSink<mxre::types::Frame> appsink;
@@ -58,10 +57,10 @@ int main(int argc, char const *argv[])
   appsink.setup("sink");
 
   xrPipeline += appsource["out_data"] >>  cudaORBDetector["in_frame"];
-  xrPipeline += cudaORBDetector["out_obj_info"] >> objCtxExtractor["in_obj_info"];
+  xrPipeline += cudaORBDetector["out_obj_info"] >> markerCtxExtractor["in_obj_info"];
 
   xrPipeline += appsource["out_data2"] >> objRenderer["in_frame"];
-  xrPipeline += objCtxExtractor["out_obj_context"] >> objRenderer["in_obj_context"];
+  xrPipeline += markerCtxExtractor["out_obj_context"] >> objRenderer["in_obj_context"];
   xrPipeline += keyboard["out_keystroke"] >> objRenderer["in_keystroke"];
 
   xrPipeline += objRenderer["out_frame"] >> appsink["in_data"];

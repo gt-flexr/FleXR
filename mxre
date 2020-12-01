@@ -47,19 +47,18 @@
 #include "./mxreinc/kernels/sources/appsource.h"
 
 #include "./mxreinc/kernels/sinks/cv_display.h"
+#include "./mxreinc/kernels/sinks/non_display.h"
 #include "./mxreinc/kernels/sinks/appsink.h"
 
 #include "./mxreinc/kernels/perceptions/prediction_receiver.h"
 #include "./mxreinc/kernels/perceptions/orb/orb_detector.h"
 #include "./mxreinc/kernels/perceptions/orb/cuda_orb_detector.h"
-#include "./mxreinc/kernels/perceptions/orb/object_ctx_extractor.h"
+#include "./mxreinc/kernels/perceptions/orb/marker_ctx_extractor.h"
 
 #include "./mxreinc/kernels/offloading/message_sender.h"
+#include "./mxreinc/kernels/offloading/sending_functions.h"
 #include "./mxreinc/kernels/offloading/message_receiver.h"
-#include "./mxreinc/kernels/offloading/cvmat_sender.h"
-#include "./mxreinc/kernels/offloading/cvmat_receiver.h"
-#include "./mxreinc/kernels/offloading/static_sender.h"
-#include "./mxreinc/kernels/offloading/static_receiver.h"
+#include "./mxreinc/kernels/offloading/receiving_functions.h"
 #include "./mxreinc/kernels/offloading/rtp_frame_sender.h"
 #include "./mxreinc/kernels/offloading/rtp_frame_receiver.h"
 

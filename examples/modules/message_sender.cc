@@ -9,40 +9,34 @@
 using namespace std;
 using namespace cv;
 
+template<typename OUT_T>
 class TestSrc : public raft::kernel {
   private:
     bool isVector;
     int numMat;
+    int data;
   public:
   TestSrc(bool isVector=false, int numMat=1): raft::kernel(), isVector(isVector), numMat(numMat) {
     cout << "TestSrc isVector: " << isVector << endl;
+    data = 0;
     if(isVector)
-      output.addPort<vector<cv::Mat>>("out_data");
+      output.addPort<vector<OUT_T>>("out_data");
     else
-      output.addPort<cv::Mat>("out_data");
+      output.addPort<OUT_T>("out_data");
   }
 
   virtual raft::kstatus run() {
     printf("[TestSource] run \n");
     if(isVector) {
-      auto &outData( output["out_data"].template allocate<vector<cv::Mat>>() );
+      auto &outData( output["out_data"].template allocate<vector<OUT_T>>() );
       for(int i = 0; i < numMat; i++) {
-        cv::Mat newMat(16, 2048, CV_32F);
-        newMat.at<float>(0, 0) = i;
-        newMat.at<float>(0, 1) = i+1;
-        newMat.at<float>(0, 2) = i+2;
-        newMat.at<float>(0, 3) = i+3;
-        debug_print("%p %p", static_cast<void*>(newMat.data), static_cast<void*>(newMat.data));
-        outData.push_back(newMat);
+        OUT_T newElem = i;
+        outData.push_back(newElem);
       }
     }
     else {
-      auto &outData( output["out_data"].template allocate<cv::Mat>() );
-      outData = cv::Mat(16, 2048, CV_32F);
-      outData.at<float>(0, 0) = 0;
-      outData.at<float>(0, 1) = 1;
-      outData.at<float>(0, 2) = 2;
-      outData.at<float>(0, 3) = 3;
+      auto &outData( output["out_data"].template allocate<OUT_T>() );
+      outData = data++;
     }
     //sleep(1);
     output["out_data"].send();
@@ -55,13 +49,16 @@ int main(int argc, char const *argv[])
   cout << "client start!" << endl;
   bool isVector = false;
 
-  TestSrc testSrc(isVector, 5);
-  mxre::kernels::MatSender matSender("localhost", 5555, isVector);
+  TestSrc<int> testSrc(isVector, 8192);
+  //mxre::kernels::MessageSender<std::vector<int>> messageSender("localhost", 5555, mxre::utils::sendPrimitiveVector<std::vector<int>>);
+  mxre::kernels::MessageSender<int> messageSender("localhost", 5555, mxre::utils::sendPrimitive<int>);
+  //mxre::kernels::MessageSender<int> messageSender("localhost", 5555, mxre::utils::sendPrimitive<int>);
+
   cout << "created pipeline elements" << endl;
 
   raft::map pipeline;
 
-  pipeline += testSrc["out_data"] >> matSender["in_data"];
+  pipeline += testSrc["out_data"] >> messageSender["in_data"];
   cout << "\tpipeline.exe" << endl;
   pipeline.exe();
   return 0;
