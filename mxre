@@ -47,6 +47,7 @@
 #include "./mxreinc/kernels/sources/appsource.h"
 
 #include "./mxreinc/kernels/sinks/cv_display.h"
+#include "./mxreinc/kernels/sinks/non_display.h"
 #include "./mxreinc/kernels/sinks/appsink.h"
 
 #include "./mxreinc/kernels/perceptions/prediction_receiver.h"
