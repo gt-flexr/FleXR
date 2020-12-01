@@ -36,7 +36,7 @@ int main(int argc, char const *argv[])
 {
   // Set the markers
   mxre::cv_types::ORBMarkerTracker orbMarkerTracker;
-  mxre::cv_utils::setMarkerFromImages("/home/jin/github/mxre/resources/markers/", "marker", 0, 1, orbMarkerTracker);
+  mxre::cv_utils::setMarkerFromImages("/home/jin/github/mxre/resources/markers/", "720p_marker", 0, 1, orbMarkerTracker);
 
   // Create mxre components
   raft::map clientDag;
