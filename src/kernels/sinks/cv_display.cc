@@ -8,6 +8,9 @@ namespace mxre
     CVDisplay::CVDisplay()
     {
       addInputPort<mxre::types::Frame>("in_frame");
+#ifdef __PROFILE__
+      if(logger == NULL) initLoggerST("cv_display", "logs/cv_display.log");
+#endif
     }
 
 
@@ -22,10 +25,11 @@ namespace mxre
 
     raft::kstatus CVDisplay::run()
     {
-#ifdef __PROFILE__
-      start = getNow();
-#endif
       auto &frame( input["in_frame"].peek<mxre::types::Frame>() );
+#ifdef __PROFILE__
+      startTimeStamp = getTimeStampNow();
+#endif
+
       debug_print("START");
 
       logic(&frame);
@@ -34,8 +38,8 @@ namespace mxre
       debug_print("END");
 
 #ifdef __PROFILE__
-      end = getNow();
-      profile_print("Exe Time: %lf ms", getExeTime(end, start));
+      endTimeStamp = getTimeStampNow();
+      logger->info("{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
 #endif
       return raft::proceed;
     }

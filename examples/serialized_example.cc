@@ -1,9 +1,11 @@
 #include <raft>
 #include <mxre>
 #include <bits/stdc++.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/basic_file_sink.h>
 
-#define WIDTH 1280
-#define HEIGHT 720
+#define WIDTH 640
+#define HEIGHT 480
 
 using namespace std;
 
@@ -11,8 +13,9 @@ using namespace std;
 int main(int argc, char const *argv[])
 {
   mxre::cv_types::ORBMarkerTracker orbMarkerTracker;
-  mxre::cv_utils::setMarkerFromImages("/home/jin/github/mxre/resources/markers/", "720p_marker", 0, 1, orbMarkerTracker);
+  //mxre::cv_utils::setMarkerFromImages("/home/jin/github/mxre/resources/markers/", "720p_marker", 0, 1, orbMarkerTracker);
   //mxre::cv_utils::setMarkerFromImages("/home/jin/github/mxre/resources/markers/", "1080p_marker", 0, 1, orbMarkerTracker);
+  mxre::cv_utils::setMarkerFromImages("/home/jin/github/mxre/resources/markers/", "480p_marker", 0, 1, orbMarkerTracker);
   std::vector<mxre::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
 
   int frame_idx = 1;
@@ -49,16 +52,22 @@ int main(int argc, char const *argv[])
     worldManager.addObjectToWorld(i);
   }
   //mxre::egl_utils::unbindPbuffer(*pbuf);
+#ifdef __PROFILE__
+  auto logger = spdlog::basic_logger_st("serialized_example", "logs/serialized_example.log");
+#endif
+
 
 
   while(1) {
     /********************************
                Load images
     *********************************/
+
     std::stringstream ss;
     ss << std::setfill('0') << std::setw(6);
     ss << frame_idx++;
-    std::string imagePath = "/home/jin/github/mxre/resources/video/720p/video_" + ss.str() + ".png";
+    std::string imagePath = "/home/jin/github/mxre/resources/video/480p/video_" + ss.str() + ".png";
+    //std::string imagePath = "/home/jin/github/mxre/resources/video/720p/video_" + ss.str() + ".png";
     //std::string imagePath = "/home/jin/github/mxre/resources/video/1080p/video_" + ss.str() + ".png";
     cv::Mat image = cv::imread(imagePath);
     if(image.empty()) {
@@ -67,9 +76,8 @@ int main(int argc, char const *argv[])
     }
 
 #ifdef __PROFILE__
-    mxre::types::TimeVal start = getNow();
+    double startTimeStamp = getTimeStampNow();
 #endif
-
     /********************************
                Detect Markers
     *********************************/
@@ -196,18 +204,11 @@ int main(int argc, char const *argv[])
 
     worldManager.startWorlds('f', markerContexts);
 
-#ifdef __PROFILE__
-    mxre::types::TimeVal eglCost = getNow();
-#endif
     mxre::types::Frame resultFrame = mxre::gl_utils::exportGLBufferToCV(WIDTH, HEIGHT);
 
 #ifdef __PROFILE__
-    mxre::types::TimeVal end = getNow();
-    double exeTime = getExeTime(end, start);
-    double fps = 1000 / exeTime;
-
-    profile_print("eglCost: %lfms", getExeTime(end, eglCost));
-    profile_print("Exe Time: %lfms fps: %f", exeTime, fps);
+    double endTimeStamp = getTimeStampNow();
+    logger->info("{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
 #endif
 
     //cv::imshow("CVDisplay", resultFrame.useAsCVMat());

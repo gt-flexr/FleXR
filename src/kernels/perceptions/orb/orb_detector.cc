@@ -19,6 +19,11 @@ namespace mxre
 
       detector = cv::ORB::create();
       matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
+
+#ifdef __PROFILE__
+      if(logger == NULL) initLoggerST("orb_detector", "logs/orb_detector.log");
+#endif
+
     }
 
 
@@ -108,13 +113,13 @@ namespace mxre
 
     /* Kernel Run */
     raft::kstatus ORBDetector::run() {
-
-#ifdef __PROFILE__
-      mxre::types::TimeVal start = getNow();
-#endif
-
       auto &inFrame( input["in_frame"].peek<mxre::types::Frame>() );
       auto &outDetectedMarkers(output["out_detected_markers"].allocate<std::vector<mxre::cv_types::DetectedMarker>>());
+
+#ifdef __PROFILE__
+      startTimeStamp = getTimeStampNow();
+#endif
+
 
       if(logic(&inFrame, &outDetectedMarkers)) {
         output["out_detected_markers"].send();
@@ -124,8 +129,8 @@ namespace mxre
       recyclePort("in_frame");
 
 #ifdef __PROFILE__
-      mxre::types::TimeVal end = getNow();
-      profile_print("Exe Time: %lfms", getExeTime(end, start));
+      endTimeStamp = getTimeStampNow();
+      logger->info("{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
 #endif
 
       return raft::proceed;

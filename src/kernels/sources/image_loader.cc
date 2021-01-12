@@ -18,6 +18,10 @@ namespace mxre
       this->periodMS = 0;
 
       addOutputPort<mxre::types::Frame>("out_frame");
+#ifdef __PROFILE__
+      if(logger == NULL) initLoggerST("image_loader", "logs/image_loader.log");
+#endif
+
     }
 
 
@@ -30,7 +34,7 @@ namespace mxre
       sleepForMS(periodMS); // control read frequency
 
 #ifdef __PROFILE__
-      start = getNow();
+      startTimeStamp = getTimeStampNow();
 #endif
 
       std::stringstream ss;
@@ -59,8 +63,8 @@ namespace mxre
       sendFrameCopy("out_frame", &outFrame);
 
 #ifdef __PROFILE__
-      end = getNow();
-      profile_print("Exe Time: %lf ms", getExeTime(end, start));
+      endTimeStamp = getTimeStampNow();
+      logger->info("{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
 #endif
 
       return raft::proceed;

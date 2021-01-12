@@ -39,6 +39,10 @@ namespace mxre
       // 3. Unbind the pbuf context in init thread
       mxre::egl_utils::unbindPbuffer(*pbuf);
       binding = false;
+
+#ifdef __PROFILE__
+      if(logger == NULL) initLoggerST("object_renderer", "logs/object_renderer.log");
+#endif
     }
 
 
@@ -91,14 +95,13 @@ namespace mxre
         binding = true;
       }
 
-#ifdef __PROFILE__
-      mxre::types::TimeVal start = getNow();
-#endif
-      debug_print("START");
-
       // 0.0.Get inputs from the previous kernel: ObjectDetector
       auto &inFrame( input["in_frame"].peek<mxre::types::Frame>() );
       auto &inMarkerContexts( input["in_marker_contexts"].peek<std::vector<mxre::gl_types::ObjectContext>>() );
+
+#ifdef __PROFILE__
+      startTimeStamp = getTimeStampNow();
+#endif
 
       // 0.1.Get input keystroke from Keyboard
       char inKey;
@@ -120,12 +123,10 @@ namespace mxre
       recyclePort("in_frame");
       recyclePort("in_marker_contexts");
 
-      debug_print("END");
 #ifdef __PROFILE__
-      mxre::types::TimeVal end = getNow();
-      profile_print("Exe Time: %lfms", getExeTime(end, start));
+      endTimeStamp = getTimeStampNow();
+      logger->info("{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
 #endif
-
       return raft::proceed;
     }
 

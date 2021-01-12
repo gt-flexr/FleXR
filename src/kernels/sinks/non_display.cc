@@ -8,24 +8,21 @@ namespace mxre
     NonDisplay::NonDisplay()
     {
       addInputPort<mxre::types::Frame>("in_frame");
+#ifdef __PROFILE__
+      if(logger == NULL) initLoggerST("non_display", "logs/non_display.log");
+#endif
     }
 
 
     raft::kstatus NonDisplay::run()
     {
-#ifdef __PROFILE__
-      start = getNow();
-#endif
       auto &frame( input["in_frame"].peek<mxre::types::Frame>() );
-      debug_print("START");
+#ifdef __PROFILE__
+      logger->info("\t{}", getTimeStampNow());
+#endif
 
       frame.release();
       recyclePort("in_frame");
-
-#ifdef __PROFILE__
-      end = getNow();
-      profile_print("Exe Time: %lf ms", getExeTime(end, start));
-#endif
       return raft::proceed;
     }
   } // namespace kernels
