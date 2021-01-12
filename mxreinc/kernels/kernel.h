@@ -8,6 +8,8 @@
 #include <chrono>
 #include <thread>
 #include <raftinc/rafttypes.hpp>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/basic_file_sink.h>
 
 #include "defs.h"
 #include "types/clock_types.h"
@@ -31,6 +33,8 @@ namespace mxre
 
 #ifdef __PROFILE__
         mxre::types::TimeVal start, end;
+        double startTimeStamp, endTimeStamp;
+        std::shared_ptr<spdlog::logger> logger;
 #endif
 
       public:
@@ -96,6 +100,17 @@ namespace mxre
             output[i->second].send();
           }
         }
+
+#ifdef __PROFILE__
+        void initLoggerST(std::string loggerName, std::string fileName) {
+          logger = spdlog::basic_logger_st(loggerName, fileName);
+        }
+
+        void initLoggerMT(std::string loggerName, std::string fileName) {
+          logger = spdlog::basic_logger_mt(loggerName, fileName);
+        }
+#endif
+
     };
 
   }   // namespace kernels
