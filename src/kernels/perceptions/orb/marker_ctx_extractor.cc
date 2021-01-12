@@ -20,6 +20,9 @@ namespace mxre
 
       addInputPort<std::vector<mxre::cv_types::DetectedMarker>>("in_detected_markers");
       addOutputPort<std::vector<mxre::gl_types::ObjectContext>>("out_marker_contexts");
+#ifdef __PROFILE__
+      initLoggerST("marker_ctx_extractor", "logs/marker_ctx_extractor.log");
+#endif
     }
 
 
@@ -68,14 +71,13 @@ namespace mxre
 
     raft::kstatus MarkerCtxExtractor::run()
     {
-
-#ifdef __PROFILE__
-      mxre::types::TimeVal start = getNow();
-#endif
-      debug_print("START");
       auto &inDetectedMarkers(input["in_detected_markers"].peek<std::vector<mxre::cv_types::DetectedMarker>>() );
       auto &outMarkerContexts(
           output["out_marker_contexts"].template allocate<std::vector<mxre::gl_types::ObjectContext>>());
+#ifdef __PROFILE__
+      startTimeStamp = getTimeStampNow();
+#endif
+
 
       if(logic(&inDetectedMarkers, &outMarkerContexts)) {
         output["out_marker_contexts"].send();
@@ -86,8 +88,8 @@ namespace mxre
 
       debug_print("END");
 #ifdef __PROFILE__
-      mxre::types::TimeVal end = getNow();
-      profile_print("Exe Time: %lfms", getExeTime(end, start));
+      endTimeStamp = getTimeStampNow();
+      logger->info("{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
 #endif
 
       return raft::proceed;
