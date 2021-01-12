@@ -1,6 +1,7 @@
 file(GLOB_RECURSE EXAMPLE_SRCS modules/*.cc)
 list(APPEND EXAMPLE_SRCS
   basic_example.cc
+  imgloader_example.cc
   serialized_example.cc
   complex_yolo.cc
 
