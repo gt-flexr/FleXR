@@ -78,6 +78,8 @@ int main(int argc, char const *argv[])
 
   mxre::kernels::CVCamera cam(camera_no, WIDTH, HEIGHT);
   cam.duplicateOutPort<mxre::types::Frame>("out_frame", "out_frame2");
+  cam.setSleepPeriodMS(50);
+
   mxre::kernels::Keyboard keyboard;
   mxre::kernels::CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
   mxre::kernels::MarkerCtxExtractor markerCtxExtractor(WIDTH, HEIGHT, cam.getIntrinsic(), cam.getDistCoeffs());
