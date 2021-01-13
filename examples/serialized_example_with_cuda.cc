@@ -1,3 +1,4 @@
+#include <opencv2/core/mat.hpp>
 #include <raft>
 #include <mxre>
 #include <bits/stdc++.h>
@@ -26,8 +27,8 @@ int main(int argc, char const *argv[])
    *  ORB detector & matcher, set matching params
    */
   int frame_idx = 1;
-  cv::Ptr<cv::Feature2D> detector = cv::ORB::create();
-  cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
+  cv::Ptr<cv::cuda::ORB> detector = cv::cuda::ORB::create();
+  cv::Ptr<cv::cuda::DescriptorMatcher> matcher = cv::cuda::DescriptorMatcher::createBFMatcher(cv::NORM_HAMMING);
   double knnMatchRatio = 0.8f;
   int knnParam = 5;
   double ransacThresh = 2.5f;
@@ -69,13 +70,15 @@ int main(int argc, char const *argv[])
   }
   //mxre::egl_utils::unbindPbuffer(*pbuf);
 #ifdef __PROFILE__
-  auto logger = spdlog::basic_logger_st("serialized_example", "logs/serialized_example.log");
+  auto logger = spdlog::basic_logger_st("serialized_example", "logs/serialized_example_with_cuda.log");
 #endif
 
+  cv::cuda::GpuMat cuFrame;
+  cv::cuda::Stream stream;
+  cv::cuda::GpuMat cuKp, cuDesc;
+  cv::cuda::GpuMat cuMatches;
 
-  /*
-   *  Processing Loop
-   */
+
   while(1) {
     /*
      *  1. Load camera frames
@@ -100,19 +103,22 @@ int main(int argc, char const *argv[])
      *  2. Detect registered markers on the loaded frame
      */
     std::vector<cv::KeyPoint> frameKps;
-    cv::Mat frameDesc;
     std::vector<mxre::cv_types::DetectedMarker> detectedMarkers;
     std::vector<mxre::gl_types::ObjectContext> markerContexts;
 
     // 2.1. Get frame keypoints and descriptors
     cv::Mat grayFrame = image.clone();
     cv::cvtColor(grayFrame, grayFrame, CV_BGR2GRAY);
-    detector->detectAndCompute(grayFrame, cv::noArray(), frameKps, frameDesc);
+    cuFrame.upload(grayFrame);
+    detector->detectAndComputeAsync(cuFrame, cv::noArray(), cuKp, cuDesc, false, stream);
+    stream.waitForCompletion();
+    detector->convert(cuKp, frameKps);
 
     // multiple object detection
     std::vector<mxre::cv_types::MarkerInfo>::iterator markerInfo;
     for (markerInfo = registeredMarkers.begin(); markerInfo != registeredMarkers.end(); ++markerInfo)
     {
+      cv::cuda::GpuMat cuObjDesc;
       std::vector<std::vector<cv::DMatch>> matches;
       std::vector<cv::KeyPoint> objMatch, frameMatch;
       cv::Mat homography;
@@ -120,8 +126,12 @@ int main(int argc, char const *argv[])
       std::vector<cv::KeyPoint> objInlier, frameInlier;
       std::vector<cv::DMatch> inlierMatches;
 
+
       // 2.2. find matching descriptors between the frame and the object
-      matcher->knnMatch(markerInfo->desc, frameDesc, matches, knnParam);
+      cuObjDesc.upload(markerInfo->desc);
+      matcher->knnMatchAsync(cuObjDesc, cuDesc, cuMatches, 2, cv::noArray(), stream);
+      stream.waitForCompletion();
+      matcher->knnMatchConvert(cuMatches, matches);
 
       // 2.3. filter matching descriptors by their distances, and store the pair of matching keypoints
       for (unsigned i = 0; i < matches.size(); i++)
