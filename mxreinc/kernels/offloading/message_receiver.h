@@ -21,7 +21,7 @@ namespace mxre
         zmq::context_t ctx;
         zmq::socket_t sock;
       public:
-        MessageReceiver(int port=5555, void (*recv)(OUT_T*, zmq::socket_t*)=NULL);
+        MessageReceiver(int port=5555, void (*recv)(OUT_T*, zmq::socket_t*)=NULL, int sockType = ZMQ_REP);
         ~MessageReceiver();
         virtual raft::kstatus run();
     };
@@ -29,10 +29,14 @@ namespace mxre
 
     /* Constructor */
     template<typename OUT_T>
-    MessageReceiver<OUT_T>::MessageReceiver(int port, void (*recv)(OUT_T*, zmq::socket_t*)): MXREKernel() {
-      sock = zmq::socket_t(ctx, zmq::socket_type::rep);
+    MessageReceiver<OUT_T>::MessageReceiver(int port, void (*recv)(OUT_T*, zmq::socket_t*), int sockType): MXREKernel() {
+      sock = zmq::socket_t(ctx, sockType);
       std::string bindingAddr = "tcp://*:" + std::to_string(port);
       sock.bind(bindingAddr);
+
+      // for pub/sub
+      if(sockType == (int)zmq::socket_type::sub)
+        sock.set(zmq::sockopt::subscribe, "");
 
       this->recv = recv;
       addOutputPort<OUT_T>("out_data");
