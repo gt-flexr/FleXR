@@ -2,8 +2,8 @@
 #include <mxre>
 #include <bits/stdc++.h>
 
-#define WIDTH 1280
-#define HEIGHT 720
+#define WIDTH 1920
+#define HEIGHT 1080
 
 using namespace std;
 
@@ -11,7 +11,7 @@ using namespace std;
 int main(int argc, char const *argv[])
 {
   mxre::cv_types::ORBMarkerTracker orbMarkerTracker;
-  mxre::cv_utils::setMarkerFromImages("/home/jin/github/mxre/resources/markers/", "720p_marker", 0, 1, orbMarkerTracker);
+  mxre::cv_utils::setMarkerFromImages("/home/jin/github/mxre/resources/markers/", "1080p_marker", 0, 1, orbMarkerTracker);
 
   raft::map servingPipeline;
   mxre::kernels::CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
