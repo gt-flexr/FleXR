@@ -1,4 +1,5 @@
 #include <kernels/perceptions/orb/marker_ctx_extractor.h>
+#include <unistd.h>
 
 namespace mxre
 {
@@ -21,7 +22,7 @@ namespace mxre
       addInputPort<std::vector<mxre::cv_types::DetectedMarker>>("in_detected_markers");
       addOutputPort<std::vector<mxre::gl_types::ObjectContext>>("out_marker_contexts");
 #ifdef __PROFILE__
-      if(logger == NULL) initLoggerST("marker_ctx_extractor", "logs/marker_ctx_extractor.log");
+      if(logger == NULL) initLoggerST("marker_ctx_extractor", "logs/" + std::to_string(pid) + "/marker_ctx_extractor.log");
 #endif
     }
 

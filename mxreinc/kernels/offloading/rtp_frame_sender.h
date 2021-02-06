@@ -8,6 +8,7 @@
 #include <ifaddrs.h>
 
 #include "defs.h"
+#include "kernels/kernel.h"
 #include "types/cv/types.h"
 #include "types/clock_types.h"
 #include "types/frame.h"
@@ -25,7 +26,7 @@ namespace mxre
   {
 
     /* Class Deifinition */
-    class RTPFrameSender : public raft::kernel
+    class RTPFrameSender : public MXREKernel
     {
       private:
         int bitrate, fps, width, height;

@@ -40,6 +40,11 @@ namespace mxre
 
       this->recv = recv;
       addOutputPort<OUT_T>("out_data");
+
+#ifdef __PROFILE__
+      if(logger == NULL) initLoggerST("message_receiver", std::to_string(pid) + "/message_receiver.log");
+#endif
+
     }
 
 
@@ -55,23 +60,24 @@ namespace mxre
     /* Run */
     template<typename OUT_T>
     raft::kstatus MessageReceiver<OUT_T>::run() {
-#ifdef __PROFILE__
-      mxre::types::TimeVal start = getNow();
-#endif
-
       auto &outData( output["out_data"].template allocate<OUT_T>() );
+
+#ifdef __PROFILE__
+      startTimeStamp = getTimeStampNow();
+#endif
 
       if(recv != NULL) recv(&outData, &sock);
       else {
         debug_print("recv function pointer is invalid.");
       }
 
+      output["out_data"].send();
+
 #ifdef __PROFILE__
-      mxre::types::TimeVal end = getNow();
-      profile_print("Exe Time: %lfms", getExeTime(end, start));
+      endTimeStamp = getTimeStampNow();
+      logger->info("{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
 #endif
 
-      output["out_data"].send();
       return raft::proceed;
     }
 

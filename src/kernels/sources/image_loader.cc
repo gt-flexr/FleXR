@@ -1,6 +1,7 @@
 #include <kernels/sources/image_loader.h>
 #include <opencv2/highgui.hpp>
 #include <types/cv/types.h>
+#include <unistd.h>
 
 namespace mxre
 {
@@ -19,9 +20,8 @@ namespace mxre
 
       addOutputPort<mxre::types::Frame>("out_frame");
 #ifdef __PROFILE__
-      if(logger == NULL) initLoggerST("image_loader", "logs/image_loader.log");
+      if(logger == NULL) initLoggerST("image_loader", "logs/" + std::to_string(pid) + "/image_loader.log");
 #endif
-
     }
 
 
@@ -62,9 +62,11 @@ namespace mxre
       output["out_frame"].send();
       sendFrameCopy("out_frame", &outFrame);
 
-#ifdef __PROFILE__
       endTimeStamp = getTimeStampNow();
-      logger->info("{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
+
+#ifdef __PROFILE__
+      logger->info("{}th frame\t start\t{}\t end\t{}\t exe\t{}", frame_idx-2, startTimeStamp, endTimeStamp,
+          endTimeStamp-startTimeStamp);
 #endif
 
       return raft::proceed;

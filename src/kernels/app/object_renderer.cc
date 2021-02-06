@@ -1,6 +1,7 @@
 #include <kernels/app/object_renderer.h>
 #include <GL/gl.h>
 #include <GL/glew.h>
+#include <unistd.h>
 
 namespace mxre
 {
@@ -41,7 +42,7 @@ namespace mxre
       binding = false;
 
 #ifdef __PROFILE__
-      if(logger == NULL) initLoggerST("object_renderer", "logs/object_renderer.log");
+      if(logger == NULL) initLoggerST("object_renderer", "logs/" + std::to_string(pid) + "/object_renderer.log");
 #endif
     }
 

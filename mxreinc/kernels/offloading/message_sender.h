@@ -39,6 +39,12 @@ namespace mxre
 
       this->send = send;
       addInputPort<IN_T>("in_data");
+
+#ifdef __PROFILE__
+      if(logger == NULL) initLoggerST("message_sender", std::to_string(pid) + "/message_sender.log");
+#endif
+
+
     }
 
 
@@ -54,11 +60,12 @@ namespace mxre
     /* Run */
     template<typename IN_T>
     raft::kstatus MessageSender<IN_T>::run() {
-#ifdef __PROFILE__
-      mxre::types::TimeVal start = getNow();
-#endif
 
       auto &inData( input["in_data"].template peek<IN_T>() );
+
+#ifdef __PROFILE__
+      startTimeStamp = getTimeStampNow();
+#endif
 
       if(send != NULL) send(&inData, &sock);
       else {
@@ -68,8 +75,8 @@ namespace mxre
       recyclePort("in_data");
 
 #ifdef __PROFILE__
-      mxre::types::TimeVal end = getNow();
-      profile_print("Exe Time: %lfms", getExeTime(end, start));
+      endTimeStamp = getTimeStampNow();
+      logger->info("{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
 #endif
 
       return raft::proceed;

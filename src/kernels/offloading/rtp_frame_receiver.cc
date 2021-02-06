@@ -1,4 +1,5 @@
 #include <kernels/offloading/rtp_frame_receiver.h>
+#include <unistd.h>
 
 namespace mxre
 {
@@ -8,7 +9,7 @@ namespace mxre
     RTPFrameReceiver::RTPFrameReceiver(std::string decoder, int srcPort, int width, int height) :
       MXREKernel(), decoder(decoder),width(width), height(height)
     {
-      output.addPort<mxre::types::Frame>("out_data");
+      addOutputPort<mxre::types::Frame>("out_data");
 
       av_register_all();
       avcodec_register_all();
@@ -22,6 +23,11 @@ namespace mxre
       initRTPContext();
       initRTPCodecAndScaler();
       initFrame();
+
+#ifdef __PROFILE__
+      if(logger == NULL) initLoggerST("rtp_frame_receiver", "logs/" + std::to_string(pid) + "/rtp_frame_receiver.log");
+#endif
+
     }
 
 
@@ -171,12 +177,12 @@ namespace mxre
     /* Run() */
     raft::kstatus RTPFrameReceiver::run() {
 
-#ifdef __PROFILE__
-      mxre::types::TimeVal start = getNow();
-#endif
-
       auto &outData( output["out_data"].allocate<mxre::types::Frame>() );
       int ret = 0, receivedFrame = 0, readSuccess = -1;
+
+#ifdef __PROFILE__
+      startTimeStamp = getTimeStampNow();
+#endif
 
       AVPacket packet;
       av_init_packet(&packet);
@@ -195,14 +201,14 @@ namespace mxre
 
           output["out_data"].send();
           sendFrameCopy("out_data", &outData);
+
+#ifdef __PROFILE__
+          endTimeStamp = getTimeStampNow();
+          logger->info("\t{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
+#endif
         }
       }
       av_free_packet(&packet);
-
-#ifdef __PROFILE__
-      mxre::types::TimeVal end = getNow();
-      profile_print("Exe Time: %lfms", getExeTime(end, start));
-#endif
 
       return raft::proceed;
     }

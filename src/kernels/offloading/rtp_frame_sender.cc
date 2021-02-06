@@ -1,4 +1,5 @@
 #include "kernels/offloading/rtp_frame_sender.h"
+#include <unistd.h>
 
 namespace mxre
 {
@@ -8,9 +9,9 @@ namespace mxre
     /* Constructor() */
     RTPFrameSender::RTPFrameSender(std::string encoder, std::string destAddr,
         int destPort, int bitrate, int fps, int width, int height) : encoder(encoder), bitrate(bitrate),
-        fps(fps), width(width), height(height), framePts(0), raft::kernel()
+    fps(fps), width(width), height(height), framePts(0)
     {
-      input.addPort<mxre::types::Frame>("in_data");
+      addInputPort<mxre::types::Frame>("in_data");
       this->filename = "rtp://" + destAddr + ":" + std::to_string(destPort);
 
       av_register_all();
@@ -21,6 +22,10 @@ namespace mxre
       setRTPStreamWithCodec();
       setFrameWithScaler();
       sendSDP(destAddr, destPort);
+
+#ifdef __PROFILE__
+      if(logger == NULL) initLoggerST("rtp_frame_sender", "logs/" + std::to_string(pid) + "/rtp_frame_sender.log");
+#endif
     }
 
 
@@ -136,8 +141,8 @@ namespace mxre
           width, height);
 
       swsContext = sws_getCachedContext(NULL, width, height, AV_PIX_FMT_RGB24,
-                                              width, height, rtpCodecContext->pix_fmt,
-                                              SWS_BICUBIC, NULL, NULL, NULL);
+          width, height, rtpCodecContext->pix_fmt,
+          SWS_BICUBIC, NULL, NULL, NULL);
     }
 
 
@@ -189,17 +194,17 @@ namespace mxre
 
     /* Run() */
     raft::kstatus RTPFrameSender::run() {
-
-#ifdef __PROFILE__
-      mxre::types::TimeVal start = getNow();
-#endif
-
       auto &inData( input["in_data"].template peek<mxre::types::Frame>() );
       if(inData.rows != (size_t)height || inData.cols != (size_t)width) {
         clearSession();
         debug_print("inMat size is not compatible.");
         exit(1);
       }
+
+#ifdef __PROFILE__
+      startTimeStamp = getTimeStampNow();
+#endif
+
 
       int ret=0, gotPkt=0;
 
@@ -235,8 +240,8 @@ namespace mxre
       input["in_data"].recycle(1);
 
 #ifdef __PROFILE__
-      mxre::types::TimeVal end = getNow();
-      profile_print("Exe Time: %lfms", getExeTime(end, start));
+      endTimeStamp = getTimeStampNow();
+      logger->info("\t{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
 #endif
 
       return raft::proceed;

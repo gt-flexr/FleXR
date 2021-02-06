@@ -18,6 +18,8 @@ namespace mxre
 
     class CVDisplay : public MXREKernel
     {
+    private:
+      unsigned long long int frameIndex;
     public:
       CVDisplay();
       virtual raft::kstatus run() override;

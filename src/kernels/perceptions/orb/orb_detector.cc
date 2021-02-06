@@ -1,4 +1,5 @@
 #include <kernels/perceptions/orb/orb_detector.h>
+#include <unistd.h>
 
 namespace mxre
 {
@@ -21,7 +22,7 @@ namespace mxre
       matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
 
 #ifdef __PROFILE__
-      if(logger == NULL) initLoggerST("orb_detector", "logs/orb_detector.log");
+      if(logger == NULL) initLoggerST("orb_detector", "logs/" + std::to_string(pid) + "/orb_detector.log");
 #endif
 
     }
@@ -53,6 +54,10 @@ namespace mxre
         // 2. use the matcher to find correspondence
         std::vector<std::vector<cv::DMatch>> matches;
         std::vector<cv::KeyPoint> objMatch, frameMatch;
+        cv::Mat homography;
+        cv::Mat inlierMask;
+        std::vector<cv::KeyPoint> objInlier, frameInlier;
+        std::vector<cv::DMatch> inlierMatches;
 
         // 2.1. get all the matches between object and frame kps based on desc
         matcher->knnMatch(markerInfo->desc, frameDesc, matches, knnParam);
@@ -68,16 +73,11 @@ namespace mxre
         }
 
         // 3. get the homography from the matches
-        cv::Mat homography;
-        cv::Mat inlierMask;
-        std::vector<cv::KeyPoint> objInlier, frameInlier;
-        std::vector<cv::DMatch> inlierMatches;
-
         if (objMatch.size() >= 4)
         {
           homography = findHomography(mxre::cv_utils::convertKpsToPts(objMatch),
-              mxre::cv_utils::convertKpsToPts(frameMatch),
-              cv::RANSAC, ransacThresh, inlierMask);
+                                      mxre::cv_utils::convertKpsToPts(frameMatch),
+                                      cv::RANSAC, ransacThresh, inlierMask);
         }
 
         // 4. if there is an object in the frame, check the inlier points and save matched inlier points
@@ -107,6 +107,7 @@ namespace mxre
           }
         }
       }
+
       return true;
     }
 

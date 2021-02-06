@@ -1,5 +1,6 @@
 #include <kernels/sources/cv_camera.h>
 #include <types/cv/types.h>
+#include <unistd.h>
 
 namespace mxre
 {
@@ -31,6 +32,10 @@ namespace mxre
       this->intrinsic.at<double>(2, 2) = 1;
 
       addOutputPort<mxre::types::Frame>("out_frame");
+
+#ifdef __PROFILE__
+      if(logger == NULL) initLoggerST("cv_camera", "logs/" + std::to_string(pid) + "/cv_camera.log");
+#endif
     }
 
 
@@ -58,7 +63,7 @@ namespace mxre
     raft::kstatus CVCamera::run()
     {
 #ifdef __PROFILE__
-      start = getNow();
+      startTimeStamp = getTimeStampNow();
 #endif
       debug_print("START");
       auto &outFrame(output["out_frame"].allocate<mxre::types::Frame>());
@@ -69,9 +74,11 @@ namespace mxre
       }
 
       debug_print("END");
+
 #ifdef __PROFILE__
-      end = getNow();
-      profile_print("Exe Time: %lf ms", getExeTime(end, start));
+      endTimeStamp = getTimeStampNow();
+      logger->info("{}th frame\t start\t{}\t end\t{}\t exe\t{}", frame_idx-1, startTimeStamp, endTimeStamp,
+          endTimeStamp-startTimeStamp);
 #endif
       return raft::proceed;
     }

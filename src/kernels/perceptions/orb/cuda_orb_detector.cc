@@ -1,3 +1,4 @@
+#include <unistd.h>
 #ifdef __USE_OPENCV_CUDA__
 #include <kernels/perceptions/orb/cuda_orb_detector.h>
 #include <opencv2/core.hpp>
@@ -21,7 +22,7 @@ namespace mxre
       detector = cv::cuda::ORB::create();
       matcher = cv::cuda::DescriptorMatcher::createBFMatcher(cv::NORM_HAMMING);
 #ifdef __PROFILE__
-      if(logger == NULL) initLoggerST("cuda_orb_detector", "logs/cuda_orb_detector.log");
+      if(logger == NULL) initLoggerST("cuda_orb_detector", "logs/" + std::to_string(pid) + "/cuda_orb_detector.log");
 #endif
     }
 
