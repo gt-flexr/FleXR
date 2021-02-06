@@ -40,6 +40,8 @@
 #define getTimeStampOf(a) ( (double)std::chrono::duration_cast<std::chrono::microseconds>(a.time_since_epoch()).count() / 1000 )
 #define getNow() std::chrono::high_resolution_clock::now()
 #define getTimeStampNow() ( (double)std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() / 1000 )
+#define getTimeStampNowUint() (unsigned int)( (double)std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() / 1000 )
+
 
 #endif
 
