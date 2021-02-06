@@ -1,24 +1,36 @@
+#include <opencv2/core/mat.hpp>
 #include <raft>
 #include <mxre>
 #include <bits/stdc++.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/basic_file_sink.h>
 
-#define WIDTH 1920
-#define HEIGHT 1080
+//#define LATENCY_BREAKDOWN 1
 
 using namespace std;
 
+int WIDTH, HEIGHT, QUEUE_SIZE;
+std::string absMarkerPath, absImagePath;
 
 int main(int argc, char const *argv[])
 {
+  if(argc == 5) {
+    WIDTH = stoi(argv[1]);
+    HEIGHT = stoi(argv[2]);
+    absMarkerPath = argv[3];
+    absImagePath = argv[4];
+  }
+  else {
+    cout << "usage: ./EXE WIDTH HEIGHT MARKER_PATH IMG_PATH"  << endl;
+    return 0;
+  }
+
+
   /*
    *  Load a marker from an image
    */
   mxre::cv_types::ORBMarkerTracker orbMarkerTracker;
-  //mxre::cv_utils::setMarkerFromImages("/home/jin/github/mxre/resources/markers/", "720p_marker", 0, 1, orbMarkerTracker);
-  mxre::cv_utils::setMarkerFromImages("/home/jin/github/mxre/resources/markers/", "1080p_marker", 0, 1, orbMarkerTracker);
-  //mxre::cv_utils::setMarkerFromImages("/home/jin/github/mxre/resources/markers/", "480p_marker", 0, 1, orbMarkerTracker);
+  mxre::cv_utils::setMarkerFromImages(absMarkerPath + to_string(HEIGHT) + "/", 0, 1, orbMarkerTracker);
   std::vector<mxre::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
   orbMarkerTracker.printRegisteredObjects();
 
@@ -26,8 +38,8 @@ int main(int argc, char const *argv[])
    *  ORB detector & matcher, set matching params
    */
   int frame_idx = 1;
-  cv::Ptr<cv::Feature2D> detector = cv::ORB::create();
-  cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
+  cv::Ptr<cv::cuda::ORB> detector = cv::cuda::ORB::create();
+  cv::Ptr<cv::cuda::DescriptorMatcher> matcher = cv::cuda::DescriptorMatcher::createBFMatcher(cv::NORM_HAMMING);
   double knnMatchRatio = 0.8f;
   int knnParam = 5;
   double ransacThresh = 2.5f;
@@ -69,9 +81,15 @@ int main(int argc, char const *argv[])
   }
   //mxre::egl_utils::unbindPbuffer(*pbuf);
 #ifdef __PROFILE__
-  auto logger = spdlog::basic_logger_st("serialized_example", "logs/serialized_example.log");
+  auto logger = spdlog::basic_logger_st("serialized_example_with_cuda", "logs/serialized_example_with_cuda.log");
+  double e2eStart, e2eEnd;
+  double blockStart, blockEnd;
 #endif
 
+  cv::cuda::GpuMat cuFrame;
+  cv::cuda::Stream stream;
+  cv::cuda::GpuMat cuKp, cuDesc;
+  cv::cuda::GpuMat cuMatches;
 
   /*
    *  Processing Loop
@@ -80,39 +98,54 @@ int main(int argc, char const *argv[])
     /*
      *  1. Load camera frames
      */
+
+#ifdef __PROFILE__
+    e2eStart = getTimeStampNow();
+    blockStart = e2eStart;
+#endif
+
     std::stringstream ss;
     ss << std::setfill('0') << std::setw(6);
     ss << frame_idx++;
-    //std::string imagePath = "/home/jin/github/mxre/resources/video/480p/video_" + ss.str() + ".png";
-    //std::string imagePath = "/home/jin/github/mxre/resources/video/720p/video_" + ss.str() + ".png";
-    std::string imagePath = "/home/jin/github/mxre/resources/video/1080p/video_" + ss.str() + ".png";
+    std::string imagePath = absImagePath + to_string(HEIGHT) +"/video_" + ss.str() + ".png";
     cv::Mat image = cv::imread(imagePath);
     if(image.empty()) {
       debug_print("Could not read the image: %s", imagePath.c_str());
       break;
     }
 
-#ifdef __PROFILE__
-    double startTimeStamp = getTimeStampNow();
+#ifdef LATENCY_BREAKDOWN
+    blockEnd = getTimeStampNow();
+    logger->info("\tDisk Read Time\t{}", blockEnd - blockStart);
+    blockStart = blockEnd;
 #endif
 
     /*
      *  2. Detect registered markers on the loaded frame
      */
     std::vector<cv::KeyPoint> frameKps;
-    cv::Mat frameDesc;
     std::vector<mxre::cv_types::DetectedMarker> detectedMarkers;
     std::vector<mxre::gl_types::ObjectContext> markerContexts;
 
     // 2.1. Get frame keypoints and descriptors
     cv::Mat grayFrame = image.clone();
     cv::cvtColor(grayFrame, grayFrame, CV_BGR2GRAY);
-    detector->detectAndCompute(grayFrame, cv::noArray(), frameKps, frameDesc);
+    cuFrame.upload(grayFrame);
+    detector->detectAndComputeAsync(cuFrame, cv::noArray(), cuKp, cuDesc, false, stream);
+    stream.waitForCompletion();
+    detector->convert(cuKp, frameKps);
+
+#ifdef LATENCY_BREAKDOWN
+    blockEnd = getTimeStampNow();
+    logger->info("\tKeypoint Extraction Time\t{}", blockEnd - blockStart);
+    blockStart = blockEnd;
+#endif
 
     // multiple object detection
     std::vector<mxre::cv_types::MarkerInfo>::iterator markerInfo;
     for (markerInfo = registeredMarkers.begin(); markerInfo != registeredMarkers.end(); ++markerInfo)
     {
+      cv::cuda::GpuMat cuObjDesc;
       std::vector<std::vector<cv::DMatch>> matches;
       std::vector<cv::KeyPoint> objMatch, frameMatch;
       cv::Mat homography;
@@ -121,7 +154,16 @@ int main(int argc, char const *argv[])
       std::vector<cv::DMatch> inlierMatches;
 
       // 2.2. find matching descriptors between the frame and the object
-      matcher->knnMatch(markerInfo->desc, frameDesc, matches, knnParam);
+      cuObjDesc.upload(markerInfo->desc);
+      matcher->knnMatchAsync(cuObjDesc, cuDesc, cuMatches, 2, cv::noArray(), stream);
+      stream.waitForCompletion();
+      matcher->knnMatchConvert(cuMatches, matches);
+
+#ifdef LATENCY_BREAKDOWN
+      blockEnd = getTimeStampNow();
+      logger->info("\tFinding Matching Descriptors Time\t{}", blockEnd - blockStart);
+      blockStart = blockEnd;
+#endif
 
       // 2.3. filter matching descriptors by their distances, and store the pair of matching keypoints
       for (unsigned i = 0; i < matches.size(); i++)
@@ -167,6 +209,12 @@ int main(int argc, char const *argv[])
       }
     }
 
+#ifdef LATENCY_BREAKDOWN
+    blockEnd = getTimeStampNow();
+    logger->info("\tFiltering and Detection Time\t{}", blockEnd - blockStart);
+    blockStart = blockEnd;
+#endif
+
     /********************************
                 Extract Contexts
     *********************************/
@@ -192,6 +240,12 @@ int main(int argc, char const *argv[])
       markerContext.tvec.x = transX; markerContext.tvec.y = transY; markerContext.tvec.z = -transZ;
       markerContexts.push_back(markerContext);
     }
+
+#ifdef LATENCY_BREAKDOWN
+    blockEnd = getTimeStampNow();
+    logger->info("\tReal-Virtual Mapping Time\t{}", blockEnd - blockStart);
+    blockStart = getTimeStampNow();
+#endif
 
     /********************************
                 Overlay Objects
@@ -222,13 +276,25 @@ int main(int argc, char const *argv[])
 
     mxre::types::Frame resultFrame = mxre::gl_utils::exportGLBufferToCV(WIDTH, HEIGHT);
 
-#ifdef __PROFILE__
-    double endTimeStamp = getTimeStampNow();
-    logger->info("{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
+#ifdef LATENCY_BREAKDOWN
+    blockEnd = getTimeStampNow();
+    logger->info("\tRendering and Overlaying Time\t{}", blockEnd - blockStart);
+    blockStart = getTimeStampNow();
 #endif
 
-    cv::imshow("CVDisplay", resultFrame.useAsCVMat());
-    int inKey = cv::waitKey(1) & 0xFF;
+    //cv::imshow("CVDisplay", resultFrame.useAsCVMat());
+    //int inKey = cv::waitKey(1) & 0xFF;
+
+#ifdef LATENCY_BREAKDOWN
+    blockEnd = getTimeStampNow();
+    logger->info("\tDisplaying Time\t{}", blockEnd - blockStart);
+#endif
+
+#ifdef __PROFILE__
+    e2eEnd = getTimeStampNow();
+    logger->info("E2E Time\t{}\tFPS: {}", e2eEnd - e2eStart, 1000/(e2eEnd - e2eStart));
+#endif
+
     resultFrame.release();
   }
 

@@ -2,21 +2,31 @@
 #include <mxre>
 #include <bits/stdc++.h>
 
-#define WIDTH 1280
-#define HEIGHT 720
-
 using namespace std;
+
+int WIDTH, HEIGHT, QUEUE_SIZE;
+std::string absMarkerPath, absImagePath;
 
 int main(int argc, char const *argv[])
 {
-  mxre::cv_types::ORBMarkerTracker orbMarkerTracker;
-  mxre::cv_utils::setMarkerFromImages("/home/jin/github/mxre/resources/markers/", "720p_marker", 0, 1, orbMarkerTracker);
+  if(argc == 5) {
+    WIDTH = stoi(argv[1]);
+    HEIGHT = stoi(argv[2]);
+    absMarkerPath = argv[3];
+    absImagePath = argv[4];
+  }
+  else {
+    cout << "usage: ./EXE WIDTH HEIGHT MARKER_PATH IMG_PATH" << endl;
+    return 0;
+  }
 
+  mxre::cv_types::ORBMarkerTracker orbMarkerTracker;
+  mxre::cv_utils::setMarkerFromImages(absMarkerPath + to_string(HEIGHT) + "/", 0, 1, orbMarkerTracker);
   orbMarkerTracker.printRegisteredObjects();
 
-  mxre::kernels::ImageLoader imageLoader("/home/jin/github/mxre/resources/video/720p/", "video_", 1, 6, WIDTH, HEIGHT);
+  mxre::kernels::ImageLoader imageLoader(absImagePath + to_string(HEIGHT) + "/", "video_", 1, 6, WIDTH, HEIGHT);
   imageLoader.duplicateOutPort<mxre::types::Frame>("out_frame", "out_frame2");
-  imageLoader.setSleepPeriodMS(50);
+  //imageLoader.setSleepPeriodMS(50);
 
   mxre::kernels::Keyboard keyboard;
   mxre::kernels::ORBDetector orbDetector(orbMarkerTracker.getRegisteredObjects());
