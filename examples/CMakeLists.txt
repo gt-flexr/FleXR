@@ -1,8 +1,6 @@
 file(GLOB_RECURSE EXAMPLE_SRCS modules/*.cc)
 list(APPEND EXAMPLE_SRCS
   basic_example.cc
-  imgloader_example.cc
-  serialized_example.cc
   complex_yolo.cc
 
   full_offloading/cam_fulloff_client.cc
@@ -13,18 +11,31 @@ list(APPEND EXAMPLE_SRCS
   partial_offloading/detector_only_server.cc
   partial_offloading/perception_only_client.cc
   partial_offloading/perception_only_server.cc
+
+  # experiments/imgloader/imgloader_example_adq.cc
+  # experiments/imgloader/imgloader_example_q.cc
+  # experiments/imgloader/serialized_img_loader.cc
+  experiments/serialized_mock_cam.cc
+  experiments/mock_cam_q.cc
+  experiments/mock_cam_adq.cc
 )
 
 if(${USE_OPENCV_CUDA})
 list(APPEND EXAMPLE_SRCS
   basic_example_with_cuda.cc
-  serialized_example_with_cuda.cc
-  imgloader_example_with_cuda.cc
   illixr_local_server.cc
+
   full_offloading/cam_fulloff_server_with_cuda.cc
   full_offloading/img_fulloff_server_with_cuda.cc
   partial_offloading/detector_only_server_with_cuda.cc
   partial_offloading/perception_only_server_with_cuda.cc
+
+  # experiments/imgloader/imgloader_example_with_cuda_adq.cc
+  # experiments/imgloader/imgloader_example_with_cuda_q.cc
+  # experiments/imgloader/serialized_img_loader_with_cuda.cc
+  experiments/serialized_mock_cam_cuda.cc
+  experiments/mock_cam_cuda_q.cc
+  experiments/mock_cam_cuda_adq.cc
 )
 endif(${USE_OPENCV_CUDA})
 
