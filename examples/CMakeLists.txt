@@ -18,6 +18,9 @@ list(APPEND EXAMPLE_SRCS
   experiments/serialized_mock_cam.cc
   experiments/mock_cam_q.cc
   experiments/mock_cam_adq.cc
+
+  unity_writer.cc
+  unity_test.cc
 )
 
 if(${USE_OPENCV_CUDA})

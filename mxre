@@ -40,6 +40,7 @@
 
 #include "./mxreinc/kernels/plugin/illixr_source.h"
 #include "./mxreinc/kernels/plugin/illixr_sink.h"
+#include "./mxreinc/kernels/plugin/unity_frame_writer.h"
 
 #include "./mxreinc/kernels/sources/cv_camera.h"
 #include "./mxreinc/kernels/sources/keyboard.h"
