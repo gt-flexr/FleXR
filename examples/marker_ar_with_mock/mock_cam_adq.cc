@@ -1,37 +1,46 @@
 #include <raft>
 #include <mxre>
 #include <bits/stdc++.h>
+#include <yaml-cpp/yaml.h>
 
 using namespace std;
 
-int WIDTH, HEIGHT, QUEUE_SIZE;
-std::string absMarkerPath, absImagePath;
+int width, height;
+std::string markerPath, fixedImagePath;
 
-int main(int argc, char const *argv[])
+int main()
 {
-  if(argc == 5) {
-    WIDTH = stoi(argv[1]);
-    HEIGHT = stoi(argv[2]);
-    absMarkerPath = argv[3];
-    absImagePath = argv[4];
-  }
-  else {
-    cout << "usage: ./EXE WIDTH HEIGHT MARKER_PATH IMG_PATH" << endl;
+  string mxre_home = getenv("MXRE_HOME");
+  string config_yaml = mxre_home + "/examples/marker_ar_with_mock/config.yaml";
+
+  if(mxre_home.empty()) {
+    cout << "Set MXRE_HOME as a environment variable" << endl;
     return 0;
   }
+  else
+    cout << config_yaml << endl;
+
+
+  YAML::Node config = YAML::LoadFile(config_yaml);
+
+  width = config["width"].as<int>();
+  height = config["height"].as<int>();
+
+  markerPath = config["marker_path"].as<string>();
+  fixedImagePath = config["fixed_image_path"].as<string>();
 
   mxre::cv_types::ORBMarkerTracker orbMarkerTracker;
-  mxre::cv_utils::setMarkerFromImages(absMarkerPath + to_string(HEIGHT) + "/", 0, 1, orbMarkerTracker);
+  mxre::cv_utils::setMarkerFromImages(markerPath + to_string(height) + "/", 0, 1, orbMarkerTracker);
   orbMarkerTracker.printRegisteredObjects();
 
-  mxre::kernels::MockCamera mockCamera(absImagePath, WIDTH, HEIGHT);
+  mxre::kernels::MockCamera mockCamera(fixedImagePath, width, height);
   mockCamera.duplicateOutPort<mxre::types::Frame>("out_frame", "out_frame2");
   mockCamera.setSleepPeriodMS(16);
 
   mxre::kernels::Keyboard keyboard;
   mxre::kernels::ORBDetector orbDetector(orbMarkerTracker.getRegisteredObjects());
-  mxre::kernels::MarkerCtxExtractor markerCtxExtractor(WIDTH, HEIGHT);
-  mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), WIDTH, HEIGHT);
+  mxre::kernels::MarkerCtxExtractor markerCtxExtractor(width, height);
+  mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), width, height);
   mxre::kernels::NonDisplay nonDisplay;
 
   raft::map pipeline;

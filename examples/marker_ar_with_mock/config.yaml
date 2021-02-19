@@ -1,0 +1,11 @@
+width: 1920
+height: 1080
+marker_path: "/home/jin/github/mxre/resources/markers/"
+fixed_image_path: "/home/jin/github/mxre/resources/video/1080/video_000120.png"
+
+mock_cam_q:
+  queue_size: 1 # Complex configurations
+
+mock_cam_cuda_q:
+  queue_size: 1 # Complex configurations
+

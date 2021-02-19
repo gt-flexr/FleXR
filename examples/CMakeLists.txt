@@ -1,46 +1,36 @@
 file(GLOB_RECURSE EXAMPLE_SRCS modules/*.cc)
 list(APPEND EXAMPLE_SRCS
-  basic_example.cc
-  complex_yolo.cc
+  ar_with_lidar/complex_yolo.cc
 
-  full_offloading/cam_fulloff_client.cc
-  full_offloading/cam_fulloff_server.cc
-  full_offloading/img_fulloff_client.cc
-  full_offloading/img_fulloff_server.cc
-  partial_offloading/detector_only_client.cc
-  partial_offloading/detector_only_server.cc
-  partial_offloading/perception_only_client.cc
-  partial_offloading/perception_only_server.cc
+  #marker_ar_with_cam/full_offloading/cam_fulloff_client.cc
+  #marker_ar_with_cam/full_offloading/cam_fulloff_server.cc
+  #marker_ar_with_cam/basic_example.cc
 
-  # experiments/imgloader/imgloader_example_adq.cc
-  # experiments/imgloader/imgloader_example_q.cc
-  # experiments/imgloader/serialized_img_loader.cc
-  experiments/serialized_mock_cam.cc
-  experiments/mock_cam_q.cc
-  experiments/mock_cam_adq.cc
+  marker_ar_with_mock/mock_cam_q.cc
+  marker_ar_with_mock/mock_cam_adq.cc
+  marker_ar_with_mock/serialized_mock_cam.cc
 
-  unity_writer.cc
-  unity_test.cc
+  #marker_ar_with_img/full_offloading/img_fulloff_server.cc
+  #marker_ar_with_img/full_offloading/img_fulloff_client.cc
+
+  incubator/unity_test.cc
+  incubator/unity_writer.cc
 )
+
 
 if(${USE_OPENCV_CUDA})
 list(APPEND EXAMPLE_SRCS
-  basic_example_with_cuda.cc
-  illixr_local_server.cc
+  #marker_ar_with_cam/full_offloading/cam_fulloff_server_with_cuda.cc
+  #marker_ar_with_cam/basic_example_with_cuda.cc
 
-  full_offloading/cam_fulloff_server_with_cuda.cc
-  full_offloading/img_fulloff_server_with_cuda.cc
-  partial_offloading/detector_only_server_with_cuda.cc
-  partial_offloading/perception_only_server_with_cuda.cc
+  marker_ar_with_mock/mock_cam_cuda_q.cc
+  marker_ar_with_mock/mock_cam_cuda_adq.cc
+  marker_ar_with_mock/serialized_mock_cam_cuda.cc
 
-  # experiments/imgloader/imgloader_example_with_cuda_adq.cc
-  # experiments/imgloader/imgloader_example_with_cuda_q.cc
-  # experiments/imgloader/serialized_img_loader_with_cuda.cc
-  experiments/serialized_mock_cam_cuda.cc
-  experiments/mock_cam_cuda_q.cc
-  experiments/mock_cam_cuda_adq.cc
+  #incubator/illixr_local_server.cc
 )
 endif(${USE_OPENCV_CUDA})
+
 
 foreach(EXAMPLE_SRC ${EXAMPLE_SRCS})
   get_filename_component (NAME_WITHOUT_EXTENSION ${EXAMPLE_SRC} NAME_WE)
@@ -48,8 +38,8 @@ foreach(EXAMPLE_SRC ${EXAMPLE_SRCS})
 
   add_executable(${EXAMPLE_NAME} ${EXAMPLE_SRC})
   target_include_directories(${EXAMPLE_NAME} PUBLIC
-                               "${PROJECT_SOURCE_DIR}/mxreinc"
-                               "${CMAKE_BINARY_DIR}/config")
+                             "${PROJECT_SOURCE_DIR}/mxreinc"
+                             "${CMAKE_BINARY_DIR}/config")
 
   target_compile_options(${EXAMPLE_NAME} PUBLIC ${MXRE_CXX_FLAGS})
   target_link_libraries(${EXAMPLE_NAME} ${MXRE_LINKER_FLAGS})

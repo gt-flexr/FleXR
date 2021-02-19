@@ -3,44 +3,52 @@
 #include <bits/stdc++.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/basic_file_sink.h>
+#include <yaml-cpp/yaml.h>
 
 //#define LATENCY_BREAKDOWN 1
 
 using namespace std;
 
-int WIDTH, HEIGHT, QUEUE_SIZE;
-std::string absMarkerPath, absImagePath;
+int width, height;
+std::string markerPath, fixedImagePath;
 
 int main(int argc, char const *argv[])
 {
-  if(argc == 5) {
-    WIDTH = stoi(argv[1]);
-    HEIGHT = stoi(argv[2]);
-    absMarkerPath = argv[3];
-    absImagePath = argv[4];
-  }
-  else {
-    cout << "usage: ./EXE WIDTH HEIGHT MARKER_PATH IMG_PATH"  << endl;
+  string mxre_home = getenv("MXRE_HOME");
+  string config_yaml = mxre_home + "/examples/marker_ar_with_mock/config.yaml";
+
+  if(mxre_home.empty()) {
+    cout << "Set MXRE_HOME as a environment variable" << endl;
     return 0;
   }
+  else
+    cout << config_yaml << endl;
 
+
+  YAML::Node config = YAML::LoadFile(config_yaml);
+
+  width = config["width"].as<int>();
+  height = config["height"].as<int>();
+
+  markerPath = config["marker_path"].as<string>();
+  fixedImagePath = config["fixed_image_path"].as<string>();
 
   /*
    *  Load a marker from an image
    */
   mxre::cv_types::ORBMarkerTracker orbMarkerTracker;
-  mxre::cv_utils::setMarkerFromImages(absMarkerPath + to_string(HEIGHT) + "/", 0, 1, orbMarkerTracker);
+  mxre::cv_utils::setMarkerFromImages(markerPath + to_string(height) + "/", 0, 1, orbMarkerTracker);
   std::vector<mxre::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
   orbMarkerTracker.printRegisteredObjects();
 
-  cv::Mat cachedFrame = cv::imread(absImagePath);
+  cv::Mat cachedFrame = cv::imread(fixedImagePath);
   if(cachedFrame.empty()) {
-    debug_print("Could not read the image: %s", absImagePath.c_str());
+    debug_print("Could not read the image: %s", fixedImagePath.c_str());
     exit(0);
   }
 
-  int rowPadding = HEIGHT - cachedFrame.rows;
-  int colPadding = WIDTH - cachedFrame.cols;
+  int rowPadding = height - cachedFrame.rows;
+  int colPadding = width - cachedFrame.cols;
   if(rowPadding > 0 && colPadding > 0) {
     debug_print("padding : %d %d", rowPadding, colPadding);
     cv::copyMakeBorder(cachedFrame, cachedFrame, 0, rowPadding, 0, colPadding, cv::BORDER_CONSTANT,
@@ -64,8 +72,8 @@ int main(int argc, char const *argv[])
    *  Set default camera params
    */
   cv::Mat camIntrinsic(3, 3, CV_64FC1);
-  camIntrinsic.at<double>(0, 0) = WIDTH; camIntrinsic.at<double>(0, 1) = 0; camIntrinsic.at<double>(0, 2) = WIDTH/2;
-  camIntrinsic.at<double>(1, 0) = 0; camIntrinsic.at<double>(1, 1) = WIDTH; camIntrinsic.at<double>(1, 2) = HEIGHT/2;
+  camIntrinsic.at<double>(0, 0) = width; camIntrinsic.at<double>(0, 1) = 0; camIntrinsic.at<double>(0, 2) = width/2;
+  camIntrinsic.at<double>(1, 0) = 0; camIntrinsic.at<double>(1, 1) = width; camIntrinsic.at<double>(1, 2) = height/2;
   camIntrinsic.at<double>(2, 0) = 0; camIntrinsic.at<double>(2, 1) = 0; camIntrinsic.at<double>(2, 2) = 1;
   cv::Mat camDistCoeffs(4, 1, CV_64FC1, {0, 0, 0, 0});
 
@@ -77,10 +85,10 @@ int main(int argc, char const *argv[])
   GLuint backgroundTexture;
 
   pbuf = new mxre::egl_types::pbuffer;
-  mxre::egl_utils::initPbuffer(*pbuf, WIDTH, HEIGHT);
+  mxre::egl_utils::initPbuffer(*pbuf, width, height);
 
   mxre::egl_utils::bindPbuffer(*pbuf);
-  mxre::gl_utils::initGL(WIDTH, HEIGHT);
+  mxre::gl_utils::initGL(width, height);
   worldManager.initShader();
 
   /*
@@ -225,9 +233,9 @@ int main(int argc, char const *argv[])
 
       mxre::gl_types::ObjectContext markerContext;
       markerContext.index = detectedMarker->index;
-      float transX = (tvec.at<double>(0, 0) * 2) / WIDTH;
-      float transY = (tvec.at<double>(0, 1) * 2) / HEIGHT;
-      float transZ = tvec.at<double>(0, 2) / WIDTH;
+      float transX = (tvec.at<double>(0, 0) * 2) / width;
+      float transY = (tvec.at<double>(0, 1) * 2) / height;
+      float transZ = tvec.at<double>(0, 2) / width;
 
       float rotX = rvec.at<double>(0, 0);
       float rotY = rvec.at<double>(0, 1);
@@ -258,20 +266,20 @@ int main(int argc, char const *argv[])
     glClearColor(1.0, 1.0, 1.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    mxre::gl_utils::startBackground(WIDTH, HEIGHT);
+    mxre::gl_utils::startBackground(width, height);
     glBindTexture(GL_TEXTURE_2D, backgroundTexture);
     glBegin(GL_QUADS);
     glColor3f(1, 1, 1);
     glTexCoord2i(0,0); glVertex3f(0,     0,      -1);
-    glTexCoord2i(1,0); glVertex3f(WIDTH, 0,      -1);
-    glTexCoord2i(1,1); glVertex3f(WIDTH, HEIGHT, -1);
-    glTexCoord2i(0,1); glVertex3f(0,     HEIGHT, -1);
+    glTexCoord2i(1,0); glVertex3f(width, 0,      -1);
+    glTexCoord2i(1,1); glVertex3f(width, height, -1);
+    glTexCoord2i(0,1); glVertex3f(0,     height, -1);
     glEnd();
     mxre::gl_utils::endBackground();
 
     worldManager.startWorlds('f', markerContexts);
 
-    mxre::types::Frame resultFrame = mxre::gl_utils::exportGLBufferToCV(WIDTH, HEIGHT);
+    mxre::types::Frame resultFrame = mxre::gl_utils::exportGLBufferToCV(width, height);
 
 #ifdef LATENCY_BREAKDOWN
     blockEnd = getTimeStampNow();
