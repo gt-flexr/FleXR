@@ -9,6 +9,7 @@ list(APPEND EXAMPLE_SRCS
   marker_ar_with_mock/mock_cam_q.cc
   marker_ar_with_mock/mock_cam_adq.cc
   marker_ar_with_mock/serialized_mock_cam.cc
+  marker_ar_with_mock/full_offloading/mock_client.cc
 
   #marker_ar_with_img/full_offloading/img_fulloff_server.cc
   #marker_ar_with_img/full_offloading/img_fulloff_client.cc
@@ -26,6 +27,7 @@ list(APPEND EXAMPLE_SRCS
   marker_ar_with_mock/mock_cam_cuda_q.cc
   marker_ar_with_mock/mock_cam_cuda_adq.cc
   marker_ar_with_mock/serialized_mock_cam_cuda.cc
+  marker_ar_with_mock/full_offloading/mock_server.cc
 
   #incubator/illixr_local_server.cc
 )
