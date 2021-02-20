@@ -5,6 +5,9 @@
 
 using namespace std;
 
+// pipeline runner for threads
+void runPipeline(raft::map *pipeline) { pipeline->exe(); }
+
 int width, height;
 std::string fixedImagePath;
 
@@ -29,30 +32,34 @@ int main(int argc, char const *argv[])
   fixedImagePath = config["fixed_image_path"].as<string>();
 
   // 1. create & run a sending pipeline
-  raft::map clientPipe;
+  raft::map sendPipe, recvPipe;
 
   mxre::kernels::MockCamera mockCamera(fixedImagePath, width, height);
   mockCamera.setSleepPeriodMS(16);
   mxre::kernels::RTPFrameSender rtpSender(config["codec"].as<string>(),
                                           config["server_addr"].as<string>(),
-                                          config["server_video_port"].as<int>(), 800000, 10, width, height);
+                                          config["server_video_port"].as<int>(),
+                                          800000, 30, width, height);
 
   mxre::kernels::Keyboard keyboard;
   mxre::kernels::MessageSender<char> keySender(config["server_addr"].as<string>(),
                                                config["server_key_port"].as<int>(),
                                                mxre::utils::sendPrimitive<char>);
 
-  clientPipe += mockCamera["out_frame"] >> rtpSender["in_data"];
-  clientPipe += keyboard["out_keystroke"] >> keySender["in_data"];
+  sendPipe += mockCamera["out_frame"] >> rtpSender["in_data"];
+  sendPipe += keyboard["out_keystroke"] >> keySender["in_data"];
+  std::thread sendThread(runPipeline, &sendPipe);
 
   mxre::kernels::RTPFrameReceiver rtpReceiver(config["codec"].as<string>(),
                                               config["client_video_port"].as<int>(),
                                               width, height);
   mxre::kernels::NonDisplay nonDisplay;
 
-  clientPipe += rtpReceiver["out_data"] >> nonDisplay["in_frame"];
+  recvPipe += rtpReceiver["out_data"] >> nonDisplay["in_frame"];
+  std::thread recevThread(runPipeline, &recvPipe); 
 
-  clientPipe.exe();
+  sendThread.join();
+  recevThread.join();
 
   return 0;
 }

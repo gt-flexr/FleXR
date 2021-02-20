@@ -46,7 +46,7 @@ int main(int argc, char const *argv[])
   mxre::kernels::RTPFrameSender rtpSender(config["codec"].as<string>(),
                                           config["client_addr"].as<string>(),
                                           config["client_video_port"].as<int>(),
-                                          800000, 10, width, height);
+                                          800000, 30, width, height);
 
   servingPipeline += rtpReceiver["out_data"] >> cudaORBDetector["in_frame"];
   servingPipeline += cudaORBDetector["out_detected_markers"] >> markerCtxExtractor["in_detected_markers"];
