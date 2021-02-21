@@ -5,7 +5,7 @@
 
 using namespace std;
 
-int width, height;
+int width, height, fps;
 std::string markerPath;
 
 int main(int argc, char const *argv[])
@@ -25,6 +25,7 @@ int main(int argc, char const *argv[])
 
   width = config["width"].as<int>();
   height = config["height"].as<int>();
+  fps = config["fps"].as<int>();
 
   markerPath = config["marker_path"].as<string>();
 
@@ -37,16 +38,16 @@ int main(int argc, char const *argv[])
   mxre::kernels::CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
   mxre::kernels::MarkerCtxExtractor markerCtxExtractor(width, height);
   mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), width, height);
-  mxre::kernels::RTPFrameReceiver rtpReceiver(config["codec"].as<string>(),
+  mxre::kernels::RTPFrameReceiver rtpReceiver(config["server_dec"].as<string>(),
                                               config["server_video_port"].as<int>(),
                                               width, height);
   rtpReceiver.duplicateOutPort<mxre::types::Frame>("out_data", "out_data2");
   mxre::kernels::MessageReceiver<char> keyReceiver(config["server_key_port"].as<int>(),
                                                    mxre::utils::recvPrimitive<char>);
-  mxre::kernels::RTPFrameSender rtpSender(config["codec"].as<string>(),
+  mxre::kernels::RTPFrameSender rtpSender(config["server_enc"].as<string>(),
                                           config["client_addr"].as<string>(),
                                           config["client_video_port"].as<int>(),
-                                          800000, 30, width, height);
+                                          width * height * 2, fps, width, height);
 
   servingPipeline += rtpReceiver["out_data"] >> cudaORBDetector["in_frame"];
   servingPipeline += cudaORBDetector["out_detected_markers"] >> markerCtxExtractor["in_detected_markers"];

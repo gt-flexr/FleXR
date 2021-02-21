@@ -1,5 +1,6 @@
 width: 1920
 height: 1080
+fps: 30
 marker_path: "/home/jin/github/mxre/resources/markers/"
 fixed_image_path: "/home/jin/github/mxre/resources/video/1080/video_000120.png"
 

@@ -8,7 +8,7 @@ using namespace std;
 // pipeline runner for threads
 void runPipeline(raft::map *pipeline) { pipeline->exe(); }
 
-int width, height;
+int width, height, fps;
 std::string fixedImagePath;
 
 int main(int argc, char const *argv[])
@@ -28,6 +28,7 @@ int main(int argc, char const *argv[])
 
   width = config["width"].as<int>();
   height = config["height"].as<int>();
+  fps = config["fps"].as<int>();
 
   fixedImagePath = config["fixed_image_path"].as<string>();
 
@@ -35,11 +36,11 @@ int main(int argc, char const *argv[])
   raft::map sendPipe, recvPipe;
 
   mxre::kernels::MockCamera mockCamera(fixedImagePath, width, height);
-  mockCamera.setSleepPeriodMS(16);
-  mxre::kernels::RTPFrameSender rtpSender(config["codec"].as<string>(),
+  mockCamera.setSleepPeriodMS((int)(1000/fps + 1));
+  mxre::kernels::RTPFrameSender rtpSender(config["client_enc"].as<string>(),
                                           config["server_addr"].as<string>(),
                                           config["server_video_port"].as<int>(),
-                                          800000, 30, width, height);
+                                          width * height * 2, fps, width, height);
 
   mxre::kernels::Keyboard keyboard;
   mxre::kernels::MessageSender<char> keySender(config["server_addr"].as<string>(),
@@ -50,7 +51,7 @@ int main(int argc, char const *argv[])
   sendPipe += keyboard["out_keystroke"] >> keySender["in_data"];
   std::thread sendThread(runPipeline, &sendPipe);
 
-  mxre::kernels::RTPFrameReceiver rtpReceiver(config["codec"].as<string>(),
+  mxre::kernels::RTPFrameReceiver rtpReceiver(config["client_dec"].as<string>(),
                                               config["client_video_port"].as<int>(),
                                               width, height);
   mxre::kernels::NonDisplay nonDisplay;
