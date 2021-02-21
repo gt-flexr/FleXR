@@ -3,11 +3,13 @@ height: 1080
 marker_path: "/home/jin/github/mxre/resources/markers/"
 fixed_image_path: "/home/jin/github/mxre/resources/video/1080/video_000120.png"
 
-codec: "mjpeg"
 server_addr: "wingtip-gpu2.cc.gatech.edu"
 server_video_port: 49991
+server_enc: "nvenc_h264"
+server_dec: "h264_cuvid"
 server_key_port: 49992
 
 client_addr: "130.207.5.93"
-client_video_port: 49991
-
+client_video_port: 49993
+client_enc: "libx264"
+client_dec: "h264"

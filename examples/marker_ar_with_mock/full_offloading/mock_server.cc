@@ -53,7 +53,6 @@ int main(int argc, char const *argv[])
   servingPipeline += rtpReceiver["out_data2"] >> objRenderer["in_frame"];
   servingPipeline += markerCtxExtractor["out_marker_contexts"] >> objRenderer["in_marker_contexts"];
   servingPipeline += keyReceiver["out_data"] >> objRenderer["in_keystroke"];
-
   servingPipeline += objRenderer["out_frame"] >> rtpSender["in_data"];
   servingPipeline.exe();
   return 0;
