@@ -17,7 +17,7 @@ namespace mxre
       protocolWhitelist = NULL;
 
       // recv sdp and save it as a file
-      sdp = "localhost_" + std::to_string(srcPort) + ".sdp";
+      sdp = "/tmp/" + std::to_string(pid) + "_" + std::to_string(srcPort) + ".sdp";
       recvSDP(srcPort);
 
       initRTPContext();
