@@ -116,6 +116,9 @@ namespace mxre
 
       rtpCodecContext = avcodec_alloc_context3(rtpCodec);
       avcodec_get_context_defaults3(rtpCodecContext, rtpCodec);
+      rtpCodecContext->delay = 0;
+      rtpCodecContext->gop_size = 12;
+      rtpCodecContext->max_b_frames = 0;
       avcodec_copy_context(rtpCodecContext, rtpContext->streams[rtpStreamIndex]->codec);
 
       // sanity check
@@ -180,31 +183,38 @@ namespace mxre
       auto &outData( output["out_data"].allocate<mxre::types::Frame>() );
       int ret = 0, receivedFrame = 0, readSuccess = -1;
 
+      AVPacket packet;
+      av_init_packet(&packet);
+      readSuccess = av_read_frame(rtpContext, &packet);
+
 #ifdef __PROFILE__
       startTimeStamp = getTimeStampNow();
 #endif
 
-      AVPacket packet;
-      av_init_packet(&packet);
-
-      readSuccess = av_read_frame(rtpContext, &packet);
+      /* Received Packet Status */
+      debug_print("Receiving Packet BEFORE DECODING: dts(%ld), pts(%ld), duration(%ld), size(%d)", packet.dts,
+                  packet.pts, packet.duration, packet.size);
 
       if(packet.stream_index == rtpStreamIndex && readSuccess >= 0) {
         int result = avcodec_decode_video2(rtpCodecContext, rtpFrame, &receivedFrame, &packet);
+        debug_print("Receiving Packet AFTER DECODING: dts(%ld), pts(%ld), duration(%ld), size(%d)", packet.dts,
+                    packet.pts, packet.duration, packet.size);
+
         if(receivedFrame) {
           sws_scale(swsContext, rtpFrame->data, rtpFrame->linesize, 0, rtpFrame->height,
               convertingFrame->data, convertingFrame->linesize);
 
           cv::Mat temp = cv::Mat(rtpCodecContext->height, rtpCodecContext->width, CV_8UC3,
                                  convertingFrameBuf.data(), convertingFrame->linesize[0]);
-          outData = mxre::types::Frame(temp);
+          outData = mxre::types::Frame(temp, 0, 0); // TODO put index and timestamp
 
           output["out_data"].send();
           sendFrameCopy("out_data", &outData);
 
 #ifdef __PROFILE__
           endTimeStamp = getTimeStampNow();
-          logger->info("\t{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
+          logger->info("RecvTime/ExportTime/ExeTime\t{}\t {}\t {}", startTimeStamp, endTimeStamp,
+                       endTimeStamp-startTimeStamp);
 #endif
         }
       }

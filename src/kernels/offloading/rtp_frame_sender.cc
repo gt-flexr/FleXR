@@ -79,7 +79,7 @@ namespace mxre
       rtpStream = avformat_new_stream(rtpContext, rtpCodec);
       rtpStream->id = rtpContext->nb_streams - 1;
 
-      // set codec context
+      // set codec context https://ffmpeg.org/doxygen/4.0/structAVCodecContext.html
       rtpCodecContext = rtpStream->codec;
 
       rtpCodecContext->codec_id = rtpCodec->id;
@@ -89,8 +89,9 @@ namespace mxre
       rtpCodecContext->pix_fmt = AV_PIX_FMT_YUV420P;
       rtpCodecContext->time_base = rtpStream->time_base = av_inv_q(dstFps);
       rtpCodecContext->framerate = dstFps;
-      rtpCodecContext->gop_size = 3;
-      rtpCodecContext->max_b_frames = 0;
+      rtpCodecContext->delay = 0;        // https://bit.ly/2NlAtEl
+      rtpCodecContext->gop_size = 12;     // https://bit.ly/2NtOGit
+      rtpCodecContext->max_b_frames = 0; // https://bit.ly/3pIMUal
 
       debug_print("rtpCodecContext->codec->name: %s", rtpCodecContext->codec->name);
 
@@ -218,6 +219,7 @@ namespace mxre
       packet.data = nullptr;
       packet.size = 0;
       av_init_packet(&packet);
+
       ret = avcodec_encode_video2(rtpCodecContext, &packet, rtpFrame, &gotPkt);
       if(ret < 0) {
         debug_print("avcodec_encode_video2");
@@ -225,16 +227,24 @@ namespace mxre
 
       // send the encoded frame as packet
       if(gotPkt) {
-        packet.pts = av_rescale_q_rnd(packet.pts, rtpCodecContext->time_base, rtpStream->time_base,
-            AVRounding(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
-        packet.dts = av_rescale_q_rnd(packet.dts, rtpCodecContext->time_base, rtpStream->time_base,
-            AVRounding(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
-        packet.duration = av_rescale_q(packet.duration, rtpCodecContext->time_base, rtpStream->time_base);
+        //packet.pts = av_rescale_q_rnd(packet.pts, rtpCodecContext->time_base, rtpStream->time_base,
+        //                              AVRounding(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+        //packet.dts = av_rescale_q_rnd(packet.dts, rtpCodecContext->time_base, rtpStream->time_base,
+        //                              AVRounding(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+        //packet.duration = av_rescale_q(packet.duration, rtpCodecContext->time_base, rtpStream->time_base);
+        packet.pts = inData.index;
+        packet.duration = convertTimeStampDouble2Uint(inData.timestamp);
         packet.stream_index = rtpStream->index;
+
+        /* Packet Status */
+        debug_print("Sending Packet: dts(%ld), pts(%ld), duration(%ld), size(%d)", packet.dts,
+                    packet.pts, packet.duration, packet.size);
 
         /* Write the compressed frame to the media file. */
         av_interleaved_write_frame(rtpContext, &packet);
       }
+
+
       inData.release();
 
       input["in_data"].recycle(1);
