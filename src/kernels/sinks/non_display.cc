@@ -10,7 +10,6 @@ namespace mxre
     NonDisplay::NonDisplay()
     {
       addInputPort<mxre::types::Frame>("in_frame");
-      frameIndex = 0;
 #ifdef __PROFILE__
       if(logger == NULL) initLoggerST("non_display", "logs/" + std::to_string(pid) + "/non_display.log");
 #endif
@@ -23,10 +22,9 @@ namespace mxre
 
 #ifdef __PROFILE__
       endTimeStamp = getTimeStampNow();
-      logger->info("{}th frame\t Arriving Time\t{}", frameIndex, endTimeStamp);
+      logger->info("{}th frame\t E2E latency\t{}", frame.index, endTimeStamp - frame.timestamp);
 #endif
 
-      frameIndex++;
       frame.release();
       recyclePort("in_frame");
       return raft::proceed;

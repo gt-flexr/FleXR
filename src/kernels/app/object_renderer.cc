@@ -59,6 +59,9 @@ namespace mxre
                                std::vector<mxre::gl_types::ObjectContext> *inMarkerContexts,
                                char inKey, mxre::types::Frame *outFrame)
     {
+      uint32_t frameIndex = inFrame->index;
+      double frameTimestamp = inFrame->timestamp;
+
       // 1. Create/update background texture & release previous CV frame
       if(glIsTexture(backgroundTexture))
         mxre::gl_utils::updateTextureFromFrame(inFrame, backgroundTexture);
@@ -83,7 +86,7 @@ namespace mxre
 
       worldManager.startWorlds(inKey, *inMarkerContexts);
 
-      *outFrame = mxre::gl_utils::exportGLBufferToCV(width, height);
+      *outFrame = mxre::gl_utils::exportGLBufferToCV(width, height, frameIndex, frameTimestamp);
       return true;
     }
 

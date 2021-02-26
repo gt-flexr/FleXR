@@ -165,7 +165,7 @@ namespace mxre
       glPopMatrix();
       glUseProgram(0);
       worldMap.emptyObject();
-      out_frame = mxre::gl_utils::exportGLBufferToCV(width, height); // IMGSIZE!!!!
+      out_frame = mxre::gl_utils::exportGLBufferToCV(width, height, 0, 0); // IMGSIZE!!!!
 
       input["in_frame"].recycle();
       input["in_obj_context"].recycle();

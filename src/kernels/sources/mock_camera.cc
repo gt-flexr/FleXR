@@ -11,7 +11,7 @@ namespace mxre
   {
     /* Constructor */
     MockCamera::MockCamera(std::string path, int width, int height): MXREKernel(){
-      this->frame_idx = 0;
+      this->frameIndex = 0;
       this->imagePath = path;
       this->width = width;
       this->height = height;
@@ -51,8 +51,7 @@ namespace mxre
 
       auto &outFrame( output["out_frame"].allocate<mxre::types::Frame>() );
 
-      outFrame = mxre::types::Frame(cachedFrame);
-      frame_idx++;
+      outFrame = mxre::types::Frame(cachedFrame, frameIndex++, getTimeStampNow());
       output["out_frame"].send();
       sendFrameCopy("out_frame", &outFrame);
 
@@ -61,7 +60,7 @@ namespace mxre
 
 #ifdef __PROFILE__
       endTimeStamp = getTimeStampNow();
-      logger->info("{}th frame\t start\t{}\t end\t{}\t exe\t{}", frame_idx, startTimeStamp, endTimeStamp,
+      logger->info("{}th frame\t start\t{}\t end\t{}\t exe\t{}", frameIndex-1, startTimeStamp, endTimeStamp,
           endTimeStamp-startTimeStamp);
 #endif
 

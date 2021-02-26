@@ -10,7 +10,6 @@ namespace mxre
     CVDisplay::CVDisplay()
     {
       addInputPort<mxre::types::Frame>("in_frame");
-      frameIndex = 0;
 #ifdef __PROFILE__
       if(logger == NULL) initLoggerST("cv_display", "logs/" + std::to_string(pid) + "/cv_display.log");
 #endif
@@ -19,7 +18,7 @@ namespace mxre
 
     bool CVDisplay::logic(mxre::types::Frame *inFrame) {
       cv::imshow("CVDisplay", inFrame->useAsCVMat());
-      int inKey = cv::waitKey(2) & 0xFF;
+      int inKey = cv::waitKey(0) & 0xFF;
 
       inFrame->release();
       return true;
@@ -29,13 +28,15 @@ namespace mxre
     raft::kstatus CVDisplay::run()
     {
       auto &frame( input["in_frame"].peek<mxre::types::Frame>() );
+      uint32_t frameIndex = frame.index;
+      double frameTimestamp = frame.timestamp;
+
+      logic(&frame);
 
 #ifdef __PROFILE__
       endTimeStamp = getTimeStampNow();
-      logger->info("{}th frame\t Processed Time\t{}", frameIndex, endTimeStamp);
+      logger->info("{}th frame\t E2E latency\t{}", frameIndex, endTimeStamp - frameTimestamp);
 #endif
-      frameIndex++;
-      logic(&frame);
       recyclePort("in_frame");
 
       return raft::proceed;

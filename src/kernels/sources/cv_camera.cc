@@ -16,7 +16,7 @@ namespace mxre
       if (!cam.isOpened())
         std::cerr << "ERROR: unable to open camera" << std::endl;
 
-      frame_idx = 0;
+      frameIndex = 0;
 
       // set default camera intrinsic
       this->intrinsic.at<double>(0, 0) = width;
@@ -47,10 +47,12 @@ namespace mxre
 
     /* Kernel Logic */
     bool CVCamera::logic(mxre::types::Frame *outFrame) {
-      *outFrame = mxre::types::Frame(height, width, CV_8UC3);
+      *outFrame = mxre::types::Frame(height, width, CV_8UC3, 0, 0);
       cv::Mat outFrameAsCVMat = outFrame->useAsCVMat();
       cam.read(outFrameAsCVMat);
-      debug_print("%p %p", outFrame->data, outFrameAsCVMat.data);
+      outFrame->index = frameIndex++;
+      outFrame->timestamp = getTimeStampNow();
+
       if(outFrameAsCVMat.empty()) {
         std::cerr << "ERROR: blank frame grabbed" << std::endl;
         return false;
@@ -65,7 +67,6 @@ namespace mxre
 #ifdef __PROFILE__
       startTimeStamp = getTimeStampNow();
 #endif
-      debug_print("START");
       auto &outFrame(output["out_frame"].allocate<mxre::types::Frame>());
 
       if(logic(&outFrame)) {
@@ -73,12 +74,10 @@ namespace mxre
         sendFrameCopy("out_frame", &outFrame);
       }
 
-      debug_print("END");
-
 #ifdef __PROFILE__
       endTimeStamp = getTimeStampNow();
-      logger->info("{}th frame\t start\t{}\t end\t{}\t exe\t{}", frame_idx-1, startTimeStamp, endTimeStamp,
-          endTimeStamp-startTimeStamp);
+      logger->info("{}th frame\t start\t{}\t end\t{}\t exe\t{}", frameIndex-1, startTimeStamp, endTimeStamp,
+                    endTimeStamp-startTimeStamp);
 #endif
       return raft::proceed;
     }
