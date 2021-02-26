@@ -37,12 +37,14 @@ int main(int argc, char const *argv[])
 
   mxre::kernels::MockCamera mockCamera(fixedImagePath, width, height);
   mockCamera.setSleepPeriodMS((int)(1000/fps + 1));
+
   mxre::kernels::RTPFrameSender rtpSender(config["client_enc"].as<string>(),
                                           config["server_addr"].as<string>(),
                                           config["server_video_port"].as<int>(),
                                           width * height * 2, fps, width, height);
 
   mxre::kernels::Keyboard keyboard;
+
   mxre::kernels::MessageSender<char> keySender(config["server_addr"].as<string>(),
                                                config["server_key_port"].as<int>(),
                                                mxre::utils::sendPrimitive<char>);

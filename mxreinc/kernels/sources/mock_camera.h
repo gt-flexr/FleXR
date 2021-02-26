@@ -21,7 +21,7 @@ namespace mxre
     class MockCamera: public MXREKernel
     {
     private:
-      unsigned int frame_idx;
+      unsigned int frameIndex;
       std::string imagePath;
       int width, height;
       cv::Mat cachedFrame;

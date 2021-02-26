@@ -83,16 +83,16 @@ namespace mxre
     }
 
 
-    static mxre::types::Frame exportGLBufferToCV(int width, int height)
+    static mxre::types::Frame exportGLBufferToCV(int width, int height, uint32_t index, double timestamp)
     {
       glReadBuffer(GL_FRONT);
       glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
       unsigned char *pixels = new unsigned char[3 * width * height];
       glReadPixels(0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, pixels);
-      debug_print("allocated pixel addr: %p", static_cast<void*>(pixels));
+      // debug_print("allocated pixel addr: %p", static_cast<void*>(pixels));
 
-      mxre::types::Frame frame(height, width, CV_8UC3, pixels);
+      mxre::types::Frame frame(height, width, CV_8UC3, pixels, index, timestamp);
 
       return frame;
     }
@@ -182,7 +182,7 @@ namespace mxre
       //glPushMatrix();
       //glLoadIdentity();
       //glTranslatef(-width/2, -height/2, 0); // set mid point
-      debug_print("width height %d %d \n", width, height);
+      // debug_print("width height %d %d \n", width, height);
       gluOrtho2D(0, width, 0, height); // set to orthogonal projection
     }
 

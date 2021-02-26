@@ -22,7 +22,7 @@ namespace mxre
     {
     private:
       cv::VideoCapture cam;
-      int frame_idx;
+      int frameIndex;
       cv::Mat intrinsic;
       cv::Mat distCoeffs;
       int width, height;

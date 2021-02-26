@@ -2,6 +2,8 @@
 #define __MXRE_FRAME__
 
 #include <cv.hpp>
+#include <bits/stdc++.h>
+#include "defs.h"
 
 namespace mxre {
   namespace types {
@@ -13,12 +15,21 @@ namespace mxre {
       int type;
       unsigned char *data;
 
+      // index and timestamp are necessary for tracking
+      uint32_t index;
+      double timestamp;
+
       Frame() {
         rows = cols = type = totalElem = elemSize = dataSize = 0;
+        index = 0;
+        timestamp = 0;
         data = NULL;
       }
 
-      Frame(cv::Mat inMat) {
+      Frame(cv::Mat inMat, uint32_t index, double timestamp) {
+        this->index = index;
+        this->timestamp = timestamp;
+
         rows = inMat.rows;
         cols = inMat.cols;
         type = inMat.type();
@@ -29,7 +40,10 @@ namespace mxre {
         memcpy(data, inMat.data, dataSize);
       }
 
-      Frame(int rows, int cols, int type) {
+      Frame(int rows, int cols, int type, uint32_t index, double timestamp) {
+        this->index = index;
+        this->timestamp = timestamp;
+
         this->rows = rows;
         this->cols = cols;
         this->type = type;
@@ -40,7 +54,10 @@ namespace mxre {
         this->data = new unsigned char[totalElem * elemSize];
       }
 
-      Frame(int rows, int cols, int type, void *data) {
+      Frame(int rows, int cols, int type, void *data, uint32_t index, double timestamp) {
+        this->index = index;
+        this->timestamp = timestamp;
+
         this->rows = rows;
         this->cols = cols;
         this->type = type;
@@ -60,7 +77,7 @@ namespace mxre {
       cv::Mat useAsCVMat() { return cv::Mat(rows, cols, type, data); }
 
       Frame clone() {
-        Frame cloneFrame(rows, cols, type);
+        Frame cloneFrame(rows, cols, type, index, timestamp);
         memcpy(cloneFrame.data, data, dataSize);
         return cloneFrame;
       }

@@ -36,7 +36,8 @@ int main(int argc, char const *argv[])
   /*
    *  ORB detector & matcher, set matching params
    */
-  int frame_idx = 1;
+  int frameIndex = 1;
+  double frameTimestamp;
   cv::Ptr<cv::Feature2D> detector = cv::ORB::create();
   cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
   double knnMatchRatio = 0.8f;
@@ -100,13 +101,14 @@ int main(int argc, char const *argv[])
 
     std::stringstream ss;
     ss << std::setfill('0') << std::setw(6);
-    ss << frame_idx++;
+    ss << frameIndex++;
     std::string imagePath = absImagePath + to_string(HEIGHT) +"/video_" + ss.str() + ".png";
     cv::Mat image = cv::imread(imagePath);
     if(image.empty()) {
       debug_print("Could not read the image: %s", imagePath.c_str());
       break;
     }
+    frameTimestamp = getTimeStampNow();
 
 #ifdef LATENCY_BREAKDOWN
     blockEnd = getTimeStampNow();
@@ -238,7 +240,7 @@ int main(int argc, char const *argv[])
     /********************************
                 Overlay Objects
     *********************************/
-    mxre::types::Frame mxreFrame(image);
+    mxre::types::Frame mxreFrame(image, frameIndex, frameTimestamp);
     if(glIsTexture(backgroundTexture))
       mxre::gl_utils::updateTextureFromFrame(&mxreFrame, backgroundTexture);
     else
@@ -262,7 +264,7 @@ int main(int argc, char const *argv[])
 
     worldManager.startWorlds('f', markerContexts);
 
-    mxre::types::Frame resultFrame = mxre::gl_utils::exportGLBufferToCV(WIDTH, HEIGHT);
+    mxre::types::Frame resultFrame = mxre::gl_utils::exportGLBufferToCV(WIDTH, HEIGHT, frameIndex, frameTimestamp);
 
 #ifdef LATENCY_BREAKDOWN
     blockEnd = getTimeStampNow();

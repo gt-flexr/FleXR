@@ -60,7 +60,8 @@ int main(int argc, char const *argv[])
   /*
    *  ORB detector & matcher, set matching params
    */
-  int frame_idx = 1;
+  int frameIndex = 1;
+  double frameTimestamp;
   cv::Ptr<cv::Feature2D> detector = cv::ORB::create();
   cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
   double knnMatchRatio = 0.8f;
@@ -124,6 +125,7 @@ int main(int argc, char const *argv[])
 
     // Camera Frequency
     std::this_thread::sleep_for(std::chrono::milliseconds(16));
+    frameTimestamp = getTimeStampNow();
 
 #ifdef LATENCY_BREAKDOWN
     blockEnd = getTimeStampNow();
@@ -255,7 +257,7 @@ int main(int argc, char const *argv[])
     /********************************
                 Overlay Objects
     *********************************/
-    mxre::types::Frame mxreFrame(cachedFrame);
+    mxre::types::Frame mxreFrame(cachedFrame, frameIndex, frameTimestamp);
     if(glIsTexture(backgroundTexture))
       mxre::gl_utils::updateTextureFromFrame(&mxreFrame, backgroundTexture);
     else
@@ -279,7 +281,8 @@ int main(int argc, char const *argv[])
 
     worldManager.startWorlds('f', markerContexts);
 
-    mxre::types::Frame resultFrame = mxre::gl_utils::exportGLBufferToCV(width, height);
+    mxre::types::Frame resultFrame = mxre::gl_utils::exportGLBufferToCV(width, height, frameIndex, frameTimestamp);
+    frameIndex++;
 
 #ifdef LATENCY_BREAKDOWN
     blockEnd = getTimeStampNow();
@@ -298,6 +301,8 @@ int main(int argc, char const *argv[])
 #ifdef __PROFILE__
     e2eEnd = getTimeStampNow();
     logger->info("E2E Time\t{}\tFPS: {}", e2eEnd - e2eStart, 1000/(e2eEnd - e2eStart));
+    debug_print("clock / %dth frameTimstamp: %f / %f", resultFrame.index, e2eEnd - e2eStart,
+                e2eEnd - resultFrame.timestamp);
 #endif
 
     resultFrame.release();

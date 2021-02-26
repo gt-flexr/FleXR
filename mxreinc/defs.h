@@ -41,7 +41,7 @@
 #define getNow() std::chrono::high_resolution_clock::now()
 #define getTimeStampNow() ( (double)std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() / 1000 )
 #define getTimeStampNowUint() (unsigned int)( (double)std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() / 1000 )
-
+#define convertTimeStampDouble2Uint(a) (uint32_t)(a)
 
 #endif
 
