@@ -197,12 +197,18 @@ namespace mxre
 
       if(packet.stream_index == rtpStreamIndex && readSuccess >= 0) {
         int result = avcodec_decode_video2(rtpCodecContext, rtpFrame, &receivedFrame, &packet);
-        debug_print("Receiving Packet AFTER DECODING: dts(%ld), pts(%ld), duration(%ld), size(%d)", packet.dts,
-                    packet.pts, packet.duration, packet.size);
+        //debug_print("Receiving Packet AFTER DECODING: dts(%ld), pts(%ld), duration(%ld), size(%d)", packet.dts,
+        //            packet.pts, packet.duration, packet.size);
 
         if(receivedFrame) {
           sws_scale(swsContext, rtpFrame->data, rtpFrame->linesize, 0, rtpFrame->height,
               convertingFrame->data, convertingFrame->linesize);
+
+          uint32_t frameIndex = std::stoul(av_dict_get(rtpFrame->metadata, "frameIndex", NULL, 0)->value);
+          uint32_t frameTimestamp = std::stoul(av_dict_get(rtpFrame->metadata, "frameTimestamp", NULL, 0)->value);
+          av_dict_free(&rtpFrame->metadata);
+
+          debug_print("frameIndex/frameTimestamp: %ld / %ld", frameIndex, frameTimestamp);
 
           cv::Mat temp = cv::Mat(rtpCodecContext->height, rtpCodecContext->width, CV_8UC3,
                                  convertingFrameBuf.data(), convertingFrame->linesize[0]);

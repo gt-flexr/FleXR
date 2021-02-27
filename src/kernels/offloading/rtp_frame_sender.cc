@@ -216,6 +216,8 @@ namespace mxre
 
       // encode video frame
       AVPacket packet;
+      AVDictionary *frameInfo;
+      int frameInfoSize = 0;
       packet.data = nullptr;
       packet.size = 0;
       av_init_packet(&packet);
@@ -227,14 +229,20 @@ namespace mxre
 
       // send the encoded frame as packet
       if(gotPkt) {
-        //packet.pts = av_rescale_q_rnd(packet.pts, rtpCodecContext->time_base, rtpStream->time_base,
-        //                              AVRounding(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
-        //packet.dts = av_rescale_q_rnd(packet.dts, rtpCodecContext->time_base, rtpStream->time_base,
-        //                              AVRounding(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
-        //packet.duration = av_rescale_q(packet.duration, rtpCodecContext->time_base, rtpStream->time_base);
-        packet.pts = inData.index;
-        packet.duration = convertTimeStampDouble2Uint(inData.timestamp);
+        packet.pts = av_rescale_q_rnd(packet.pts, rtpCodecContext->time_base, rtpStream->time_base,
+                                      AVRounding(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+        packet.dts = av_rescale_q_rnd(packet.dts, rtpCodecContext->time_base, rtpStream->time_base,
+                                      AVRounding(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+        packet.duration = av_rescale_q(packet.duration, rtpCodecContext->time_base, rtpStream->time_base);
         packet.stream_index = rtpStream->index;
+
+        // set packet's side data for tracking frame
+        av_dict_set(&frameInfo, "frameIndex", std::to_string(inData.index).c_str(), 0);
+        av_dict_set(&frameInfo, "frameTimestamp",
+                    std::to_string(convertTimeStampDouble2Uint(inData.timestamp)).c_str(), 0);
+        uint8_t *frameInfoData = av_packet_pack_dictionary(frameInfo, &frameInfoSize);
+        av_packet_add_side_data(&packet, AVPacketSideDataType::AV_PKT_DATA_STRINGS_METADATA,
+                                frameInfoData, frameInfoSize);
 
         /* Packet Status */
         debug_print("Sending Packet: dts(%ld), pts(%ld), duration(%ld), size(%d)", packet.dts,
@@ -242,6 +250,10 @@ namespace mxre
 
         /* Write the compressed frame to the media file. */
         av_interleaved_write_frame(rtpContext, &packet);
+
+        // free frameInfo and side data
+        av_dict_free(&frameInfo);
+        av_packet_free_side_data(&packet);
       }
 
 
