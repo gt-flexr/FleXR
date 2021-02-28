@@ -4,7 +4,7 @@
 #include <bits/stdc++.h>
 #include <opencv2/opencv.hpp>
 #include <raft>
-#include <zmq.h>
+#include <zmq.hpp>
 
 #include "defs.h"
 #include "kernels/kernel.h"
@@ -31,6 +31,11 @@ namespace mxre
         int width, height;
         std::string decoder, sdp;
 
+        // Frame Tracking
+        zmq::context_t ctx;
+        zmq::socket_t subscriber;
+
+        // RTP Receiving Stream
         AVFormatContext *rtpContext;
         AVDictionary *protocolWhitelist;
         int rtpStreamIndex;

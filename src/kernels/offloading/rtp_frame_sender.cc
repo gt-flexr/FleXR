@@ -23,6 +23,11 @@ namespace mxre
       setFrameWithScaler();
       sendSDP(destAddr, destPort);
 
+      publisher = zmq::socket_t(ctx, zmq::socket_type::pub);
+      std::string bindingAddr = "tcp://" + destAddr + ":" + std::to_string(destPort+1);
+      publisher.bind(bindingAddr);
+      //publisher.set(zmq::sockopt::conflate, 1);
+
 #ifdef __PROFILE__
       if(logger == NULL) initLoggerST("rtp_frame_sender", "logs/" + std::to_string(pid) + "/rtp_frame_sender.log");
 #endif
@@ -33,6 +38,10 @@ namespace mxre
     RTPFrameSender::~RTPFrameSender() {
       clearSession();
       avformat_network_deinit();
+
+      publisher.close();
+      ctx.shutdown();
+      ctx.close();
     }
 
 
@@ -149,9 +158,11 @@ namespace mxre
 
     /* sendSDP() */
     void RTPFrameSender::sendSDP(std::string &destAddr, int port) {
-      char buf[SDP_BUF_SIZE], ackMsg[4];
-      void *ctx, *sock;
+      zmq::context_t sdpCtx;
+      zmq::socket_t sdpSock;
+      char buf[SDP_BUF_SIZE];
 
+      // 1. Generate SDP
       int ret = avformat_write_header(rtpContext, NULL);
       if(ret < 0) {
         clearSession();
@@ -161,23 +172,27 @@ namespace mxre
 
       AVFormatContext *ac[] = { rtpContext };
       av_sdp_create(ac, 1, buf, SDP_BUF_SIZE);
-      debug_print("sdp:\n%s\n", buf);
+      debug_print("===== SDP =====\n%s\n", buf);
 
-      // 1. Create a session
-      ctx = zmq_ctx_new();
-      sock = zmq_socket(ctx, ZMQ_REQ);
-      std::string dest = "tcp://" + destAddr + ":" + std::to_string(port);
-      zmq_connect(sock, dest.c_str());
+      // 2. Send the generated SDP to the receiver
+      sdpSock = zmq::socket_t(sdpCtx, zmq::socket_type::req);
+      std::string connectingAddr = "tcp://" + destAddr + ":" + std::to_string(port);
+      sdpSock.connect(connectingAddr);
 
-      // 2. Send the created sdp
-      zmq_send(sock, buf, sizeof(char) * SDP_BUF_SIZE, 0);
+      zmq::message_t sendingSDP(buf, SDP_BUF_SIZE), ackMsg;
+      sdpSock.send(sendingSDP, zmq::send_flags::none);
+      auto res = sdpSock.recv(ackMsg);
+      if( strcmp((const char*)ackMsg.data(), "ACK") == 0 ) {
+        debug_print("SDP is successfully delivered");
+      }
+      else {
+        debug_print("%s/%s", (const char*)ackMsg.data(), "ACK");
+      }
 
-      // 3. Recv an ack
-      zmq_recv(sock, ackMsg, 4, 0);
-
-      // 4. Clear the session
-      zmq_close(sock);
-      zmq_ctx_destroy(ctx);
+      // 3. Clear the connection
+      sdpSock.close();
+      sdpCtx.shutdown();
+      sdpCtx.close();
     }
 
 
@@ -216,8 +231,6 @@ namespace mxre
 
       // encode video frame
       AVPacket packet;
-      AVDictionary *frameInfo;
-      int frameInfoSize = 0;
       packet.data = nullptr;
       packet.size = 0;
       av_init_packet(&packet);
@@ -236,29 +249,18 @@ namespace mxre
         packet.duration = av_rescale_q(packet.duration, rtpCodecContext->time_base, rtpStream->time_base);
         packet.stream_index = rtpStream->index;
 
-        // set packet's side data for tracking frame
-        av_dict_set(&frameInfo, "frameIndex", std::to_string(inData.index).c_str(), 0);
-        av_dict_set(&frameInfo, "frameTimestamp",
-                    std::to_string(convertTimeStampDouble2Uint(inData.timestamp)).c_str(), 0);
-        uint8_t *frameInfoData = av_packet_pack_dictionary(frameInfo, &frameInfoSize);
-        av_packet_add_side_data(&packet, AVPacketSideDataType::AV_PKT_DATA_STRINGS_METADATA,
-                                frameInfoData, frameInfoSize);
-
-        /* Packet Status */
-        debug_print("Sending Packet: dts(%ld), pts(%ld), duration(%ld), size(%d)", packet.dts,
-                    packet.pts, packet.duration, packet.size);
+        // Send Frame Tracking Info
+        mxre::types::FrameTrackingInfo frameTrackingInfo;
+        frameTrackingInfo.index = inData.index;
+        frameTrackingInfo.timestamp = inData.timestamp;
+        publisher.send(zmq::buffer(&frameTrackingInfo, sizeof(frameTrackingInfo)), zmq::send_flags::none);
 
         /* Write the compressed frame to the media file. */
         av_interleaved_write_frame(rtpContext, &packet);
-
-        // free frameInfo and side data
-        av_dict_free(&frameInfo);
-        av_packet_free_side_data(&packet);
       }
 
 
       inData.release();
-
       input["in_data"].recycle(1);
 
 #ifdef __PROFILE__

@@ -24,10 +24,14 @@ namespace mxre
       initRTPCodecAndScaler();
       initFrame();
 
+      subscriber = zmq::socket_t(ctx, zmq::socket_type::sub);
+      std::string connectingAddr = "tcp://*:" + std::to_string(srcPort+1);
+      subscriber.connect(connectingAddr);
+      subscriber.set(zmq::sockopt::conflate, 1);
+
 #ifdef __PROFILE__
       if(logger == NULL) initLoggerST("rtp_frame_receiver", "logs/" + std::to_string(pid) + "/rtp_frame_receiver.log");
 #endif
-
     }
 
 
@@ -35,24 +39,26 @@ namespace mxre
     RTPFrameReceiver::~RTPFrameReceiver() {
       clearSession();
       avformat_network_deinit();
+
+      subscriber.close();
+      ctx.shutdown();
+      ctx.close();
     }
 
 
     /* recvSDP() */
     void RTPFrameReceiver::recvSDP(int srcPort) {
-      char buf[SDP_BUF_SIZE], ackMsg[4];
-      void *ctx, *sock;
-      memcpy(ackMsg, "ACK\0", 4);
+      zmq::context_t sdpCtx;
+      zmq::socket_t sdpSock;
 
-      // 1. Create a session
-      ctx = zmq_ctx_new();
-      sock = zmq_socket(ctx, ZMQ_REP);
-
-      std::string src = "tcp://*:" + std::to_string(srcPort);
-      zmq_bind(sock, src.c_str());
+      char buf[SDP_BUF_SIZE];
+      zmq::message_t ackMsg("ACK", 3);
+      sdpSock = zmq::socket_t(sdpCtx, zmq::socket_type::rep);
+      std::string bindingAddr = "tcp://*:" + std::to_string(srcPort);
+      sdpSock.bind(bindingAddr);
 
       // 2. Recv the sdp
-      zmq_recv(sock, buf, sizeof(char)*SDP_BUF_SIZE, 0);
+      sdpSock.recv( zmq::buffer(buf, SDP_BUF_SIZE) );
 
       // 3. Store it as a file
       FILE* fsdp = fopen(sdp.c_str(), "w");
@@ -60,10 +66,11 @@ namespace mxre
       fclose(fsdp);
 
       // 4. Send an ack
-      zmq_send(sock, ackMsg, 4, 0);
+      sdpSock.send(ackMsg, zmq::send_flags::none);
 
-      zmq_close(sock);
-      zmq_ctx_destroy(ctx);
+      sdpSock.close();
+      sdpCtx.shutdown();
+      sdpCtx.close();
     }
 
 
@@ -185,6 +192,12 @@ namespace mxre
 
       AVPacket packet;
       av_init_packet(&packet);
+
+      mxre::types::FrameTrackingInfo frameTrackingInfo;
+
+      // Recv Frame Tracking Info and Frame
+      subscriber.recv( zmq::buffer(&frameTrackingInfo, sizeof(frameTrackingInfo)) );
+      debug_print("%d, %lf", frameTrackingInfo.index, frameTrackingInfo.timestamp);
       readSuccess = av_read_frame(rtpContext, &packet);
 
 #ifdef __PROFILE__
@@ -192,27 +205,18 @@ namespace mxre
 #endif
 
       /* Received Packet Status */
-      debug_print("Receiving Packet BEFORE DECODING: dts(%ld), pts(%ld), duration(%ld), size(%d)", packet.dts,
-                  packet.pts, packet.duration, packet.size);
 
       if(packet.stream_index == rtpStreamIndex && readSuccess >= 0) {
         int result = avcodec_decode_video2(rtpCodecContext, rtpFrame, &receivedFrame, &packet);
-        //debug_print("Receiving Packet AFTER DECODING: dts(%ld), pts(%ld), duration(%ld), size(%d)", packet.dts,
-        //            packet.pts, packet.duration, packet.size);
 
         if(receivedFrame) {
           sws_scale(swsContext, rtpFrame->data, rtpFrame->linesize, 0, rtpFrame->height,
               convertingFrame->data, convertingFrame->linesize);
 
-          uint32_t frameIndex = std::stoul(av_dict_get(rtpFrame->metadata, "frameIndex", NULL, 0)->value);
-          uint32_t frameTimestamp = std::stoul(av_dict_get(rtpFrame->metadata, "frameTimestamp", NULL, 0)->value);
-          av_dict_free(&rtpFrame->metadata);
-
-          debug_print("frameIndex/frameTimestamp: %ld / %ld", frameIndex, frameTimestamp);
-
           cv::Mat temp = cv::Mat(rtpCodecContext->height, rtpCodecContext->width, CV_8UC3,
                                  convertingFrameBuf.data(), convertingFrame->linesize[0]);
-          outData = mxre::types::Frame(temp, 0, 0); // TODO put index and timestamp
+          outData = mxre::types::Frame(temp, frameTrackingInfo.index, frameTrackingInfo.timestamp);
+          debug_print("Frame: %d, %lf", outData.index, outData.timestamp);
 
           output["out_data"].send();
           sendFrameCopy("out_data", &outData);
@@ -224,7 +228,7 @@ namespace mxre
 #endif
         }
       }
-      av_free_packet(&packet);
+      //av_free_packet(&packet);
 
       return raft::proceed;
     }

@@ -4,7 +4,7 @@
 #include <bits/stdc++.h>
 #include <opencv2/opencv.hpp>
 #include <raft>
-#include <zmq.h>
+#include <zmq.hpp>
 #include <ifaddrs.h>
 
 #include "defs.h"
@@ -33,6 +33,11 @@ namespace mxre
         int64_t framePts;
         std::string encoder, filename;
 
+        // Frame Tracking
+        zmq::context_t ctx;
+        zmq::socket_t publisher;
+
+        // RTP Sending Stream
         AVFormatContext *rtpContext;
         AVStream *rtpStream;
         AVCodecContext *rtpCodecContext;

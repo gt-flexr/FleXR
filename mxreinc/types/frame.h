@@ -7,6 +7,11 @@
 
 namespace mxre {
   namespace types {
+    typedef struct FrameTrackingInfo {
+    uint32_t index;
+    double timestamp;
+    } FrameTrackingInfo;
+
 
     class Frame {
     public:
