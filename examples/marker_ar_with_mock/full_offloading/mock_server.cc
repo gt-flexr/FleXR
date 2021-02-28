@@ -39,6 +39,7 @@ int main(int argc, char const *argv[])
   mxre::kernels::MarkerCtxExtractor markerCtxExtractor(width, height);
   mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), width, height);
   mxre::kernels::RTPFrameReceiver rtpReceiver(config["server_dec"].as<string>(),
+                                              config["client_addr"].as<string>(),
                                               config["server_video_port"].as<int>(),
                                               width, height);
   rtpReceiver.duplicateOutPort<mxre::types::Frame>("out_data", "out_data2");

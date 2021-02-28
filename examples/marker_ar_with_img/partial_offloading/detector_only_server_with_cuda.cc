@@ -14,7 +14,7 @@ int main(int argc, char const *argv[])
   mxre::cv_utils::setMarkerFromImages("/home/jin/github/mxre/resources/markers/", "720p_marker", 0, 1, orbMarkerTracker);
 
   raft::map servingPipeline;
-  mxre::kernels::RTPFrameReceiver rtpReceiver("mjpeg", 49985, WIDTH, HEIGHT);
+  mxre::kernels::RTPFrameReceiver rtpReceiver("mjpeg", "localhost", 49985, WIDTH, HEIGHT);
   mxre::kernels::CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
   mxre::kernels::MessageSender<std::vector<mxre::cv_types::DetectedMarker>> detectedMarkerSender("localhost", 49987, mxre::utils::sendDetectedMarkers);
 

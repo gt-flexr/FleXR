@@ -54,12 +54,13 @@ int main(int argc, char const *argv[])
   std::thread sendThread(runPipeline, &sendPipe);
 
   mxre::kernels::RTPFrameReceiver rtpReceiver(config["client_dec"].as<string>(),
+                                              config["server_addr"].as<string>(),
                                               config["client_video_port"].as<int>(),
                                               width, height);
   mxre::kernels::NonDisplay nonDisplay;
 
   recvPipe += rtpReceiver["out_data"] >> nonDisplay["in_frame"];
-  std::thread recevThread(runPipeline, &recvPipe); 
+  std::thread recevThread(runPipeline, &recvPipe);
 
   sendThread.join();
   recevThread.join();
