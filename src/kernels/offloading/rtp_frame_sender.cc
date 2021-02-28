@@ -24,7 +24,7 @@ namespace mxre
       sendSDP(destAddr, destPort);
 
       publisher = zmq::socket_t(ctx, zmq::socket_type::pub);
-      std::string bindingAddr = "tcp://" + destAddr + ":" + std::to_string(destPort+1);
+      std::string bindingAddr = "tcp://*:" + std::to_string(destPort+1);
       publisher.bind(bindingAddr);
       //publisher.set(zmq::sockopt::conflate, 1);
 
@@ -182,11 +182,12 @@ namespace mxre
       zmq::message_t sendingSDP(buf, SDP_BUF_SIZE), ackMsg;
       sdpSock.send(sendingSDP, zmq::send_flags::none);
       auto res = sdpSock.recv(ackMsg);
+
       if( strcmp((const char*)ackMsg.data(), "ACK") == 0 ) {
         debug_print("SDP is successfully delivered");
       }
       else {
-        debug_print("%s/%s", (const char*)ackMsg.data(), "ACK");
+        debug_print("%s", (const char*)ackMsg.data());
       }
 
       // 3. Clear the connection

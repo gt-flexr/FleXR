@@ -6,7 +6,7 @@ namespace mxre
   namespace kernels
   {
     /* Constructor() */
-    RTPFrameReceiver::RTPFrameReceiver(std::string decoder, int srcPort, int width, int height) :
+    RTPFrameReceiver::RTPFrameReceiver(std::string decoder, std::string srcAddr, int destPort, int width, int height) :
       MXREKernel(), decoder(decoder),width(width), height(height)
     {
       addOutputPort<mxre::types::Frame>("out_data");
@@ -17,17 +17,18 @@ namespace mxre
       protocolWhitelist = NULL;
 
       // recv sdp and save it as a file
-      sdp = "/tmp/" + std::to_string(pid) + "_" + std::to_string(srcPort) + ".sdp";
-      recvSDP(srcPort);
+      sdp = "/tmp/" + std::to_string(pid) + "_" + std::to_string(destPort) + ".sdp";
+      recvSDP(destPort);
 
       initRTPContext();
       initRTPCodecAndScaler();
       initFrame();
 
       subscriber = zmq::socket_t(ctx, zmq::socket_type::sub);
-      std::string connectingAddr = "tcp://*:" + std::to_string(srcPort+1);
+      std::string connectingAddr = "tcp://" + srcAddr + ":" + std::to_string(destPort+1);
       subscriber.connect(connectingAddr);
       subscriber.set(zmq::sockopt::conflate, 1);
+      subscriber.set(zmq::sockopt::subscribe, "");
 
 #ifdef __PROFILE__
       if(logger == NULL) initLoggerST("rtp_frame_receiver", "logs/" + std::to_string(pid) + "/rtp_frame_receiver.log");
@@ -47,14 +48,14 @@ namespace mxre
 
 
     /* recvSDP() */
-    void RTPFrameReceiver::recvSDP(int srcPort) {
+    void RTPFrameReceiver::recvSDP(int destPort) {
       zmq::context_t sdpCtx;
       zmq::socket_t sdpSock;
 
       char buf[SDP_BUF_SIZE];
-      zmq::message_t ackMsg("ACK", 3);
+      zmq::message_t ackMsg("ACK\0", 4);
       sdpSock = zmq::socket_t(sdpCtx, zmq::socket_type::rep);
-      std::string bindingAddr = "tcp://*:" + std::to_string(srcPort);
+      std::string bindingAddr = "tcp://*:" + std::to_string(destPort);
       sdpSock.bind(bindingAddr);
 
       // 2. Recv the sdp
