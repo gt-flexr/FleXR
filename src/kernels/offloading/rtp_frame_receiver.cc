@@ -208,13 +208,11 @@ namespace mxre
       if(packet.stream_index == rtpStreamIndex && readSuccess == 0) {
         // Recv Frame Tracking Info
         subscriber.recv( zmq::buffer(&frameTrackingInfo, sizeof(frameTrackingInfo)) );
-        debug_print("%d, %lf", frameTrackingInfo.index, frameTrackingInfo.timestamp);
 
         int result = avcodec_decode_video2(rtpCodecContext, rtpFrame, &receivedFrame, &packet);
-
         if(receivedFrame != 0) {
           sws_scale(swsContext, rtpFrame->data, rtpFrame->linesize, 0, rtpFrame->height,
-              convertingFrame->data, convertingFrame->linesize);
+                    convertingFrame->data, convertingFrame->linesize);
 
           cv::Mat temp = cv::Mat(rtpCodecContext->height, rtpCodecContext->width, CV_8UC3,
                                  convertingFrameBuf.data(), convertingFrame->linesize[0]);

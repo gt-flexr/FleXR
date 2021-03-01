@@ -222,7 +222,6 @@ namespace mxre
       startTimeStamp = getTimeStampNow();
 #endif
 
-
       int ret=-1, gotPkt=0;
 
       // convert cvframe into ffmpeg frame
@@ -257,18 +256,16 @@ namespace mxre
           frameTrackingInfo.timestamp = inData.timestamp;
           debug_print("%d, %lf", frameTrackingInfo.index, frameTrackingInfo.timestamp);
           publisher.send(zmq::buffer(&frameTrackingInfo, sizeof(frameTrackingInfo)), zmq::send_flags::none);
+
+#ifdef __PROFILE__
+          endTimeStamp = getTimeStampNow();
+          logger->info("\t{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
+#endif
         }
       }
 
-
       inData.release();
       input["in_data"].recycle(1);
-
-#ifdef __PROFILE__
-      endTimeStamp = getTimeStampNow();
-      logger->info("\t{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
-#endif
-
       return raft::proceed;
     }
 
