@@ -189,16 +189,14 @@ namespace mxre
     raft::kstatus RTPFrameReceiver::run() {
 
       auto &outData( output["out_data"].allocate<mxre::types::Frame>() );
-      int ret = 0, receivedFrame = 0, readSuccess = -1;
+      int receivedFrame = 0, readSuccess = -1;
 
       AVPacket packet;
       av_init_packet(&packet);
 
       mxre::types::FrameTrackingInfo frameTrackingInfo;
 
-      // Recv Frame Tracking Info and Frame
-      subscriber.recv( zmq::buffer(&frameTrackingInfo, sizeof(frameTrackingInfo)) );
-      debug_print("%d, %lf", frameTrackingInfo.index, frameTrackingInfo.timestamp);
+      // Recv Frame
       readSuccess = av_read_frame(rtpContext, &packet);
 
 #ifdef __PROFILE__
@@ -207,10 +205,14 @@ namespace mxre
 
       /* Received Packet Status */
 
-      if(packet.stream_index == rtpStreamIndex && readSuccess >= 0) {
+      if(packet.stream_index == rtpStreamIndex && readSuccess == 0) {
+        // Recv Frame Tracking Info
+        subscriber.recv( zmq::buffer(&frameTrackingInfo, sizeof(frameTrackingInfo)) );
+        debug_print("%d, %lf", frameTrackingInfo.index, frameTrackingInfo.timestamp);
+
         int result = avcodec_decode_video2(rtpCodecContext, rtpFrame, &receivedFrame, &packet);
 
-        if(receivedFrame) {
+        if(receivedFrame != 0) {
           sws_scale(swsContext, rtpFrame->data, rtpFrame->linesize, 0, rtpFrame->height,
               convertingFrame->data, convertingFrame->linesize);
 
