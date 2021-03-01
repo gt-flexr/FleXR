@@ -223,7 +223,7 @@ namespace mxre
 #endif
 
 
-      int ret=0, gotPkt=0;
+      int ret=-1, gotPkt=0;
 
       // convert cvframe into ffmpeg frame
       const int stride[] = {static_cast<int>(inData.useAsCVMat().step[0])};
@@ -237,12 +237,9 @@ namespace mxre
       av_init_packet(&packet);
 
       ret = avcodec_encode_video2(rtpCodecContext, &packet, rtpFrame, &gotPkt);
-      if(ret < 0) {
-        debug_print("avcodec_encode_video2");
-      }
 
       // send the encoded frame as packet
-      if(gotPkt) {
+      if(gotPkt == 1 && ret == 0) {
         packet.pts = av_rescale_q_rnd(packet.pts, rtpCodecContext->time_base, rtpStream->time_base,
                                       AVRounding(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
         packet.dts = av_rescale_q_rnd(packet.dts, rtpCodecContext->time_base, rtpStream->time_base,
@@ -250,15 +247,17 @@ namespace mxre
         packet.duration = av_rescale_q(packet.duration, rtpCodecContext->time_base, rtpStream->time_base);
         packet.stream_index = rtpStream->index;
 
-        // Send Frame Tracking Info
-        mxre::types::FrameTrackingInfo frameTrackingInfo;
-        frameTrackingInfo.index = inData.index;
-        frameTrackingInfo.timestamp = inData.timestamp;
-        debug_print("%d, %lf", frameTrackingInfo.index, frameTrackingInfo.timestamp);
-        publisher.send(zmq::buffer(&frameTrackingInfo, sizeof(frameTrackingInfo)), zmq::send_flags::none);
-
         /* Write the compressed frame to the media file. */
-        av_interleaved_write_frame(rtpContext, &packet);
+        int rtpWritingResult = av_interleaved_write_frame(rtpContext, &packet);
+
+        if(rtpWritingResult == 0) {
+          // Send Frame Tracking Info
+          mxre::types::FrameTrackingInfo frameTrackingInfo;
+          frameTrackingInfo.index = inData.index;
+          frameTrackingInfo.timestamp = inData.timestamp;
+          debug_print("%d, %lf", frameTrackingInfo.index, frameTrackingInfo.timestamp);
+          publisher.send(zmq::buffer(&frameTrackingInfo, sizeof(frameTrackingInfo)), zmq::send_flags::none);
+        }
       }
 
 
