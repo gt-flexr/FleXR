@@ -18,7 +18,7 @@ namespace mxre
 
     bool CVDisplay::logic(mxre::types::Frame *inFrame) {
       cv::imshow("CVDisplay", inFrame->useAsCVMat());
-      int inKey = cv::waitKey(0) & 0xFF;
+      int inKey = cv::waitKey(1) & 0xFF;
 
       inFrame->release();
       return true;

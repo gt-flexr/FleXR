@@ -67,12 +67,19 @@ namespace mxre
 #ifdef __PROFILE__
       startTimeStamp = getTimeStampNow();
 #endif
+      sleepForMS((periodMS-periodAdj >= 0) ? periodMS-periodAdj : 0); // control read frequency
+      periodStart = getTimeStampNowUint();
+
       auto &outFrame(output["out_frame"].allocate<mxre::types::Frame>());
 
       if(logic(&outFrame)) {
         output["out_frame"].send();
         sendFrameCopy("out_frame", &outFrame);
       }
+
+      periodEnd = getTimeStampNowUint();
+      periodAdj = periodEnd - periodStart;
+
 
 #ifdef __PROFILE__
       endTimeStamp = getTimeStampNow();
