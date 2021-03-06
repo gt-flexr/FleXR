@@ -44,10 +44,9 @@ namespace mxre
         AVCodec *rtpCodec;
 
         AVFrame *rtpFrame, *convertingFrame;
-        std::vector<uint8_t> rtpFrameBuf, convertingFrameBuf;
+        uint8_t *rtpFrameBuf;
+        uint8_t *convertingFrameBuf;
         unsigned int rtpFrameSize, convertingFrameSize;
-
-        SwsContext *swsContext;
 
       public:
         RTPFrameReceiver(std::string decoder, std::string srcAddr, int destPort, int width, int height);

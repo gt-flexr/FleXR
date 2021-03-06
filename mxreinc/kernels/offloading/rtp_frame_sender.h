@@ -43,7 +43,6 @@ namespace mxre
         AVCodecContext *rtpCodecContext;
         AVCodec *rtpCodec;
         AVFrame *rtpFrame;
-        SwsContext *swsContext;
 
       public:
         RTPFrameSender(std::string encoder, std::string destAddr, int destPort, int bitrate, int fps,
