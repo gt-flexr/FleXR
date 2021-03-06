@@ -1,4 +1,6 @@
 #include <kernels/offloading/rtp_frame_receiver.h>
+#include <libavcodec/avcodec.h>
+#include <opencv2/imgproc.hpp>
 #include <unistd.h>
 
 namespace mxre
@@ -124,10 +126,10 @@ namespace mxre
 
       rtpCodecContext = avcodec_alloc_context3(rtpCodec);
       avcodec_get_context_defaults3(rtpCodecContext, rtpCodec);
+      avcodec_copy_context(rtpCodecContext, rtpContext->streams[rtpStreamIndex]->codec);
       rtpCodecContext->delay = 0;
       rtpCodecContext->gop_size = 12;
       rtpCodecContext->max_b_frames = 0;
-      avcodec_copy_context(rtpCodecContext, rtpContext->streams[rtpStreamIndex]->codec);
 
       // sanity check
       if(rtpCodecContext->height != height || rtpCodecContext->width != width) {
@@ -142,10 +144,6 @@ namespace mxre
         debug_print("avcodec_open2");
         exit(1);
       }
-
-      // set scaler
-      swsContext = sws_getContext(rtpCodecContext->width, rtpCodecContext->height, rtpCodecContext->pix_fmt,
-                                  width, height, AV_PIX_FMT_RGB24, SWS_BICUBIC, NULL, NULL, NULL);
     }
 
 
@@ -153,16 +151,22 @@ namespace mxre
     void RTPFrameReceiver::initFrame() {
       // set received rtpFrame
       rtpFrame = av_frame_alloc();
-      rtpFrameSize = avpicture_get_size(AV_PIX_FMT_YUV420P, rtpCodecContext->width, rtpCodecContext->height);
-      rtpFrameBuf = std::vector<uint8_t>(rtpFrameSize);
-      avpicture_fill(reinterpret_cast<AVPicture*>(rtpFrame), rtpFrameBuf.data(), AV_PIX_FMT_YUV420P,
-          rtpCodecContext->width, rtpCodecContext->height);
+      rtpFrame->width = width;
+      rtpFrame->height = height;
+      rtpFrame->format = AV_PIX_FMT_YUV420P;
+
+      rtpFrameSize = avpicture_get_size(static_cast<AVPixelFormat>(rtpFrame->format),
+                                        rtpFrame->width, rtpFrame->height);
+      rtpFrameBuf = (uint8_t*)av_malloc(rtpFrameSize);
+
+      avpicture_fill(reinterpret_cast<AVPicture*>(rtpFrame), rtpFrameBuf,
+                     static_cast<AVPixelFormat>(rtpFrame->format), rtpFrame->width, rtpFrame->height);
 
       convertingFrame = av_frame_alloc();
-      convertingFrameSize = avpicture_get_size(AV_PIX_FMT_BGR24, width, height);
-      convertingFrameBuf = std::vector<uint8_t>(convertingFrameSize);
-      avpicture_fill(reinterpret_cast<AVPicture*>(convertingFrame), convertingFrameBuf.data(), AV_PIX_FMT_BGR24,
-          width, height);
+      convertingFrameSize = avpicture_get_size(AV_PIX_FMT_BGR24, rtpFrame->width, rtpFrame->height);
+      convertingFrameBuf = (uint8_t*)av_malloc(rtpFrameSize);
+      avpicture_fill(reinterpret_cast<AVPicture*>(convertingFrame), convertingFrameBuf,
+                     AV_PIX_FMT_BGR24, width, height);
     }
 
 
@@ -189,6 +193,8 @@ namespace mxre
     raft::kstatus RTPFrameReceiver::run() {
 
       auto &outData( output["out_data"].allocate<mxre::types::Frame>() );
+      outData = mxre::types::Frame(height, width, CV_8UC3, -1, -1);
+      cv::Mat yuvFrame = cv::Mat::zeros(height*1.5, width, CV_8UC1);
       int receivedFrame = 0, readSuccess = -1;
 
       AVPacket packet;
@@ -196,28 +202,32 @@ namespace mxre
 
       mxre::types::FrameTrackingInfo frameTrackingInfo;
 
-      // Recv Frame
+      // 1. Read the packet via RTP context
       readSuccess = av_read_frame(rtpContext, &packet);
 
 #ifdef __PROFILE__
       startTimeStamp = getTimeStampNow();
 #endif
 
-      /* Received Packet Status */
-
-      if(packet.stream_index == rtpStreamIndex && readSuccess == 0) {
-        // Recv Frame Tracking Info
+      // 2. Decode the received packet
+      if(packet.stream_index == rtpStreamIndex && readSuccess == 0) { // check the sucess of RTP recv
+        // 2.1. Receive the frame tracking info
         subscriber.recv( zmq::buffer(&frameTrackingInfo, sizeof(frameTrackingInfo)) );
 
+        // 2.2. Decode the received packet
         int result = avcodec_decode_video2(rtpCodecContext, rtpFrame, &receivedFrame, &packet);
-        if(receivedFrame != 0) {
-          sws_scale(swsContext, rtpFrame->data, rtpFrame->linesize, 0, rtpFrame->height,
-                    convertingFrame->data, convertingFrame->linesize);
 
-          cv::Mat temp = cv::Mat(rtpCodecContext->height, rtpCodecContext->width, CV_8UC3,
-                                 convertingFrameBuf.data(), convertingFrame->linesize[0]);
-          outData = mxre::types::Frame(temp, frameTrackingInfo.index, frameTrackingInfo.timestamp);
-          debug_print("Frame: %d, %lf", outData.index, outData.timestamp);
+        if(receivedFrame != 0) { // check the decoded frame
+          outData.index = frameTrackingInfo.index;
+          outData.timestamp = frameTrackingInfo.timestamp;
+
+          // 2.3. Convert received YUV frame into RGB24
+          AVPicture* rtpFrameAsPicture = reinterpret_cast<AVPicture*>(rtpFrame);
+          avpicture_layout(rtpFrameAsPicture, static_cast<AVPixelFormat>(rtpFrame->format),
+                           rtpFrame->width, rtpFrame->height, yuvFrame.data, yuvFrame.total());
+
+          if(decoder == "h264") cv::cvtColor(yuvFrame, outData.useAsCVMat(), cv::COLOR_YUV420p2RGB);
+          else if(decoder == "h264_cuvid") cv::cvtColor(yuvFrame, outData.useAsCVMat(), cv::COLOR_YUV2BGR_NV12);
 
           output["out_data"].send();
           sendFrameCopy("out_data", &outData);

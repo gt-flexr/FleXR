@@ -89,6 +89,7 @@ namespace mxre
       rtpStream->id = rtpContext->nb_streams - 1;
 
       // set codec context https://ffmpeg.org/doxygen/4.0/structAVCodecContext.html
+      // avcodec_get_context_defaults3(rtpStream->codec, rtpCodec);
       rtpCodecContext = rtpStream->codec;
 
       rtpCodecContext->codec_id = rtpCodec->id;
@@ -110,7 +111,8 @@ namespace mxre
         av_opt_set(rtpCodecContext->priv_data, "tune", "zerolatency", 0);
         av_opt_set(rtpCodecContext->priv_data, "vsink", "0", 0);
       }
-      if (strcmp(rtpCodecContext->codec->name, "h264_nvenc") == 0) {
+      if (strcmp(rtpCodecContext->codec->name, "h264_nvenc") == 0 ||
+          strcmp(rtpCodecContext->codec->name, "nvenc_h264") == 0 ) {
         debug_print("h264_nvenc codec setting...");
         av_opt_set(rtpCodecContext->priv_data, "preset", "ll", 0);
         av_opt_set(rtpCodecContext->priv_data, "zerolatency", "true", 0);
@@ -137,22 +139,20 @@ namespace mxre
 
     /* setFrameWithScaler() */
     void RTPFrameSender::setFrameWithScaler() {
-      uint8_t *rtpFrameBuffer;
-      unsigned int rtpFrameBufferSize;
+      //uint8_t *rtpFrameBuf;
+      //unsigned int rtpFrameSize;
 
       rtpFrame = av_frame_alloc();
       rtpFrame->width = width;
       rtpFrame->height = height;
-      rtpFrame->format = static_cast<int>(rtpCodecContext->pix_fmt);
+      rtpFrame->format = rtpCodecContext->pix_fmt;
 
-      rtpFrameBufferSize = avpicture_get_size(rtpCodecContext->pix_fmt, width, height);
-      rtpFrameBuffer = new uint8_t[rtpFrameBufferSize];
-      avpicture_fill(reinterpret_cast<AVPicture*>(rtpFrame), rtpFrameBuffer, rtpCodecContext->pix_fmt,
-          width, height);
+      //rtpFrameSize = avpicture_get_size(static_cast<AVPixelFormat>(rtpFrame->format),
+      //                                  rtpFrame->width, rtpFrame->height);
+      //rtpFrameBuf = (uint8_t*)av_malloc(rtpFrameSize);
 
-      swsContext = sws_getCachedContext(NULL, width, height, AV_PIX_FMT_RGB24,
-          width, height, rtpCodecContext->pix_fmt,
-          SWS_BICUBIC, NULL, NULL, NULL);
+      avpicture_fill(reinterpret_cast<AVPicture*>(rtpFrame), NULL,
+                     static_cast<AVPixelFormat>(rtpFrame->format), rtpFrame->width, rtpFrame->height);
     }
 
 
@@ -224,21 +224,24 @@ namespace mxre
 
       int ret=-1, gotPkt=0;
 
-      // convert cvframe into ffmpeg frame
-      const int stride[] = {static_cast<int>(inData.useAsCVMat().step[0])};
-      sws_scale(swsContext, &inData.data, stride, 0, inData.rows, rtpFrame->data, rtpFrame->linesize);
-      rtpFrame->pts = framePts++;
+      // 1. Convert RGB24 to YUV 4:2:0 for encoder
+      cv::Mat yuvFrame;
+      cv::cvtColor(inData.useAsCVMat(), yuvFrame, cv::COLOR_RGB2YUV_YV12);
 
-      // encode video frame
+      // 2. Set AVFrame with YUV data
+      avpicture_fill((AVPicture*)rtpFrame, yuvFrame.data,
+                     static_cast<AVPixelFormat>(rtpFrame->format), rtpFrame->width, rtpFrame->height);
+
       AVPacket packet;
       packet.data = nullptr;
       packet.size = 0;
       av_init_packet(&packet);
 
+      // 3. Encode the frame
       ret = avcodec_encode_video2(rtpCodecContext, &packet, rtpFrame, &gotPkt);
 
-      // send the encoded frame as packet
-      if(gotPkt == 1 && ret == 0) {
+      // 4. Send the encoded frame via RTP
+      if(gotPkt == 1 && ret == 0) { // check encoding success
         packet.pts = av_rescale_q_rnd(packet.pts, rtpCodecContext->time_base, rtpStream->time_base,
                                       AVRounding(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
         packet.dts = av_rescale_q_rnd(packet.dts, rtpCodecContext->time_base, rtpStream->time_base,
@@ -246,15 +249,14 @@ namespace mxre
         packet.duration = av_rescale_q(packet.duration, rtpCodecContext->time_base, rtpStream->time_base);
         packet.stream_index = rtpStream->index;
 
-        /* Write the compressed frame to the media file. */
+        // 4.1. Send the frame via RTP context
         int rtpWritingResult = av_interleaved_write_frame(rtpContext, &packet);
 
-        if(rtpWritingResult == 0) {
-          // Send Frame Tracking Info
+        // 4.2. Send frame tracking info
+        if(rtpWritingResult == 0) { // check rtp success
           mxre::types::FrameTrackingInfo frameTrackingInfo;
           frameTrackingInfo.index = inData.index;
           frameTrackingInfo.timestamp = inData.timestamp;
-          debug_print("%d, %lf", frameTrackingInfo.index, frameTrackingInfo.timestamp);
           publisher.send(zmq::buffer(&frameTrackingInfo, sizeof(frameTrackingInfo)), zmq::send_flags::none);
 
 #ifdef __PROFILE__
