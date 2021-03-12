@@ -58,7 +58,7 @@ namespace mxre
       }
 
       std::strcpy(rtpContext->filename, filename.c_str());
-      rtpContext->flags = AVFMT_FLAG_NOBUFFER | AVFMT_FLAG_FLUSH_PACKETS;
+      rtpContext->flags = AVFMT_FLAG_NOBUFFER | AVFMT_FLAG_FLUSH_PACKETS | AVFMT_FLAG_NONBLOCK;
 
       if(!(rtpContext->oformat->flags & AVFMT_NOFILE)) {
         ret = avio_open2(&rtpContext->pb, rtpContext->filename, AVIO_FLAG_WRITE, NULL, NULL);
