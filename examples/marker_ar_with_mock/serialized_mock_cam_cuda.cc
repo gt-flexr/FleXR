@@ -6,7 +6,8 @@
 #include <spdlog/sinks/basic_file_sink.h>
 #include <yaml-cpp/yaml.h>
 
-//#define LATENCY_BREAKDOWN 1
+#define LATENCY_BREAKDOWN 1
+#define CAMERA_FREQUENCY 60
 
 using namespace std;
 
@@ -130,7 +131,7 @@ int main(int argc, char const *argv[])
 #endif
 
     // Camera Frequency
-    std::this_thread::sleep_for(std::chrono::milliseconds(16));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000/CAMERA_FREQUENCY));
     frameTimestamp = getTimeStampNow();
 
 #ifdef LATENCY_BREAKDOWN
