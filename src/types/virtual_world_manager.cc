@@ -57,7 +57,7 @@ namespace mxre
         currentWorld = key - 48;
       }
       // handle the keystroke to move the world camera
-      std::cout << currentWorld << "th world key " << key << std::endl;
+      //std::cout << currentWorld << "th world key " << key << std::endl;
       switch(key) {
         case 'r': case 'R': // camera reset
           worlds[currentWorld].camera.resetCamera();
