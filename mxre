@@ -63,6 +63,10 @@
 #include "./mxreinc/kernels/offloading/receiving_functions.h"
 #include "./mxreinc/kernels/offloading/rtp_frame_sender.h"
 #include "./mxreinc/kernels/offloading/rtp_frame_receiver.h"
+#include "./mxreinc/kernels/offloading/ffmpeg_rtp_sender.h"
+#include "./mxreinc/kernels/offloading/ffmpeg_rtp_receiver.h"
+#include "./mxreinc/kernels/offloading/ffmpeg_encoder.h"
+#include "./mxreinc/kernels/offloading/ffmpeg_decoder.h"
 
 #include "./mxreinc/kernels/app/object_renderer.h"
 #include "./mxreinc/kernels/app/complexyolo_renderer.h"
