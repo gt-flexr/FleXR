@@ -1,4 +1,4 @@
-#include <kernels/offloading/rtp_frame_receiver.h>
+#include "kernels/offloading/rtp_frame_receiver.h"
 #include <libavcodec/avcodec.h>
 #include <opencv2/imgproc.hpp>
 #include <unistd.h>
@@ -8,29 +8,50 @@ namespace mxre
   namespace kernels
   {
     /* Constructor() */
-    RTPFrameReceiver::RTPFrameReceiver(std::string decoder, std::string srcAddr, int destPort, int width, int height) :
-      MXREKernel(), decoder(decoder),width(width), height(height)
+    RTPFrameReceiver::RTPFrameReceiver(int portBase, std::string decoderName, int width, int height):
+      MXREKernel(), decoderName(decoderName), width(width), height(height)
     {
-      addOutputPort<mxre::types::Frame>("out_data");
+      addOutputPort<mxre::types::Frame>("out_frame");
 
-      av_register_all();
-      avcodec_register_all();
-      avformat_network_init();
-      protocolWhitelist = NULL;
+      // RTP Streaming
+      rtpSession = rtpContext.create_session("127.0.0.1");
+      rtpStream = rtpSession->create_stream(49991, -1, RTP_FORMAT_GENERIC, RCE_FRAGMENT_GENERIC);
 
-      // recv sdp and save it as a file
-      sdp = "/tmp/" + std::to_string(pid) + "_" + std::to_string(destPort) + ".sdp";
-      recvSDP(destPort);
-
-      initRTPContext();
-      initRTPCodecAndScaler();
-      initFrame();
-
+      // Frame Tracking
       subscriber = zmq::socket_t(ctx, zmq::socket_type::sub);
-      std::string connectingAddr = "tcp://" + srcAddr + ":" + std::to_string(destPort+1);
+      std::string connectingAddr = "tcp://localhost:" + std::to_string(portBase+1);
       subscriber.connect(connectingAddr);
       subscriber.set(zmq::sockopt::conflate, 1);
       subscriber.set(zmq::sockopt::subscribe, "");
+
+      // Decoder
+      av_register_all();
+      avcodec_register_all();
+
+      decoder = avcodec_find_decoder_by_name(decoderName.c_str());
+      if(!(decoder)) {
+        debug_print("decoder %s is not found", decoderName.c_str());
+        exit(1);
+      }
+
+      decoderContext = avcodec_alloc_context3(decoder);
+      //decoderContext->delay = 0;
+      decoderContext->max_b_frames = 0;
+
+      int ret = avcodec_open2(decoderContext, decoder, NULL);
+      if(ret < 0) {
+        debug_print("decoder %s open failed.", decoderName.c_str());
+        exit(1);
+      }
+
+      decodingFrame = av_frame_alloc();
+      decodingFrame->width = width; decodingFrame->height = height;
+      decodingFrame->format = AV_PIX_FMT_YUV420P;
+      decodingFrameSize = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, width, height, 1);;
+      decodingFrameBuffer = (uint8_t*)av_malloc(decodingFrameSize);
+      av_image_fill_arrays(decodingFrame->data, decodingFrame->linesize, decodingFrameBuffer, AV_PIX_FMT_YUV420P,
+                           width, height, 1);
+      yuvFrame = cv::Mat::zeros(height*1.5, width, CV_8UC1);
 
 #ifdef __PROFILE__
       if(logger == NULL) initLoggerST("rtp_frame_receiver", "logs/" + std::to_string(pid) + "/rtp_frame_receiver.log");
@@ -40,206 +61,57 @@ namespace mxre
 
     /* Destructor() */
     RTPFrameReceiver::~RTPFrameReceiver() {
-      clearSession();
-      avformat_network_deinit();
-
+      rtpContext.destroy_session(rtpSession);
       subscriber.close();
       ctx.shutdown();
       ctx.close();
+
+      av_frame_free(&decodingFrame);
+      avcodec_close(decoderContext);
     }
-
-
-    /* recvSDP() */
-    void RTPFrameReceiver::recvSDP(int destPort) {
-      zmq::context_t sdpCtx;
-      zmq::socket_t sdpSock;
-
-      char buf[SDP_BUF_SIZE];
-      zmq::message_t ackMsg("ACK\0", 4);
-      sdpSock = zmq::socket_t(sdpCtx, zmq::socket_type::rep);
-      std::string bindingAddr = "tcp://*:" + std::to_string(destPort);
-      sdpSock.bind(bindingAddr);
-
-      // 2. Recv the sdp
-      sdpSock.recv( zmq::buffer(buf, SDP_BUF_SIZE) );
-
-      // 3. Store it as a file
-      FILE* fsdp = fopen(sdp.c_str(), "w");
-      fprintf(fsdp, "%s", buf);
-      fclose(fsdp);
-
-      // 4. Send an ack
-      sdpSock.send(ackMsg, zmq::send_flags::none);
-
-      sdpSock.close();
-      sdpCtx.shutdown();
-      sdpCtx.close();
-    }
-
-
-    /* setRTPContext() */
-    void RTPFrameReceiver::initRTPContext() {
-      int ret = 0;
-      rtpContext = avformat_alloc_context();
-      rtpContext->flags = AVFMT_FLAG_NOBUFFER | AVFMT_FLAG_FLUSH_PACKETS;
-
-      // set protocol whitelist to receive
-      av_dict_set(&protocolWhitelist, "protocol_whitelist", "file,udp,rtp,crypto", 0);
-      ret = avformat_open_input(&rtpContext, sdp.c_str(), NULL, &protocolWhitelist);
-      if(ret < 0) {
-        clearSession();
-        debug_print("avformat_open_input");
-        exit(1);
-      }
-
-      // set stream info into rtpContext
-      ret = avformat_find_stream_info(rtpContext, NULL);
-      if(ret < 0) {
-        clearSession();
-        debug_print("avformat_find_stream_info");
-        exit(1);
-      }
-
-      // find video stream
-      for(unsigned int i = 0; i < rtpContext->nb_streams; i++) {
-        if(rtpContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
-          rtpStreamIndex = i;
-          debug_print("rtpStreamIndex: %d", rtpStreamIndex);
-        }
-      }
-
-      av_read_play(rtpContext);
-    }
-
-
-    /* setRTPCodec() */
-    void RTPFrameReceiver::initRTPCodecAndScaler() {
-      int ret = 0;
-
-      // find codec
-      rtpCodec = avcodec_find_decoder_by_name(decoder.c_str());
-      if(!(rtpCodec)) {
-        clearSession();
-        debug_print("avcodec_find_encoder_by_name");
-        exit(1);
-      }
-
-      rtpCodecContext = avcodec_alloc_context3(rtpCodec);
-      avcodec_get_context_defaults3(rtpCodecContext, rtpCodec);
-      avcodec_copy_context(rtpCodecContext, rtpContext->streams[rtpStreamIndex]->codec);
-      rtpCodecContext->delay = 0;
-      rtpCodecContext->gop_size = 12;
-      rtpCodecContext->max_b_frames = 0;
-
-      // sanity check
-      if(rtpCodecContext->height != height || rtpCodecContext->width != width) {
-        clearSession();
-        debug_print("the size of received rtpFrame is not compatible.");
-        exit(1);
-      }
-
-      ret = avcodec_open2(rtpCodecContext, rtpCodec, NULL);
-      if(ret < 0) {
-        clearSession();
-        debug_print("avcodec_open2");
-        exit(1);
-      }
-    }
-
-
-    /* setFrameWithScaler() */
-    void RTPFrameReceiver::initFrame() {
-      // set received rtpFrame
-      rtpFrame = av_frame_alloc();
-      rtpFrame->width = width;
-      rtpFrame->height = height;
-      rtpFrame->format = AV_PIX_FMT_YUV420P;
-
-      rtpFrameSize = avpicture_get_size(static_cast<AVPixelFormat>(rtpFrame->format),
-                                        rtpFrame->width, rtpFrame->height);
-      rtpFrameBuf = (uint8_t*)av_malloc(rtpFrameSize);
-
-      avpicture_fill(reinterpret_cast<AVPicture*>(rtpFrame), rtpFrameBuf,
-                     static_cast<AVPixelFormat>(rtpFrame->format), rtpFrame->width, rtpFrame->height);
-
-      convertingFrame = av_frame_alloc();
-      convertingFrameSize = avpicture_get_size(AV_PIX_FMT_BGR24, rtpFrame->width, rtpFrame->height);
-      convertingFrameBuf = (uint8_t*)av_malloc(rtpFrameSize);
-      avpicture_fill(reinterpret_cast<AVPicture*>(convertingFrame), convertingFrameBuf,
-                     AV_PIX_FMT_BGR24, width, height);
-    }
-
-
-    /* clearSession() */
-    void RTPFrameReceiver::clearSession() {
-      if(rtpCodecContext) avcodec_close(rtpCodecContext);
-
-      if(rtpFrame){
-        delete [] rtpFrame->data[0];
-        av_frame_free(&rtpFrame);
-      }
-
-      if(convertingFrame) {
-        delete [] convertingFrame->data[0];
-        av_frame_free(&convertingFrame);
-      }
-
-      if(!(rtpContext->oformat->flags & AVFMT_NOFILE)) avio_close(rtpContext->pb);
-      if(rtpContext) avformat_free_context(rtpContext);
-    }
-
 
     /* Run() */
     raft::kstatus RTPFrameReceiver::run() {
+      auto &outFrame( output["out_frame"].allocate<mxre::types::Frame>() );
+      outFrame = mxre::types::Frame(height, width, CV_8UC3, -1, -1);
+      rtpFrame = nullptr;
+      AVPacket decodingPacket;
+      mxre::types::FrameTrackingInfo trackingInfo;
+      int ret = 0;
 
-      auto &outData( output["out_data"].allocate<mxre::types::Frame>() );
-      outData = mxre::types::Frame(height, width, CV_8UC3, -1, -1);
-      cv::Mat yuvFrame = cv::Mat::zeros(height*1.5, width, CV_8UC1);
-      int receivedFrame = 0, readSuccess = -1;
 
-      AVPacket packet;
-      av_init_packet(&packet);
-
-      mxre::types::FrameTrackingInfo frameTrackingInfo;
-
-      // 1. Read the packet via RTP context
-      readSuccess = av_read_frame(rtpContext, &packet);
-
+      rtpFrame = rtpStream->pull_frame();
 #ifdef __PROFILE__
       startTimeStamp = getTimeStampNow();
 #endif
+      if(rtpFrame != nullptr) {
+        subscriber.recv(zmq::buffer(&trackingInfo, sizeof(mxre::types::FrameTrackingInfo)) );
+        outFrame.index = trackingInfo.index;
+        outFrame.timestamp = trackingInfo.timestamp;
 
-      // 2. Decode the received packet
-      if(packet.stream_index == rtpStreamIndex && readSuccess == 0) { // check the sucess of RTP recv
-        // 2.1. Receive the frame tracking info
-        subscriber.recv( zmq::buffer(&frameTrackingInfo, sizeof(frameTrackingInfo)) );
+        av_packet_from_data(&decodingPacket, rtpFrame->payload, rtpFrame->payload_len);
+        ret = avcodec_send_packet(decoderContext, &decodingPacket);
+        while (ret >= 0) {
+          ret = avcodec_receive_frame(decoderContext, decodingFrame);
+          if(ret == 0) {
+            av_image_copy_to_buffer(yuvFrame.data, yuvFrame.total(), decodingFrame->data, decodingFrame->linesize,
+                                    static_cast<AVPixelFormat>(decodingFrame->format),
+                                    decodingFrame->width, decodingFrame->height, 1);
+            if(decoderName == "h264") cv::cvtColor(yuvFrame, outFrame.useAsCVMat(), cv::COLOR_YUV420p2RGB);
+            else if(decoderName == "h264_cuvid") cv::cvtColor(yuvFrame, outFrame.useAsCVMat(), cv::COLOR_YUV2BGR_NV12);
 
-        // 2.2. Decode the received packet
-        int result = avcodec_decode_video2(rtpCodecContext, rtpFrame, &receivedFrame, &packet);
-
-        if(receivedFrame != 0) { // check the decoded frame
-          outData.index = frameTrackingInfo.index;
-          outData.timestamp = frameTrackingInfo.timestamp;
-
-          // 2.3. Convert received YUV frame into RGB24
-          AVPicture* rtpFrameAsPicture = reinterpret_cast<AVPicture*>(rtpFrame);
-          avpicture_layout(rtpFrameAsPicture, static_cast<AVPixelFormat>(rtpFrame->format),
-                           rtpFrame->width, rtpFrame->height, yuvFrame.data, yuvFrame.total());
-
-          if(decoder == "h264") cv::cvtColor(yuvFrame, outData.useAsCVMat(), cv::COLOR_YUV420p2RGB);
-          else if(decoder == "h264_cuvid") cv::cvtColor(yuvFrame, outData.useAsCVMat(), cv::COLOR_YUV2BGR_NV12);
-
-          output["out_data"].send();
-          sendFrameCopy("out_data", &outData);
+            output["out_frame"].send();
+            sendFrameCopy("out_frame", &outFrame);
 
 #ifdef __PROFILE__
-          endTimeStamp = getTimeStampNow();
-          logger->info("RecvTime/ExportTime/ExeTime\t{}\t {}\t {}", startTimeStamp, endTimeStamp,
-                       endTimeStamp-startTimeStamp);
+            endTimeStamp = getTimeStampNow();
+            logger->info("RecvTime/ExportTime/ExeTime\t{}\t {}\t {}", startTimeStamp, endTimeStamp,
+                endTimeStamp-startTimeStamp);
 #endif
+            (void)uvg_rtp::frame::dealloc_frame(rtpFrame);
+          }
         }
       }
-      //av_free_packet(&packet);
 
       return raft::proceed;
     }

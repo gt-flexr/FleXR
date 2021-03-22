@@ -1,11 +1,11 @@
-#ifndef __MXRE_RTP_SENDER__
-#define __MXRE_RTP_SENDER__
+#ifndef __MXRE_RTP_FRAME_SENDER__
+#define __MXRE_RTP_FRAME_SENDER__
 
 #include <bits/stdc++.h>
-#include <opencv2/opencv.hpp>
 #include <raft>
 #include <zmq.hpp>
 #include <ifaddrs.h>
+#include <uvgrtp/lib.hh>
 
 #include "defs.h"
 #include "kernels/kernel.h"
@@ -14,10 +14,12 @@
 #include "types/frame.h"
 
 extern "C" {
-#include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
-#include <libswscale/swscale.h>
+#include <libavformat/avformat.h>
 #include <libavutil/opt.h>
+#include <libavutil/frame.h>
+#include <libavutil/avutil.h>
+#include <libavutil/imgutils.h>
 }
 
 namespace mxre
@@ -29,30 +31,29 @@ namespace mxre
     class RTPFrameSender : public MXREKernel
     {
       private:
-        int bitrate, fps, width, height;
-        int64_t framePts;
-        std::string encoder, filename;
-
         // Frame Tracking
         zmq::context_t ctx;
         zmq::socket_t publisher;
 
-        // RTP Sending Stream
-        AVFormatContext *rtpContext;
-        AVStream *rtpStream;
-        AVCodecContext *rtpCodecContext;
-        AVCodec *rtpCodec;
-        AVFrame *rtpFrame;
+        // RTP Streaming
+        uvg_rtp::context rtpContext;
+        uvg_rtp::session *rtpSession;
+        uvg_rtp::media_stream *rtpStream;
+
+        // Encoder
+        std::string encoderName;
+        int width, height;
+
+        AVCodec* encoder;
+        AVCodecContext *encoderContext;
+        AVFrame *encodingFrame;
+
+        cv::Mat yuvFrame;
 
       public:
-        RTPFrameSender(std::string encoder, std::string destAddr, int destPort, int bitrate, int fps,
-            int width, int height);
+        RTPFrameSender(std::string destAddr, int destPortBase, std::string encoderName, int width, int height,
+                       int bitrate, int fps=60);
         ~RTPFrameSender();
-        void setRTPContext();
-        void setRTPStreamWithCodec();
-        void setFrameWithScaler();
-        void sendSDP(std::string &destAddr, int port);
-        void clearSession();
         virtual raft::kstatus run();
     };
 
