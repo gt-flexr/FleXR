@@ -23,7 +23,7 @@ int main(int argc, char const *argv[])
   // 1. create & run a sending pipeline
   raft::map sendingPipe;
   mxre::kernels::CVCamera cam(camera_no);
-  mxre::kernels::RTPFrameSender rtpSender("mjpeg", "127.0.0.1", 49985, 800000, 10, WIDTH, HEIGHT);
+  mxre::kernels::FFmpegRTPSender rtpSender("mjpeg", "127.0.0.1", 49985, 800000, 10, WIDTH, HEIGHT);
   sendingPipe += cam["out_frame"] >> rtpSender["in_data"];
 
   mxre::kernels::Keyboard keyboard;
@@ -34,7 +34,7 @@ int main(int argc, char const *argv[])
 
   // 2. create & run a receiving pipeline
   raft::map receivingPipe;
-  mxre::kernels::RTPFrameReceiver rtpReceiver("mjpeg", 49987, WIDTH, HEIGHT);
+  mxre::kernels::FFmpegRTPReceiver rtpReceiver("mjpeg", "127.0.0.1", 49987, WIDTH, HEIGHT);
   mxre::kernels::CVDisplay cvDisplay;
   receivingPipe += rtpReceiver["out_data"] >> cvDisplay["in_frame"];
   std::thread recevingThread(runPipeline, &receivingPipe);

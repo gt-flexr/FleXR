@@ -38,7 +38,7 @@ int main(int argc, char const *argv[])
   mxre::kernels::MockCamera mockCamera(fixedImagePath, width, height);
   mockCamera.setSleepPeriodMS((int)(1000/fps + 1));
 
-  mxre::kernels::RTPFrameSender rtpSender(config["client_enc"].as<string>(),
+  mxre::kernels::FFmpegRTPSender rtpSender(config["client_enc"].as<string>(),
                                           config["server_addr"].as<string>(),
                                           config["server_video_port"].as<int>(),
                                           width * height * 2, fps, width, height);
@@ -53,7 +53,7 @@ int main(int argc, char const *argv[])
   sendPipe += keyboard["out_keystroke"] >> keySender["in_data"];
   std::thread sendThread(runPipeline, &sendPipe);
 
-  mxre::kernels::RTPFrameReceiver rtpReceiver(config["client_dec"].as<string>(),
+  mxre::kernels::FFmpegRTPReceiver rtpReceiver(config["client_dec"].as<string>(),
                                               config["server_addr"].as<string>(),
                                               config["client_video_port"].as<int>(),
                                               width, height);

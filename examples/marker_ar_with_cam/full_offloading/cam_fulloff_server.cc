@@ -79,10 +79,10 @@ int main(int argc, char const *argv[])
   mxre::kernels::ORBDetector orbDetector(orbMarkerTracker.getRegisteredObjects());
   mxre::kernels::MarkerCtxExtractor markerCtxExtractor(WIDTH, HEIGHT);
   mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), WIDTH, HEIGHT);
-  mxre::kernels::RTPFrameReceiver rtpReceiver("mjpeg", "localhost", 49985, WIDTH, HEIGHT);
+  mxre::kernels::FFmpegRTPReceiver rtpReceiver("mjpeg", "127.0.0.1", 49985, WIDTH, HEIGHT);
   rtpReceiver.duplicateOutPort<mxre::types::Frame>("out_data", "out_data2");
   mxre::kernels::MessageReceiver<char> keyReceiver(49986, mxre::utils::recvPrimitive<char>);
-  mxre::kernels::RTPFrameSender rtpSender("mjpeg", "127.0.0.1", 49987, 800000, 10, WIDTH, HEIGHT);
+  mxre::kernels::FFmpegRTPSender rtpSender("mjpeg", "127.0.0.1", 49987, 800000, 10, WIDTH, HEIGHT);
 
   //mxre::pipeline::output_sinks::CVDisplay cvDisplay;
 

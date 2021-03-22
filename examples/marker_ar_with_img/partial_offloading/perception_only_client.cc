@@ -42,7 +42,7 @@ int main(int argc, char const *argv[])
   raft::map clientDag;
   mxre::kernels::ImageLoader imageLoader("/home/jin/github/mxre/resources/video/720p/", "video_", 1, 6, WIDTH, HEIGHT);
   mxre::kernels::Keyboard keyboard; // TODO MXREKernel
-  mxre::kernels::RTPFrameSender rtpSender("mjpeg", "127.0.0.1", 49985, 800000, 10, WIDTH, HEIGHT);
+  mxre::kernels::FFmpegRTPSender rtpSender("mjpeg", "127.0.0.1", 49985, 800000, 10, WIDTH, HEIGHT);
   mxre::kernels::MessageReceiver<std::vector<mxre::gl_types::ObjectContext>> markerCtxReceiver(49987,
                                         mxre::utils::recvPrimitiveVector<std::vector<mxre::gl_types::ObjectContext>>);
   mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), WIDTH, HEIGHT);

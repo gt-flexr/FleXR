@@ -16,7 +16,7 @@ int main(int argc, char const *argv[])
   raft::map sendingPipe;
   //mxre::kernels::ImageLoader imageLoader("/home/jin/github/mxre/resources/video/720p/", "video_", 1, 6, WIDTH, HEIGHT);
   mxre::kernels::ImageLoader imageLoader("/home/jin/github/mxre/resources/video/1080p/", "video_", 1, 6, WIDTH, HEIGHT);
-  mxre::kernels::RTPFrameSender rtpSender("mjpeg", "127.0.0.1", 49985, 800000, 10, WIDTH, HEIGHT);
+  mxre::kernels::FFmpegRTPSender rtpSender("mjpeg", "127.0.0.1", 49985, 800000, 10, WIDTH, HEIGHT);
 
   imageLoader.setSleepPeriodMS(100);
   sendingPipe += imageLoader["out_frame"] >> rtpSender["in_data"];
@@ -29,7 +29,7 @@ int main(int argc, char const *argv[])
 
   // 2. create & run a receiving pipeline
   raft::map receivingPipe;
-  mxre::kernels::RTPFrameReceiver rtpReceiver("mjpeg", 49987, WIDTH, HEIGHT);
+  mxre::kernels::FFmpegRTPReceiver rtpReceiver("mjpeg", "127.0.0.1", 49987, WIDTH, HEIGHT);
   //mxre::kernels::CVDisplay cvDisplay;
   mxre::kernels::NonDisplay nonDisplay;
   receivingPipe += rtpReceiver["out_data"] >> nonDisplay["in_frame"];
