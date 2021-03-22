@@ -4,6 +4,9 @@
 #include <cv.hpp>
 #include <bits/stdc++.h>
 #include "defs.h"
+extern "C" {
+#include <libavcodec/avcodec.h>
+}
 
 namespace mxre {
   namespace types {
@@ -11,6 +14,12 @@ namespace mxre {
     uint32_t index;
     double timestamp;
     } FrameTrackingInfo;
+
+
+    typedef struct AVEncodedFrame {
+      FrameTrackingInfo trackingInfo;
+      AVPacket* encodedFrame;
+    } AVEncodedFrame;
 
 
     class Frame {
