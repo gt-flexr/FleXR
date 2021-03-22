@@ -42,6 +42,7 @@ include(cmake/modules/GStreamer.cmake)
 include(cmake/modules/FFmpeg.cmake)
 include(cmake/modules/Spdlog.cmake)
 include(cmake/modules/yaml-cpp.cmake)
+include(cmake/modules/uvgRTP.cmake)
 
 message(STATUS "[MXRE COMPILE INFO]")
 
