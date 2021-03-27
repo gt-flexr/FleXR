@@ -3,6 +3,7 @@
 
 #include <uvgrtp/lib.hh>
 #include "defs.h"
+#include "types/types.h"
 
 namespace mxre {
   namespace components {
@@ -15,7 +16,12 @@ namespace mxre {
     public:
       ~RTPReceiver();
       RTPReceiver(std::string ip, int even_port);
-      bool receive(uint8_t *outDataBuffer, uint32_t *outDataSize);
+      bool receiveDynamic(uint8_t **outDataBuffer, uint32_t *outDataSize);
+      bool receiveDynamicWithTrackinInfo(uint8_t **outDataBuffer, uint32_t *outDataSize,
+                                         uint32_t *outIndex, double *outTimestamp);
+      bool receiveStatic(uint32_t inDataSize, void *outReceivedData);
+      bool receiveStaticWithTrackinInfo(uint32_t inDataSize, uint8_t *outReceivedData,
+                                        uint32_t *outIndex, double *outTimestamp);
     };
   }
 }
