@@ -15,6 +15,8 @@ namespace mxre {
     }
 
 
+
+
     bool RTPReceiver::receiveDynamic(uint8_t **outDataBuffer, uint32_t *outDataSize) {
       uvg_rtp::frame::rtp_frame *rtpFrame = nullptr;
       if(*outDataBuffer) { delete *outDataBuffer; *outDataBuffer = nullptr; }
@@ -22,10 +24,10 @@ namespace mxre {
       rtpFrame = rtpStream->pull_frame();
       if(rtpFrame != nullptr) {
         *outDataSize = rtpFrame->payload_len;
-        *outDataBuffer = new uint8_t[*outDataSize];
-        memcpy(*outDataBuffer, rtpFrame->payload, *outDataSize);
-        (void)uvg_rtp::frame::dealloc_frame(rtpFrame);
-        debug_print("Receiving data size %d at %p", *outDataSize, (void*)*outDataBuffer);
+        *outDataBuffer = rtpFrame->payload;
+        unrefFrameExceptData(rtpFrame);
+
+        //debug_print("Receiving data size %d at %p", *outDataSize, (void*)*outDataBuffer);
         return true;
       }
 
@@ -59,7 +61,6 @@ namespace mxre {
       if(rtpFrame != nullptr) {
         if(inDataSize == rtpFrame->payload_len) {
           memcpy(outReceivedData, rtpFrame->payload, inDataSize);
-          debug_print("Receiving static data size %d at %p", inDataSize, (void*)outReceivedData);
           (void)uvg_rtp::frame::dealloc_frame(rtpFrame);
           return true;
         }
@@ -90,5 +91,11 @@ namespace mxre {
       return false;
     }
 
+
+    void RTPReceiver::unrefFrameExceptData(uvg_rtp::frame::rtp_frame *rtpFrame) {
+      if (rtpFrame->csrc) delete rtpFrame->csrc;
+      if (rtpFrame->ext) delete rtpFrame->ext;
+      if (rtpFrame->probation) delete rtpFrame->probation;
+    }
   }
 }
