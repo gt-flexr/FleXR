@@ -19,7 +19,6 @@ namespace mxre {
 
 
     bool RTPSender::send(uint8_t *inData, uint32_t inDataSize) {
-      debug_print("Sending data size %d", inDataSize);
       if(inDataSize > MXRE_RTP_PAYLOAD_UNIT_SIZE) {
         if (rtpFragmentingStream->push_frame(inData, inDataSize, RTP_SLICE) != RTP_OK) {
           debug_print("RTP push_frame failed..");

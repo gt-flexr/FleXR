@@ -66,17 +66,17 @@ namespace mxre
 
       uint8_t *recvDataBuffer = nullptr;
       uint32_t recvDataSize = 0;
-      ;
 
 
-#ifdef __PROFILE__
-      startTimeStamp = getTimeStampNow();
-#endif
       if(rtpReceiver.receiveDynamicWithTrackinInfo(&recvDataBuffer, &recvDataSize,
                                             &outFrame.index, &outFrame.timestamp))
       {
-        debug_print("recvDataInfo: Index(%d) TS(%f) Size(%d) %p", outFrame.index, outFrame.timestamp,
-                                                                  recvDataSize, recvDataBuffer);
+#ifdef __PROFILE__
+      startTimeStamp = getTimeStampNow();
+#endif
+
+        //debug_print("recvDataInfo: Index(%d) TS(%f) Size(%d) %p", outFrame.index, outFrame.timestamp,
+        //                                                          recvDataSize, recvDataBuffer);
 
         av_packet_from_data(&decodingPacket, recvDataBuffer, recvDataSize);
         ret = avcodec_send_packet(decoderContext, &decodingPacket);

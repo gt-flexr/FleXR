@@ -22,6 +22,8 @@ namespace mxre {
       bool receiveStatic(uint32_t inDataSize, void *outReceivedData);
       bool receiveStaticWithTrackinInfo(uint32_t inDataSize, uint8_t *outReceivedData,
                                         uint32_t *outIndex, double *outTimestamp);
+
+      void unrefFrameExceptData(uvg_rtp::frame::rtp_frame *rtpFrame);
     };
   }
 }
