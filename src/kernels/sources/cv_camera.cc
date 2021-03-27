@@ -1,5 +1,6 @@
 #include <kernels/sources/cv_camera.h>
 #include <types/cv/types.h>
+#include <unistd.h>
 
 namespace mxre
 {
@@ -15,7 +16,7 @@ namespace mxre
       if (!cam.isOpened())
         std::cerr << "ERROR: unable to open camera" << std::endl;
 
-      frame_idx = 0;
+      frameIndex = 0;
 
       // set default camera intrinsic
       this->intrinsic.at<double>(0, 0) = width;
@@ -31,6 +32,10 @@ namespace mxre
       this->intrinsic.at<double>(2, 2) = 1;
 
       addOutputPort<mxre::types::Frame>("out_frame");
+
+#ifdef __PROFILE__
+      if(logger == NULL) initLoggerST("cv_camera", "logs/" + std::to_string(pid) + "/cv_camera.log");
+#endif
     }
 
 
@@ -42,10 +47,12 @@ namespace mxre
 
     /* Kernel Logic */
     bool CVCamera::logic(mxre::types::Frame *outFrame) {
-      *outFrame = mxre::types::Frame(height, width, CV_8UC3);
+      *outFrame = mxre::types::Frame(height, width, CV_8UC3, 0, 0);
       cv::Mat outFrameAsCVMat = outFrame->useAsCVMat();
       cam.read(outFrameAsCVMat);
-      debug_print("%p %p", outFrame->data, outFrameAsCVMat.data);
+      outFrame->index = frameIndex++;
+      outFrame->timestamp = getTimeStampNow();
+
       if(outFrameAsCVMat.empty()) {
         std::cerr << "ERROR: blank frame grabbed" << std::endl;
         return false;
@@ -58,9 +65,11 @@ namespace mxre
     raft::kstatus CVCamera::run()
     {
 #ifdef __PROFILE__
-      start = getNow();
+      startTimeStamp = getTimeStampNow();
 #endif
-      debug_print("START");
+      sleepForMS((periodMS-periodAdj >= 0) ? periodMS-periodAdj : 0); // control read frequency
+      periodStart = getTimeStampNowUint();
+
       auto &outFrame(output["out_frame"].allocate<mxre::types::Frame>());
 
       if(logic(&outFrame)) {
@@ -68,10 +77,14 @@ namespace mxre
         sendFrameCopy("out_frame", &outFrame);
       }
 
-      debug_print("END");
+      periodEnd = getTimeStampNowUint();
+      periodAdj = periodEnd - periodStart;
+
+
 #ifdef __PROFILE__
-      end = getNow();
-      profile_print("Exe Time: %lf ms", getExeTime(end, start));
+      endTimeStamp = getTimeStampNow();
+      logger->info("{}th frame\t start\t{}\t end\t{}\t exe\t{}", frameIndex-1, startTimeStamp, endTimeStamp,
+                    endTimeStamp-startTimeStamp);
 #endif
       return raft::proceed;
     }

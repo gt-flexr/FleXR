@@ -1,6 +1,7 @@
 #include <kernels/app/object_renderer.h>
 #include <GL/gl.h>
 #include <GL/glew.h>
+#include <unistd.h>
 
 namespace mxre
 {
@@ -39,6 +40,10 @@ namespace mxre
       // 3. Unbind the pbuf context in init thread
       mxre::egl_utils::unbindPbuffer(*pbuf);
       binding = false;
+
+#ifdef __PROFILE__
+      if(logger == NULL) initLoggerST("object_renderer", "logs/" + std::to_string(pid) + "/object_renderer.log");
+#endif
     }
 
 
@@ -54,6 +59,9 @@ namespace mxre
                                std::vector<mxre::gl_types::ObjectContext> *inMarkerContexts,
                                char inKey, mxre::types::Frame *outFrame)
     {
+      uint32_t frameIndex = inFrame->index;
+      double frameTimestamp = inFrame->timestamp;
+
       // 1. Create/update background texture & release previous CV frame
       if(glIsTexture(backgroundTexture))
         mxre::gl_utils::updateTextureFromFrame(inFrame, backgroundTexture);
@@ -78,7 +86,7 @@ namespace mxre
 
       worldManager.startWorlds(inKey, *inMarkerContexts);
 
-      *outFrame = mxre::gl_utils::exportGLBufferToCV(width, height);
+      *outFrame = mxre::gl_utils::exportGLBufferToCV(width, height, frameIndex, frameTimestamp);
       return true;
     }
 
@@ -91,14 +99,13 @@ namespace mxre
         binding = true;
       }
 
-#ifdef __PROFILE__
-      mxre::types::TimeVal start = getNow();
-#endif
-      debug_print("START");
-
       // 0.0.Get inputs from the previous kernel: ObjectDetector
       auto &inFrame( input["in_frame"].peek<mxre::types::Frame>() );
       auto &inMarkerContexts( input["in_marker_contexts"].peek<std::vector<mxre::gl_types::ObjectContext>>() );
+
+#ifdef __PROFILE__
+      startTimeStamp = getTimeStampNow();
+#endif
 
       // 0.1.Get input keystroke from Keyboard
       char inKey;
@@ -120,12 +127,10 @@ namespace mxre
       recyclePort("in_frame");
       recyclePort("in_marker_contexts");
 
-      debug_print("END");
 #ifdef __PROFILE__
-      mxre::types::TimeVal end = getNow();
-      profile_print("Exe Time: %lfms", getExeTime(end, start));
+      endTimeStamp = getTimeStampNow();
+      logger->info("{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
 #endif
-
       return raft::proceed;
     }
 

@@ -18,6 +18,8 @@ namespace mxre
 
     class NonDisplay : public MXREKernel
     {
+    private:
+      unsigned long long int frameIndex;
     public:
       NonDisplay();
       virtual raft::kstatus run() override;

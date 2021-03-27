@@ -8,6 +8,7 @@
 #include "kernels/kernel.h"
 #include "types/clock_types.h"
 
+
 namespace mxre
 {
   namespace kernels
@@ -21,7 +22,8 @@ namespace mxre
         zmq::context_t ctx;
         zmq::socket_t sock;
       public:
-        MessageSender(std::string addr="localhost", int port=5555, void (*send)(IN_T*, zmq::socket_t*)=NULL);
+        MessageSender(std::string addr="localhost", int port=5555, void (*send)(IN_T*, zmq::socket_t*)=NULL,
+                      int sockType=ZMQ_REQ);
         ~MessageSender();
         virtual raft::kstatus run();
     };
@@ -29,13 +31,20 @@ namespace mxre
 
     /* Constructor */
     template<typename IN_T>
-    MessageSender<IN_T>::MessageSender(std::string addr, int port, void (*send)(IN_T*, zmq::socket_t*)): MXREKernel() {
-      sock = zmq::socket_t(ctx, zmq::socket_type::req);
+    MessageSender<IN_T>::MessageSender(std::string addr, int port, void (*send)(IN_T*, zmq::socket_t*),
+        int sockType): MXREKernel() {
+      sock = zmq::socket_t(ctx, sockType);
       std::string connectingAddr = "tcp://" + addr + ":" + std::to_string(port);
       sock.connect(connectingAddr);
 
       this->send = send;
       addInputPort<IN_T>("in_data");
+
+#ifdef __PROFILE__
+      if(logger == NULL) initLoggerST("message_sender", std::to_string(pid) + "/message_sender.log");
+#endif
+
+
     }
 
 
@@ -51,11 +60,12 @@ namespace mxre
     /* Run */
     template<typename IN_T>
     raft::kstatus MessageSender<IN_T>::run() {
-#ifdef __PROFILE__
-      mxre::types::TimeVal start = getNow();
-#endif
 
       auto &inData( input["in_data"].template peek<IN_T>() );
+
+#ifdef __PROFILE__
+      startTimeStamp = getTimeStampNow();
+#endif
 
       if(send != NULL) send(&inData, &sock);
       else {
@@ -65,8 +75,8 @@ namespace mxre
       recyclePort("in_data");
 
 #ifdef __PROFILE__
-      mxre::types::TimeVal end = getNow();
-      profile_print("Exe Time: %lfms", getExeTime(end, start));
+      endTimeStamp = getTimeStampNow();
+      logger->info("{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
 #endif
 
       return raft::proceed;

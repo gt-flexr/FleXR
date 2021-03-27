@@ -94,6 +94,27 @@ namespace mxre
       orbMarkerTracker.printRegisteredObjects();
     }
 
+
+    static void setMarkerFromImages(std::string path, int startIndex, int maxPlaceValue,
+                                    mxre::cv_types::ORBMarkerTracker &orbMarkerTracker)
+    {
+      cv::Mat image;
+
+      while(1) {
+        std::stringstream ss;
+        ss << std::setfill('0') << std::setw(maxPlaceValue);
+        ss << startIndex++;
+        std::string imagePath = path + ss.str() + ".png";
+        image = cv::imread(imagePath);
+        if(image.empty()) {
+          break;
+        }
+
+        cv::Rect roiRect(0, 0, image.cols, image.rows);
+        orbMarkerTracker.registerObject(image, roiRect);
+      }
+      orbMarkerTracker.printRegisteredObjects();
+    }
   } // namespace cv_utils
 } // namespace mxre
 

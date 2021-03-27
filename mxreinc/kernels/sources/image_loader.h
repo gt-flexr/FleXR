@@ -21,7 +21,7 @@ namespace mxre
     class ImageLoader: public MXREKernel
     {
     private:
-      unsigned int frame_idx;
+      unsigned int frameIndex;
       int maxPlaceValue;
       std::string path, stemName;
       int width, height;

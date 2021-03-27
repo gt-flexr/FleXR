@@ -8,6 +8,9 @@
 #include <chrono>
 #include <thread>
 #include <raftinc/rafttypes.hpp>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <unistd.h>
 
 #include "defs.h"
 #include "types/clock_types.h"
@@ -21,6 +24,7 @@ namespace mxre
     {
       protected:
         unsigned int periodMS;
+        unsigned int periodStart, periodEnd, periodAdj;
         std::multimap<std::string, std::string> oPortMap;
         template<typename T> void addInputPort(std::string id) { input.addPort<T>(id); }
         template<typename T> void addOutputPort(std::string id) { output.addPort<T>(id); }
@@ -31,11 +35,22 @@ namespace mxre
 
 #ifdef __PROFILE__
         mxre::types::TimeVal start, end;
+        double startTimeStamp, endTimeStamp;
+        std::shared_ptr<spdlog::logger> logger;
+        int pid;
 #endif
 
       public:
         /* Constructor */
-        MXREKernel(){ }
+        MXREKernel(){
+          periodMS = 0;
+          periodStart = 0;
+          periodEnd = 0;
+          periodAdj = 0;
+#ifdef __PROFILE__
+          pid = getpid();
+#endif
+        }
 
 
         /* Destructor */
@@ -96,6 +111,17 @@ namespace mxre
             output[i->second].send();
           }
         }
+
+#ifdef __PROFILE__
+        void initLoggerST(std::string loggerName, std::string fileName) {
+          logger = spdlog::basic_logger_st(loggerName, fileName);
+        }
+
+        void initLoggerMT(std::string loggerName, std::string fileName) {
+          logger = spdlog::basic_logger_mt(loggerName, fileName);
+        }
+#endif
+
     };
 
   }   // namespace kernels

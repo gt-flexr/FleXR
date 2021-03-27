@@ -67,7 +67,6 @@ namespace mxre {
         auto res = sock->recv(ackMsg);
       }
     }
-
   }
 }
 

@@ -1,3 +1,4 @@
+#include <unistd.h>
 #ifdef __USE_OPENCV_CUDA__
 #include <kernels/perceptions/orb/cuda_orb_detector.h>
 #include <opencv2/core.hpp>
@@ -20,6 +21,9 @@ namespace mxre
 
       detector = cv::cuda::ORB::create();
       matcher = cv::cuda::DescriptorMatcher::createBFMatcher(cv::NORM_HAMMING);
+#ifdef __PROFILE__
+      if(logger == NULL) initLoggerST("cuda_orb_detector", "logs/" + std::to_string(pid) + "/cuda_orb_detector.log");
+#endif
     }
 
 
@@ -104,13 +108,13 @@ namespace mxre
 
 
     raft::kstatus CudaORBDetector::run() {
-#ifdef __PROFILE__
-      mxre::types::TimeVal start = getNow();
-#endif
-      debug_print("START");
-
       auto &inFrame(input["in_frame"].peek<mxre::types::Frame>());
       auto &outDetectedMarkers(output["out_detected_markers"].allocate<std::vector<mxre::cv_types::DetectedMarker>>());
+
+#ifdef __PROFILE__
+      startTimeStamp = getTimeStampNow();
+#endif
+
 
       if(logic(&inFrame, &outDetectedMarkers)) {
         output["out_detected_markers"].send();
@@ -121,8 +125,8 @@ namespace mxre
       debug_print("END");
 
 #ifdef __PROFILE__
-      mxre::types::TimeVal end = getNow();
-      profile_print("Exe Time: %lfms", getExeTime(end, start));
+      endTimeStamp = getTimeStampNow();
+      logger->info("{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
 #endif
 
       return raft::proceed;

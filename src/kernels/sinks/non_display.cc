@@ -1,5 +1,7 @@
 #include <kernels/sinks/non_display.h>
+#include <string>
 #include <types/cv/types.h>
+#include <unistd.h>
 
 namespace mxre
 {
@@ -8,24 +10,23 @@ namespace mxre
     NonDisplay::NonDisplay()
     {
       addInputPort<mxre::types::Frame>("in_frame");
+#ifdef __PROFILE__
+      if(logger == NULL) initLoggerST("non_display", "logs/" + std::to_string(pid) + "/non_display.log");
+#endif
     }
 
 
     raft::kstatus NonDisplay::run()
     {
-#ifdef __PROFILE__
-      start = getNow();
-#endif
       auto &frame( input["in_frame"].peek<mxre::types::Frame>() );
-      debug_print("START");
+
+#ifdef __PROFILE__
+      endTimeStamp = getTimeStampNow();
+      logger->info("{}th frame\t E2E latency\t{}", frame.index, endTimeStamp - frame.timestamp);
+#endif
 
       frame.release();
       recyclePort("in_frame");
-
-#ifdef __PROFILE__
-      end = getNow();
-      profile_print("Exe Time: %lf ms", getExeTime(end, start));
-#endif
       return raft::proceed;
     }
   } // namespace kernels

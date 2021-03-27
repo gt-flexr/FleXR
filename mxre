@@ -4,6 +4,13 @@
 #ifndef STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #endif
+#
+/* Utils */
+#include "./mxreinc/utils/getch.h"
+#include "./mxreinc/utils/path_finder.h"
+#include "./mxreinc/utils/cv_utils.h"
+#include "./mxreinc/utils/gl_utils.h"
+#include "./mxreinc/utils/egl_utils.h"
 
 /* defs */
 #include "./mxreinc/defs.h"
@@ -25,25 +32,22 @@
 #include "./mxreinc/types/ar/virtual_world.h"
 #include "./mxreinc/types/ar/virtual_object.h"
 #include "./mxreinc/types/ar/virtual_world_manager.h"
-#
-/* Utils */
-#include "./mxreinc/utils/getch.h"
-#include "./mxreinc/utils/path_finder.h"
-#include "./mxreinc/utils/cv_utils.h"
-#include "./mxreinc/utils/gl_utils.h"
-#include "./mxreinc/utils/egl_utils.h"
-//#include <glm/gtc/matrix_transform.hpp>
-//#include <glm/gtc/type_ptr.hpp>
+
+/* Components */
+#include "./mxreinc/components/rtp_sender.h"
+#include "./mxreinc/components/rtp_receiver.h"
 
 /* Kernels */
 #include "./mxreinc/kernels/kernel.h"
 
 #include "./mxreinc/kernels/plugin/illixr_source.h"
 #include "./mxreinc/kernels/plugin/illixr_sink.h"
+#include "./mxreinc/kernels/plugin/unity_frame_writer.h"
 
 #include "./mxreinc/kernels/sources/cv_camera.h"
 #include "./mxreinc/kernels/sources/keyboard.h"
 #include "./mxreinc/kernels/sources/image_loader.h"
+#include "./mxreinc/kernels/sources/mock_camera.h"
 #include "./mxreinc/kernels/sources/appsource.h"
 
 #include "./mxreinc/kernels/sinks/cv_display.h"
@@ -61,6 +65,10 @@
 #include "./mxreinc/kernels/offloading/receiving_functions.h"
 #include "./mxreinc/kernels/offloading/rtp_frame_sender.h"
 #include "./mxreinc/kernels/offloading/rtp_frame_receiver.h"
+#include "./mxreinc/kernels/offloading/ffmpeg_rtp_sender.h"
+#include "./mxreinc/kernels/offloading/ffmpeg_rtp_receiver.h"
+#include "./mxreinc/kernels/offloading/ffmpeg_encoder.h"
+#include "./mxreinc/kernels/offloading/ffmpeg_decoder.h"
 
 #include "./mxreinc/kernels/app/object_renderer.h"
 #include "./mxreinc/kernels/app/complexyolo_renderer.h"

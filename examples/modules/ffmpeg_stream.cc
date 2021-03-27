@@ -240,16 +240,6 @@ int main(int argc, char* argv[])
       break;
     }
 
-    // Raw video case - directly store the picture in the packet
-    if (rtpContext->oformat->flags & AVFMT_RAWPICTURE) {
-      /*
-      packet.flags        |= AV_PKT_FLAG_KEY;
-      packet.stream_index  = rtpStream->index;
-      packet.data          = dst_picture.data[0];
-      packet.size          = sizeof(AVPicture);
-      ret = av_interleaved_write_frame(oc, &pkt);*/
-    }
-
     // send the encoded frame as packet
     if(gotPkt) {
       packet.pts = av_rescale_q_rnd(packet.pts, rtpStream->codec->time_base, rtpStream->time_base,

@@ -1,6 +1,7 @@
 #include <kernels/sources/image_loader.h>
 #include <opencv2/highgui.hpp>
 #include <types/cv/types.h>
+#include <unistd.h>
 
 namespace mxre
 {
@@ -9,7 +10,7 @@ namespace mxre
     /* Constructor */
     ImageLoader::ImageLoader(std::string path, std::string stemName, int startIndex, int maxPlaceValue,
         int width, int height): MXREKernel() {
-      frame_idx = startIndex;
+      frameIndex = startIndex;
       this->maxPlaceValue = maxPlaceValue;
       this->path = path;
       this->stemName = stemName;
@@ -18,6 +19,9 @@ namespace mxre
       this->periodMS = 0;
 
       addOutputPort<mxre::types::Frame>("out_frame");
+#ifdef __PROFILE__
+      if(logger == NULL) initLoggerST("image_loader", "logs/" + std::to_string(pid) + "/image_loader.log");
+#endif
     }
 
 
@@ -30,12 +34,12 @@ namespace mxre
       sleepForMS(periodMS); // control read frequency
 
 #ifdef __PROFILE__
-      start = getNow();
+      startTimeStamp = getTimeStampNow();
 #endif
 
       std::stringstream ss;
       ss << std::setfill('0') << std::setw(maxPlaceValue);
-      ss << frame_idx++;
+      ss << frameIndex;
       std::string imagePath = path + stemName + ss.str() + ".png";
 
       auto &outFrame( output["out_frame"].allocate<mxre::types::Frame>() );
@@ -53,14 +57,16 @@ namespace mxre
             cv::Scalar::all(0));
       }
 
-      outFrame = mxre::types::Frame(image);
+      outFrame = mxre::types::Frame(image, frameIndex++, getTimeStampNow());
       //debug_print("IMG LOADER %d %d from image %d %d\n", (int)outFrame.cols, (int)outFrame.rows, image.cols, image.rows);
       output["out_frame"].send();
       sendFrameCopy("out_frame", &outFrame);
 
+      endTimeStamp = getTimeStampNow();
+
 #ifdef __PROFILE__
-      end = getNow();
-      profile_print("Exe Time: %lf ms", getExeTime(end, start));
+      logger->info("{}th frame\t start\t{}\t end\t{}\t exe\t{}", frameIndex-1, startTimeStamp, endTimeStamp,
+                   endTimeStamp-startTimeStamp);
 #endif
 
       return raft::proceed;

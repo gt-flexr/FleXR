@@ -23,7 +23,7 @@ int main() {
 
   for(int i = 0; i < 1000; i++) {
     cap.read(camFrame);
-    mxre::types::Frame sendFrame(camFrame);
+    mxre::types::Frame sendFrame(camFrame, 0, 0);
     illixrSource.send(&sendFrame);
     illixrSink.recv(&recvFrame);
     cv::imshow("test", recvFrame.useAsCVMat());
