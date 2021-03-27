@@ -3,6 +3,7 @@
 
 #include <uvgrtp/lib.hh>
 #include "defs.h"
+#include "types/types.h"
 
 namespace mxre {
   namespace components {
@@ -17,6 +18,7 @@ namespace mxre {
       ~RTPSender();
       RTPSender(std::string dest, int even_port);
       bool send(uint8_t *inData, uint32_t inDataSize);
+      bool sendWithTrackingInfo(uint8_t *inData, uint32_t inDataSize, uint32_t index, double timestamp);
     };
   }
 }

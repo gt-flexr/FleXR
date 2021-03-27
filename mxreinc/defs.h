@@ -21,7 +21,8 @@
 #define SDP_BUF_SIZE 2048
 
 // RTP payload size for uvgRTP
-#define MXRE_PAYLOAD_UNIT_SIZE 1443
+#define MXRE_RTP_PAYLOAD_UNIT_SIZE 1443
+#define MXRE_RTP_TRACKING_INVOICE (-777777)
 
 // color-print reference: http://web.theurbanpenguin.com/adding-color-to-your-output-from-c/
 #define debug_print(...) do { if (__DEBUG__) { \
