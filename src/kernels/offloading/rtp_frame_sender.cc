@@ -13,12 +13,6 @@ namespace mxre
     {
       addInputPort<mxre::types::Frame>("in_frame");
 
-      // Frame Tracking
-      publisher = zmq::socket_t(ctx, zmq::socket_type::pub);
-      std::string bindingAddr = "tcp://*:" + std::to_string(destPortBase+1);
-      publisher.bind(bindingAddr);
-      publisher.set(zmq::sockopt::conflate, 1);
-
       // Encoder
       av_register_all();
       avcodec_register_all();
@@ -77,10 +71,6 @@ namespace mxre
 
     /* Destructor() */
     RTPFrameSender::~RTPFrameSender() {
-      publisher.close();
-      ctx.shutdown();
-      ctx.close();
-
       avcodec_close(encoderContext);
       av_frame_free(&encodingFrame);
     }
@@ -88,7 +78,6 @@ namespace mxre
 
     /* Run() */
     raft::kstatus RTPFrameSender::run() {
-      mxre::types::FrameTrackingInfo trackingInfo;
       AVPacket encodingPacket;
       av_init_packet(&encodingPacket);
 
@@ -110,11 +99,8 @@ namespace mxre
       while (ret >= 0) {
         ret = avcodec_receive_packet(encoderContext, &encodingPacket);
         if(ret == 0) {
-          if(rtpSender.send(encodingPacket.data, encodingPacket.size)) {
-            trackingInfo.index = inFrame.index;
-            trackingInfo.timestamp = inFrame.timestamp;
-            publisher.send(zmq::buffer(&trackingInfo, sizeof(mxre::types::FrameTrackingInfo)),
-                           zmq::send_flags::none);
+          if(rtpSender.sendWithTrackingInfo(encodingPacket.data, encodingPacket.size,
+                                            inFrame.index, inFrame.timestamp)) {
 #ifdef __PROFILE__
             endTimeStamp = getTimeStampNow();
             logger->info("RecvTime/ExportTime/ExeTime\t{}\t {}\t {}", startTimeStamp, endTimeStamp,

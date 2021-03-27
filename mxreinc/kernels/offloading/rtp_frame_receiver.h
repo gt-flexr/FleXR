@@ -4,7 +4,6 @@
 #include <bits/stdc++.h>
 #include <opencv2/opencv.hpp>
 #include <raft>
-#include <zmq.hpp>
 
 #include "defs.h"
 #include "kernels/kernel.h"
@@ -31,10 +30,6 @@ namespace mxre
     class RTPFrameReceiver : public MXREKernel
     {
       private:
-        // Frame Tracking
-        zmq::context_t ctx;
-        zmq::socket_t subscriber;
-
         // RTP Streaming
         components::RTPReceiver rtpReceiver;
 
@@ -51,7 +46,7 @@ namespace mxre
 
 
       public:
-        RTPFrameReceiver(int portBase, std::string decoderName, int width, int height);
+        RTPFrameReceiver(int port, std::string decoderName, int width, int height);
         ~RTPFrameReceiver();
         virtual raft::kstatus run();
     };

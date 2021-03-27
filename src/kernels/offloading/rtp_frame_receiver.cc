@@ -8,19 +8,12 @@ namespace mxre
   namespace kernels
   {
     /* Constructor() */
-    RTPFrameReceiver::RTPFrameReceiver(int portBase, std::string decoderName, int width, int height):
-      rtpReceiver("127.0.0.1", portBase),
+    RTPFrameReceiver::RTPFrameReceiver(int port, std::string decoderName, int width, int height):
+      rtpReceiver("127.0.0.1", port),
       width(width), height(height), decoderName(decoderName),
       MXREKernel()
     {
       addOutputPort<mxre::types::Frame>("out_frame");
-
-      // Frame Tracking
-      subscriber = zmq::socket_t(ctx, zmq::socket_type::sub);
-      std::string connectingAddr = "tcp://localhost:" + std::to_string(portBase+1);
-      subscriber.connect(connectingAddr);
-      subscriber.set(zmq::sockopt::conflate, 1);
-      subscriber.set(zmq::sockopt::subscribe, "");
 
       // Decoder
       av_register_all();
@@ -59,10 +52,6 @@ namespace mxre
 
     /* Destructor() */
     RTPFrameReceiver::~RTPFrameReceiver() {
-      subscriber.close();
-      ctx.shutdown();
-      ctx.close();
-
       av_frame_free(&decodingFrame);
       avcodec_close(decoderContext);
     }
@@ -73,20 +62,21 @@ namespace mxre
 
       outFrame = mxre::types::Frame(height, width, CV_8UC3, -1, -1);
       AVPacket decodingPacket;
-      mxre::types::FrameTrackingInfo trackingInfo;
       int ret = 0;
 
       uint8_t *recvDataBuffer = nullptr;
       uint32_t recvDataSize = 0;
-      rtpReceiver.receive(recvDataBuffer, &recvDataSize);
+      ;
+
 
 #ifdef __PROFILE__
       startTimeStamp = getTimeStampNow();
 #endif
-      if(recvDataSize > 0) {
-        subscriber.recv(zmq::buffer(&trackingInfo, sizeof(mxre::types::FrameTrackingInfo)) );
-        outFrame.index = trackingInfo.index;
-        outFrame.timestamp = trackingInfo.timestamp;
+      if(rtpReceiver.receiveDynamicWithTrackinInfo(&recvDataBuffer, &recvDataSize,
+                                            &outFrame.index, &outFrame.timestamp))
+      {
+        debug_print("recvDataInfo: Index(%d) TS(%f) Size(%d) %p", outFrame.index, outFrame.timestamp,
+                                                                  recvDataSize, recvDataBuffer);
 
         av_packet_from_data(&decodingPacket, recvDataBuffer, recvDataSize);
         ret = avcodec_send_packet(decoderContext, &decodingPacket);

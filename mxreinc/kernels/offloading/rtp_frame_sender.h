@@ -3,7 +3,6 @@
 
 #include <bits/stdc++.h>
 #include <raft>
-#include <zmq.hpp>
 
 #include "defs.h"
 #include "kernels/kernel.h"
@@ -30,10 +29,6 @@ namespace mxre
     class RTPFrameSender : public MXREKernel
     {
       private:
-        // Frame Tracking
-        zmq::context_t ctx;
-        zmq::socket_t publisher;
-
         // RTP Streaming
         components::RTPSender rtpSender;
 
