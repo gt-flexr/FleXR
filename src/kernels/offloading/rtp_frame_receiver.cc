@@ -9,13 +9,11 @@ namespace mxre
   {
     /* Constructor() */
     RTPFrameReceiver::RTPFrameReceiver(int portBase, std::string decoderName, int width, int height):
-      MXREKernel(), decoderName(decoderName), width(width), height(height)
+      rtpReceiver("127.0.0.1", portBase),
+      width(width), height(height), decoderName(decoderName),
+      MXREKernel()
     {
       addOutputPort<mxre::types::Frame>("out_frame");
-
-      // RTP Streaming
-      rtpSession = rtpContext.create_session("127.0.0.1");
-      rtpStream = rtpSession->create_stream(49991, -1, RTP_FORMAT_GENERIC, RCE_FRAGMENT_GENERIC);
 
       // Frame Tracking
       subscriber = zmq::socket_t(ctx, zmq::socket_type::sub);
@@ -61,7 +59,6 @@ namespace mxre
 
     /* Destructor() */
     RTPFrameReceiver::~RTPFrameReceiver() {
-      rtpContext.destroy_session(rtpSession);
       subscriber.close();
       ctx.shutdown();
       ctx.close();
@@ -73,23 +70,25 @@ namespace mxre
     /* Run() */
     raft::kstatus RTPFrameReceiver::run() {
       auto &outFrame( output["out_frame"].allocate<mxre::types::Frame>() );
+
       outFrame = mxre::types::Frame(height, width, CV_8UC3, -1, -1);
-      rtpFrame = nullptr;
       AVPacket decodingPacket;
       mxre::types::FrameTrackingInfo trackingInfo;
       int ret = 0;
 
+      uint8_t *recvDataBuffer = nullptr;
+      uint32_t recvDataSize = 0;
+      rtpReceiver.receive(recvDataBuffer, &recvDataSize);
 
-      rtpFrame = rtpStream->pull_frame();
 #ifdef __PROFILE__
       startTimeStamp = getTimeStampNow();
 #endif
-      if(rtpFrame != nullptr) {
+      if(recvDataSize > 0) {
         subscriber.recv(zmq::buffer(&trackingInfo, sizeof(mxre::types::FrameTrackingInfo)) );
         outFrame.index = trackingInfo.index;
         outFrame.timestamp = trackingInfo.timestamp;
 
-        av_packet_from_data(&decodingPacket, rtpFrame->payload, rtpFrame->payload_len);
+        av_packet_from_data(&decodingPacket, recvDataBuffer, recvDataSize);
         ret = avcodec_send_packet(decoderContext, &decodingPacket);
         while (ret >= 0) {
           ret = avcodec_receive_frame(decoderContext, decodingFrame);
@@ -108,9 +107,10 @@ namespace mxre
             logger->info("RecvTime/ExportTime/ExeTime\t{}\t {}\t {}", startTimeStamp, endTimeStamp,
                 endTimeStamp-startTimeStamp);
 #endif
-            (void)uvg_rtp::frame::dealloc_frame(rtpFrame);
           }
         }
+
+        delete recvDataBuffer;
       }
 
       return raft::proceed;

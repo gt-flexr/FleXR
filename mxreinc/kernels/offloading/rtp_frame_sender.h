@@ -4,14 +4,13 @@
 #include <bits/stdc++.h>
 #include <raft>
 #include <zmq.hpp>
-#include <ifaddrs.h>
-#include <uvgrtp/lib.hh>
 
 #include "defs.h"
 #include "kernels/kernel.h"
 #include "types/cv/types.h"
 #include "types/clock_types.h"
 #include "types/frame.h"
+#include "components/rtp_sender.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -36,9 +35,7 @@ namespace mxre
         zmq::socket_t publisher;
 
         // RTP Streaming
-        uvg_rtp::context rtpContext;
-        uvg_rtp::session *rtpSession;
-        uvg_rtp::media_stream *rtpStream;
+        components::RTPSender rtpSender;
 
         // Encoder
         std::string encoderName;

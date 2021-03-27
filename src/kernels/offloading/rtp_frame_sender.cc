@@ -7,14 +7,11 @@ namespace mxre
   {
     /* Constructor() */
     RTPFrameSender::RTPFrameSender(std::string destAddr, int destPortBase, std::string encoderName,
-                                   int width, int height, int bitrate, int fps): 
+                                   int width, int height, int bitrate, int fps):
+      rtpSender(destAddr, destPortBase),
       encoderName(encoderName), width(width), height(height)
     {
       addInputPort<mxre::types::Frame>("in_frame");
-
-      // RTP Streaming
-      rtpSession = rtpContext.create_session(destAddr);
-      rtpStream = rtpSession->create_stream(-1, destPortBase, RTP_FORMAT_GENERIC, RCE_FRAGMENT_GENERIC);
 
       // Frame Tracking
       publisher = zmq::socket_t(ctx, zmq::socket_type::pub);
@@ -80,7 +77,6 @@ namespace mxre
 
     /* Destructor() */
     RTPFrameSender::~RTPFrameSender() {
-      rtpContext.destroy_session(rtpSession);
       publisher.close();
       ctx.shutdown();
       ctx.close();
@@ -114,7 +110,7 @@ namespace mxre
       while (ret >= 0) {
         ret = avcodec_receive_packet(encoderContext, &encodingPacket);
         if(ret == 0) {
-          if(rtpStream->push_frame(encodingPacket.data, encodingPacket.size, RTP_NO_FLAGS) == RTP_OK) {
+          if(rtpSender.send(encodingPacket.data, encodingPacket.size)) {
             trackingInfo.index = inFrame.index;
             trackingInfo.timestamp = inFrame.timestamp;
             publisher.send(zmq::buffer(&trackingInfo, sizeof(mxre::types::FrameTrackingInfo)),

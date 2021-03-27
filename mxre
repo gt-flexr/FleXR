@@ -4,6 +4,13 @@
 #ifndef STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #endif
+#
+/* Utils */
+#include "./mxreinc/utils/getch.h"
+#include "./mxreinc/utils/path_finder.h"
+#include "./mxreinc/utils/cv_utils.h"
+#include "./mxreinc/utils/gl_utils.h"
+#include "./mxreinc/utils/egl_utils.h"
 
 /* defs */
 #include "./mxreinc/defs.h"
@@ -25,15 +32,10 @@
 #include "./mxreinc/types/ar/virtual_world.h"
 #include "./mxreinc/types/ar/virtual_object.h"
 #include "./mxreinc/types/ar/virtual_world_manager.h"
-#
-/* Utils */
-#include "./mxreinc/utils/getch.h"
-#include "./mxreinc/utils/path_finder.h"
-#include "./mxreinc/utils/cv_utils.h"
-#include "./mxreinc/utils/gl_utils.h"
-#include "./mxreinc/utils/egl_utils.h"
-//#include <glm/gtc/matrix_transform.hpp>
-//#include <glm/gtc/type_ptr.hpp>
+
+/* Components */
+#include "./mxreinc/components/rtp_sender.h"
+#include "./mxreinc/components/rtp_receiver.h"
 
 /* Kernels */
 #include "./mxreinc/kernels/kernel.h"

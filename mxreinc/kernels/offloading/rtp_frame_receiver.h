@@ -4,7 +4,6 @@
 #include <bits/stdc++.h>
 #include <opencv2/opencv.hpp>
 #include <raft>
-#include <uvgrtp/lib.hh>
 #include <zmq.hpp>
 
 #include "defs.h"
@@ -12,6 +11,7 @@
 #include "types/cv/types.h"
 #include "types/clock_types.h"
 #include "types/frame.h"
+#include "components/rtp_receiver.h"
 
 extern "C" {
 #include <libavformat/avformat.h>
@@ -36,10 +36,7 @@ namespace mxre
         zmq::socket_t subscriber;
 
         // RTP Streaming
-        uvg_rtp::context rtpContext;
-        uvg_rtp::session *rtpSession;
-        uvg_rtp::media_stream *rtpStream;
-        uvg_rtp::frame::rtp_frame *rtpFrame;
+        components::RTPReceiver rtpReceiver;
 
         // Decoder
         std::string decoderName;
