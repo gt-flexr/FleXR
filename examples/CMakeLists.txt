@@ -16,6 +16,14 @@ list(APPEND EXAMPLE_SRCS
 
   incubator/unity_test.cc
   incubator/unity_writer.cc
+
+  server.cc
+  client.cc
+  client_test.cc
+  test.cc
+  ffmpeg_test.cc
+  test_sender.cc
+  test_receiver.cc
 )
 
 
