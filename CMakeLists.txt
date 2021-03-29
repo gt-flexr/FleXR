@@ -65,16 +65,10 @@ set(MXRE_HEADER mxre)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/${MXRE_HEADER} DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
 
 if(NOT WIN32)
-  mark_as_advanced( PKG_CONFIG_PATHWAY )
-  set( PKG_CONFIG_PATH "/usr/local/lib/pkgconfig")
-
-  string(REPLACE ":" ";" PREFIX_LIST "${CMAKE_SYSTEM_PREFIX_PATH}")
-  list(FIND PREFIX_LIST ${CMAKE_INSTALL_PREFIX}  INSTALL_PREFIX_INDEX)
-
-  #if(${INSTALL_PREFIX_INDEX} GREATER 0)
-  #  file( MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/pkgconfig )
-  #  set( PKG_CONFIG_PATH ${CMAKE_INSTALL_PREFIX}/pkgconfig )
-  #endif()
+  if(NOT DEFINED ENV{PKG_CONFIG_PATH})
+    set( PKG_CONFIG_PATH "/usr/local/lib/pkgconfig")
+    message("PKG_CONFIG_PATH is not found. Set it with ${PKG_CONFIG_PATH}")
+  endif(NOT DEFINED ENV{PKG_CONFIG_PATH})
 
   configure_file("mxre.pc.in" "mxre.pc" @ONLY)
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mxre.pc DESTINATION ${PKG_CONFIG_PATH}/)
