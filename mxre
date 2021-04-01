@@ -36,6 +36,8 @@
 /* Components */
 #include "./mxreinc/components/rtp_sender.h"
 #include "./mxreinc/components/rtp_receiver.h"
+#include "./mxreinc/components/rosbag_reader.h"
+#include "./mxreinc/components/rosbag_frame_reader.h"
 
 /* Kernels */
 #include "./mxreinc/kernels/kernel.h"
