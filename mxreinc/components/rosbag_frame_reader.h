@@ -19,6 +19,7 @@ namespace mxre {
       ROSBagFrameReader(std::string bagFile, std::string topic);
       ~ROSBagFrameReader();
       void cacheFrames(int numFrames);
+      void cacheFrames(int numFrames, int skippingFrames);
       void printCachedFrameInfo();
       mxre::types::Frame getNextFrameFromBag();
       mxre::types::Frame getNextFrameFromCachedFrames();

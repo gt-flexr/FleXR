@@ -12,32 +12,45 @@ namespace mxre {
       for(unsigned int i = 0; i < cachedFrames.size(); i++) cachedFrames[i].release();
     }
 
+
     void ROSBagFrameReader::cacheFrames(int numFrames)
     {
       for(int i = 0; i < numFrames; i++) {
         sensor_msgs::Image::ConstPtr image = curMsg->instantiate<sensor_msgs::Image>();
-        mxre::types::Frame frame(image->height, image->width, CV_8UC3, -1, -1);
-        if(frame.dataSize == image->data.size()) {
-          memcpy(frame.data, image->data.data(), image->data.size());
-          cachedFrames.push_back(frame);
-          curMsg++;
-        }
+        if(image == NULL) debug_print("failed to read bag with frame %dth", i);
         else {
-          debug_print("allocated memory for mxre::type:Frame is not equal to the read data");
-          exit(1);
+          mxre::types::Frame frame(image->height, image->width, CV_8UC3, -1, -1);
+          if(frame.dataSize == image->data.size()) {
+            memcpy(frame.data, image->data.data(), image->data.size());
+            cachedFrames.push_back(frame);
+            curMsg++;
+          }
+          else {
+            debug_print("allocated memory for mxre::type:Frame is not equal to the read data");
+            exit(1);
+          }
         }
       }
       printCachedFrameInfo();
     }
 
 
+    void ROSBagFrameReader::cacheFrames(int numFrames, int skippingFrames)
+    {
+      for(int i = 0; i < skippingFrames; i++) curMsg++;
+      debug_print("start to read a bag file from %dth to %dth frames", skippingFrames, skippingFrames + numFrames);
+      cacheFrames(numFrames);
+    }
+
+
     void ROSBagFrameReader::printCachedFrameInfo()
     {
       debug_print("Num of Cached Frames: %ld" , cachedFrames.size());
+      int i = 0;
       for(std::vector<mxre::types::Frame>::iterator iter = cachedFrames.begin(); iter != cachedFrames.end(); iter++) {
-        debug_print("\tEach frame Info");
-        debug_print("\tWidth(%ld) Height(%ld) Size(%ld) ElemSize(%ld) TotalElem(%ld)", iter->cols, iter->rows,
+        debug_print("\t%d Width(%ld) Height(%ld) Size(%ld) ElemSize(%ld) TotalElem(%ld)", i, iter->cols, iter->rows,
                     iter->dataSize, iter->elemSize, iter->totalElem);
+        i++;
       }
     }
 
