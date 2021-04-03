@@ -36,6 +36,8 @@
 /* Components */
 #include "./mxreinc/components/rtp_sender.h"
 #include "./mxreinc/components/rtp_receiver.h"
+#include "./mxreinc/components/rosbag_reader.h"
+#include "./mxreinc/components/rosbag_frame_reader.h"
 
 /* Kernels */
 #include "./mxreinc/kernels/kernel.h"
@@ -48,6 +50,7 @@
 #include "./mxreinc/kernels/sources/keyboard.h"
 #include "./mxreinc/kernels/sources/image_loader.h"
 #include "./mxreinc/kernels/sources/mock_camera.h"
+#include "./mxreinc/kernels/sources/bag_camera.h"
 #include "./mxreinc/kernels/sources/appsource.h"
 
 #include "./mxreinc/kernels/sinks/cv_display.h"

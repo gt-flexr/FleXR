@@ -43,6 +43,7 @@ include(cmake/modules/FFmpeg.cmake)
 include(cmake/modules/Spdlog.cmake)
 include(cmake/modules/yaml-cpp.cmake)
 include(cmake/modules/uvgRTP.cmake)
+include(cmake/modules/rosbag.cmake)
 
 message(STATUS "[MXRE COMPILE INFO]")
 
