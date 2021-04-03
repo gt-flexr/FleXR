@@ -108,7 +108,6 @@ namespace mxre {
     mxre::types::Frame ROSBagFrameReader::getNextFrameFromCachedFrames()
     {
       mxre::types::Frame retFrame(cachedFrames[frameIndex].useAsCVMat(), -1, -1);
-      cachedFrames.push_back(retFrame);
       frameIndex = (frameIndex + 1) % cachedFrames.size();
       return retFrame;
     }
