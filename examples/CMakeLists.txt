@@ -1,4 +1,8 @@
-file(GLOB_RECURSE EXAMPLE_SRCS tests/*.cc)
+file(GLOB_RECURSE EXAMPLE_SRCS
+     tutorials/*.cc
+     tests/*.cc
+     incubator/*.cc
+     )
 list(APPEND EXAMPLE_SRCS
   ar_with_lidar/complex_yolo.cc
 

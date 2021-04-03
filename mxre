@@ -4,7 +4,12 @@
 #ifndef STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #endif
-#
+
+/* MXRE Dependencies */
+#include <bits/stdc++.h>
+#include <raft>
+#include <yaml-cpp/yaml.h>
+
 /* Utils */
 #include "./mxreinc/utils/getch.h"
 #include "./mxreinc/utils/path_finder.h"

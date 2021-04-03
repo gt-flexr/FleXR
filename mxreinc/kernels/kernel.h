@@ -61,6 +61,10 @@ namespace mxre
         void setSleepPeriodMS(int period) { periodMS = period; }
 
 
+        /* setFPS() */
+        void setFPS(unsigned int fps) { setSleepPeriodMS((int)(1000/fps)); }
+
+
         /* run(): set in/out ports and call logic() */
         virtual raft::kstatus run(){ return raft::proceed; }
 
