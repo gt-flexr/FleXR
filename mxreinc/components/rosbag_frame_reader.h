@@ -16,13 +16,19 @@ namespace mxre {
       std::vector<mxre::types::Frame> cachedFrames;
       unsigned int frameIndex;
     public:
+      ROSBagFrameReader();
       ROSBagFrameReader(std::string bagFile, std::string topic);
       ~ROSBagFrameReader();
+
       void cacheFrames(int numFrames);
       void cacheFrames(int numFrames, int skippingFrames);
+      void uncacheFrames();
+      bool isCached();
+
       void printCachedFrameInfo();
       mxre::types::Frame getNextFrameFromBag();
       mxre::types::Frame getNextFrameFromCachedFrames();
+      mxre::types::Frame getNextFrame();
     };
   }
 }
