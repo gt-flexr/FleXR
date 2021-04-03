@@ -8,7 +8,7 @@ int main()
   if(mxreHome.empty()) {
     debug_print("Set MXRE_HOME as a environment variable"); return -1;
   }
-  string configYaml = mxreHome + "examples/tutorials/config.yaml";
+  string configYaml = mxreHome + "/examples/tutorials/config.yaml";
   debug_print("configurations from %s", configYaml.c_str());
 
   YAML::Node config = YAML::LoadFile(configYaml);
