@@ -16,13 +16,11 @@ namespace mxre {
       rosbag::View::iterator curMsg;
 
     public:
-      ROSBagReader(std::string bagFile, std::string topic) {
-        bag.open(bagFile, rosbag::bagmode::Read);
-        view = new rosbag::View(bag, rosbag::TopicQuery(topic));
-        curMsg = view->begin();
-      }
-
-      ~ROSBagReader() { bag.close(); }
+      ROSBagReader();
+      ROSBagReader(std::string bagFile, std::string topic);
+      bool openBag(std::string bagFile, std::string topic);
+      void clearSession();
+      ~ROSBagReader();
     };
   }
 }
