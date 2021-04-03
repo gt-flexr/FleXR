@@ -1,0 +1,20 @@
+cam_dev_idx: 0
+
+# For img_loader example
+# ex) image_000001.png
+#   - stem: image_
+#   - start idx: 1
+#   - max place value: 6
+img_dir: ""
+img_file_stem: ""
+img_start_idx: 1
+img_max_place_value: 6
+
+# For bag example
+bag_file: ""
+bag_topic: ""
+bag_fps: 30
+
+width: 1920
+height: 1080
+
