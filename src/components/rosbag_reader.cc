@@ -11,8 +11,8 @@ namespace mxre {
 
     ROSBagReader::ROSBagReader(std::string bagFile, std::string topic)
     {
-      openBag(bagFile, topic);
       view = nullptr;
+      openBag(bagFile, topic);
     }
 
 
@@ -40,10 +40,14 @@ namespace mxre {
 
     void ROSBagReader::clearSession()
     {
-      if(view != nullptr) {
+      if(view) {
+        debug_print("clear rosbag::View");
         delete view; view = nullptr;
       }
-      if(bag.isOpen()) bag.close();
+      if(bag.isOpen()) {
+        debug_print("clear rosbag::Bag");
+        bag.close();
+      }
     }
   }
 }

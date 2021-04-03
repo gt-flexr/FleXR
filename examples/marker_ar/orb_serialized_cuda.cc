@@ -1,68 +1,50 @@
-#include <opencv2/core/mat.hpp>
-#include <raft>
 #include <mxre>
-#include <bits/stdc++.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/basic_file_sink.h>
-#include <yaml-cpp/yaml.h>
 
 #define LATENCY_BREAKDOWN 1
-#define CAMERA_FREQUENCY 60
 
 using namespace std;
-
-int width, height;
-std::string markerPath, fixedImagePath;
 
 int main(int argc, char const *argv[])
 {
   string mxre_home = getenv("MXRE_HOME");
-  string config_yaml = mxre_home + "/examples/marker_ar_with_mock/config.yaml";
+  string config_yaml = mxre_home + "/examples/marker_ar/config.yaml";
 
   if(mxre_home.empty()) {
     cout << "Set MXRE_HOME as a environment variable" << endl;
     return 0;
   }
-  else
-    cout << config_yaml << endl;
-
+  else cout << config_yaml << endl;
 
   YAML::Node config = YAML::LoadFile(config_yaml);
+  string markerPath    = config["marker_path"].as<string>();
+  int width            = config["width"].as<int>();
+  int height           = config["height"].as<int>();
+  string bagFile       = config["bag_file"].as<string>();
+  string bagTopic      = config["bag_topic"].as<string>();
+  int bagFPS           = config["bag_fps"].as<int>();
 
-  width = config["width"].as<int>();
-  height = config["height"].as<int>();
-
-  markerPath = config["marker_path"].as<string>();
-  fixedImagePath = config["fixed_image_path"].as<string>();
 
   /*
    *  Load a marker from an image
    */
   mxre::cv_types::ORBMarkerTracker orbMarkerTracker;
-  mxre::cv_utils::setMarkerFromImages(markerPath + to_string(height) + "/", 0, 1, orbMarkerTracker);
+  mxre::cv_utils::setMarkerFromImages(markerPath + "/", 0, 1, orbMarkerTracker);
   std::vector<mxre::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
-  orbMarkerTracker.printRegisteredObjects();
 
-  cv::Mat cachedFrame = cv::imread(fixedImagePath);
-  if(cachedFrame.empty()) {
-    debug_print("Could not read the image: %s", fixedImagePath.c_str());
-    exit(0);
-  }
 
-  int rowPadding = height - cachedFrame.rows;
-  int colPadding = width - cachedFrame.cols;
-  if(rowPadding > 0 && colPadding > 0) {
-    debug_print("padding : %d %d", rowPadding, colPadding);
-    cv::copyMakeBorder(cachedFrame, cachedFrame, 0, rowPadding, 0, colPadding, cv::BORDER_CONSTANT,
-        cv::Scalar::all(0));
-  }
-
+  /*
+   *  Cache frames from a bag file
+   */
+  mxre::components::ROSBagFrameReader bagFrameReader(bagFile, bagTopic);
+  bagFrameReader.cacheFrames(400, 400);
 
 
   /*
    *  ORB detector & matcher, set matching params
    */
-  int frameIndex = 1;
+  int frameIndex = 0;
   double frameTimestamp;
   cv::Ptr<cv::cuda::ORB> detector = cv::cuda::ORB::create();
   cv::Ptr<cv::cuda::DescriptorMatcher> matcher = cv::cuda::DescriptorMatcher::createBFMatcher(cv::NORM_HAMMING);
@@ -107,7 +89,7 @@ int main(int argc, char const *argv[])
   }
   //mxre::egl_utils::unbindPbuffer(*pbuf);
 #ifdef __PROFILE__
-  auto logger = spdlog::basic_logger_st("serialized_mock_cam_cuda", "logs/serialized_mock_cam_cuda.log");
+  auto logger = spdlog::basic_logger_st("marker_ar_orb_serialized_cuda", "logs/marker_ar_orb_serialized_cuda.log");
   double e2eStart, e2eEnd;
   double blockStart, blockEnd;
 #endif
@@ -131,7 +113,8 @@ int main(int argc, char const *argv[])
 #endif
 
     // Camera Frequency
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000/CAMERA_FREQUENCY));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000/bagFPS-1));
+    mxre::types::Frame frame = bagFrameReader.getNextFrame();
     frameTimestamp = getTimeStampNow();
 
 #ifdef LATENCY_BREAKDOWN
@@ -148,7 +131,7 @@ int main(int argc, char const *argv[])
     std::vector<mxre::gl_types::ObjectContext> markerContexts;
 
     // 2.1. Get frame keypoints and descriptors
-    cv::Mat grayFrame = cachedFrame.clone();
+    cv::Mat grayFrame = frame.useAsCVMat().clone();
     cv::cvtColor(grayFrame, grayFrame, CV_BGR2GRAY);
     cuFrame.upload(grayFrame);
     detector->detectAndComputeAsync(cuFrame, cv::noArray(), cuKp, cuDesc, false, stream);
@@ -270,12 +253,11 @@ int main(int argc, char const *argv[])
     /********************************
                 Overlay Objects
     *********************************/
-    mxre::types::Frame mxreFrame(cachedFrame, frameIndex, frameTimestamp);
     if(glIsTexture(backgroundTexture))
-      mxre::gl_utils::updateTextureFromFrame(&mxreFrame, backgroundTexture);
+      mxre::gl_utils::updateTextureFromFrame(&frame, backgroundTexture);
     else
-      mxre::gl_utils::makeTextureFromFrame(&mxreFrame, backgroundTexture);
-    mxreFrame.release();
+      mxre::gl_utils::makeTextureFromFrame(&frame, backgroundTexture);
+    frame.release();
 
     // 2. Draw background frame
     glClearColor(1.0, 1.0, 1.0, 1.0);
