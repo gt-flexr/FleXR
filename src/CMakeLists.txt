@@ -1,6 +1,6 @@
 file(GLOB_RECURSE MXRE_SRCS *.cc *.vs *.fs *.gs)
 file(GLOB_RECURSE MXRE_SHADERS *.vs *.fs *.gs)
-
+find_package(kimera_vio REQUIRED)
 add_library(mxre ${MXRE_SRCS})
 target_include_directories(mxre PUBLIC
                            "${PROJECT_SOURCE_DIR}"
@@ -14,6 +14,8 @@ target_compile_options(mxre PUBLIC ${MXRE_CXX_FLAGS})
 target_link_libraries(mxre ${MXRE_THIRD_PARTIES})
 target_link_libraries(mxre ${MXRE_LINKER_FLAGS})
 target_link_libraries(mxre ${MXRE_LINKER_LIBS})
+target_link_libraries(mxre kimera_vio)
+
 
 # vertex, fragment, geometric shaders
 foreach(MXRE_SHADER ${MXRE_SHADERS})
