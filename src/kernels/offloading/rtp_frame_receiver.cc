@@ -89,8 +89,7 @@ namespace mxre
             if(decoderName == "h264") cv::cvtColor(yuvFrame, outFrame.useAsCVMat(), cv::COLOR_YUV420p2RGB);
             else if(decoderName == "h264_cuvid") cv::cvtColor(yuvFrame, outFrame.useAsCVMat(), cv::COLOR_YUV2BGR_NV12);
 
-            output["out_frame"].send();
-            sendFrameCopy("out_frame", &outFrame);
+            sendFrames("out_frame", &outFrame);
 
 #ifdef __PROFILE__
             endTimeStamp = getTimeStampNow();

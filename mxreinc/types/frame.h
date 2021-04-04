@@ -104,6 +104,11 @@ namespace mxre {
         dataSize = mat.total() * mat.elemSize();
         type = mat.type();
       }
+
+      void printInfo() {
+        debug_print("idx(%d/%f) width(%ld) height(%ld) elem(%ld/%ld) dataSize(%ld)",
+            index, timestamp, cols, rows, elemSize, totalElem, dataSize);
+      }
     };
 
   } // namespace types

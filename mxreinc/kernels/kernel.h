@@ -106,14 +106,14 @@ namespace mxre
 
 
         /* sendCopyFrame: propagate the primitive-type data into duplicated output ports */
-        void sendFrameCopy(std::string id, void* data) {
-          mxre::types::Frame *frame = (mxre::types::Frame*)data;
+        void sendFrames(std::string id, mxre::types::Frame *frame) {
           auto portRange = oPortMap.equal_range(id);
           for(auto i = portRange.first; i != portRange.second; ++i) {
             auto &outData(output[i->second].allocate<mxre::types::Frame>());
             outData = frame->clone();
             output[i->second].send();
           }
+          output[id].send();
         }
 
 #ifdef __PROFILE__

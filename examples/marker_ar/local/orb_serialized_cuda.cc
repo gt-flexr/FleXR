@@ -162,7 +162,7 @@ int main(int argc, char const *argv[])
 
       // 2.2. find matching descriptors between the frame and the object
       cuObjDesc.upload(markerInfo->desc);
-      matcher->knnMatchAsync(cuObjDesc, cuDesc, cuMatches, 2, cv::noArray(), stream);
+      matcher->knnMatchAsync(cuObjDesc, cuDesc, cuMatches, knnParam, cv::noArray(), stream);
       stream.waitForCompletion();
       matcher->knnMatchConvert(cuMatches, matches);
 

@@ -52,8 +52,7 @@ namespace mxre
       auto &outFrame( output["out_frame"].allocate<mxre::types::Frame>() );
 
       outFrame = mxre::types::Frame(cachedFrame, frameIndex++, getTimeStampNow());
-      output["out_frame"].send();
-      sendFrameCopy("out_frame", &outFrame);
+      sendFrames("out_frame", &outFrame);
 
       periodEnd = getTimeStampNowUint();
       periodAdj = periodEnd - periodStart;

@@ -49,12 +49,16 @@ namespace mxre
         cv::cuda::GpuMat cuObjDesc;
         std::vector<std::vector<cv::DMatch>> matches;
         std::vector<cv::KeyPoint> objMatch, frameMatch;
+        cv::Mat homography;
+        cv::Mat inlierMask;
+        std::vector<cv::KeyPoint> objInlier, frameInlier;
+        std::vector<cv::DMatch> inlierMatches;
 
         // 3-1. upload each objDesc into cuDesc
         cuObjDesc.upload(markerInfo->desc);
 
         // 3-2. find matched descs for finding matching kps
-        matcher->knnMatchAsync(cuObjDesc, cuDesc, cuMatches, 2, cv::noArray(), stream);
+        matcher->knnMatchAsync(cuObjDesc, cuDesc, cuMatches, knnParam, cv::noArray(), stream);
         stream.waitForCompletion();
         matcher->knnMatchConvert(cuMatches, matches);
 
@@ -65,11 +69,6 @@ namespace mxre
             frameMatch.push_back(frameKps[matches[i][0].trainIdx]);
           }
         }
-
-        cv::Mat homography;
-        cv::Mat inlierMask;
-        std::vector<cv::KeyPoint> objInlier, frameInlier;
-        std::vector<cv::DMatch> inlierMatches;
 
         // 4. Find the homography with matched kps (at least 4kps for planar obj)
         if(objMatch.size() > 4) {

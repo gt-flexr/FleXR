@@ -91,13 +91,13 @@ namespace mxre
         zmq_send(sock, "ack", 3, 0);
 
         if(recvFlag) {
-          output["out_data"].send();
           switch(dtype) {
             case MXRE_DTYPE_PRIMITIVE:
+              output["out_data"].send();
               sendPrimitiveCopy("out_data", &outData);
               break;
             case MXRE_DTYPE_FRAME:
-              sendFrameCopy("out_data", &outData);
+              sendFrames("out_data", &outData);
               break;
           }
         }

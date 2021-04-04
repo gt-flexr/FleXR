@@ -59,8 +59,7 @@ namespace mxre
 
       outFrame = mxre::types::Frame(image, frameIndex++, getTimeStampNow());
       //debug_print("IMG LOADER %d %d from image %d %d\n", (int)outFrame.cols, (int)outFrame.rows, image.cols, image.rows);
-      output["out_frame"].send();
-      sendFrameCopy("out_frame", &outFrame);
+      sendFrames("out_frame", &outFrame);
 
       endTimeStamp = getTimeStampNow();
 

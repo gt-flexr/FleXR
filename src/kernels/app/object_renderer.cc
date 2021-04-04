@@ -120,8 +120,7 @@ namespace mxre
       auto &outFrame( output["out_frame"].allocate<mxre::types::Frame>() );
 
       if(logic(&inFrame, &inMarkerContexts, inKey, &outFrame)) {
-        output["out_frame"].send();
-        sendFrameCopy("out_frame", &outFrame);
+        sendFrames("out_frame", &outFrame);
       }
 
       recyclePort("in_frame");
