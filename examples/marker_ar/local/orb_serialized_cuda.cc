@@ -24,6 +24,10 @@ int main(int argc, char const *argv[])
   string bagFile       = config["bag_file"].as<string>();
   string bagTopic      = config["bag_topic"].as<string>();
   int bagFPS           = config["bag_fps"].as<int>();
+  if(markerPath.empty() || bagFile.empty() || bagTopic.empty() || bagFPS == 0) {
+    debug_print("Please put correct info on config.yaml");
+    return -1;
+  }
 
 
   /*
@@ -46,8 +50,8 @@ int main(int argc, char const *argv[])
    */
   int frameIndex = 0;
   double frameTimestamp;
-  cv::Ptr<cv::Feature2D> detector = cv::ORB::create();
-  cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
+  cv::Ptr<cv::cuda::ORB> detector = cv::cuda::ORB::create();
+  cv::Ptr<cv::cuda::DescriptorMatcher> matcher = cv::cuda::DescriptorMatcher::createBFMatcher(cv::NORM_HAMMING);
   double knnMatchRatio = 0.8f;
   int knnParam = 5;
   double ransacThresh = 2.5f;
@@ -89,11 +93,15 @@ int main(int argc, char const *argv[])
   }
   //mxre::egl_utils::unbindPbuffer(*pbuf);
 #ifdef __PROFILE__
-  auto logger = spdlog::basic_logger_st("marker_ar_orb_serialized", "logs/marker_ar_orb_serialized.log");
+  auto logger = spdlog::basic_logger_st("marker_ar_orb_serialized_cuda", "logs/marker_ar_orb_serialized_cuda.log");
   double e2eStart, e2eEnd;
   double blockStart, blockEnd;
 #endif
 
+  cv::cuda::GpuMat cuFrame;
+  cv::cuda::Stream stream;
+  cv::cuda::GpuMat cuKp, cuDesc;
+  cv::cuda::GpuMat cuMatches;
 
   /*
    *  Processing Loop
@@ -102,6 +110,7 @@ int main(int argc, char const *argv[])
     /*
      *  1. Load camera frames
      */
+
 #ifdef __PROFILE__
     e2eStart = getTimeStampNow();
     blockStart = e2eStart;
@@ -114,7 +123,7 @@ int main(int argc, char const *argv[])
 
 #ifdef LATENCY_BREAKDOWN
     blockEnd = getTimeStampNow();
-    logger->info("\tCamera Read Time\t{}", blockEnd - blockStart);
+    logger->info("\tDisk Read Time\t{}", blockEnd - blockStart);
     blockStart = blockEnd;
 #endif
 
@@ -122,14 +131,16 @@ int main(int argc, char const *argv[])
      *  2. Detect registered markers on the loaded frame
      */
     std::vector<cv::KeyPoint> frameKps;
-    cv::Mat frameDesc;
     std::vector<mxre::cv_types::DetectedMarker> detectedMarkers;
     std::vector<mxre::gl_types::ObjectContext> markerContexts;
 
     // 2.1. Get frame keypoints and descriptors
     cv::Mat grayFrame = frame.useAsCVMat().clone();
     cv::cvtColor(grayFrame, grayFrame, CV_BGR2GRAY);
-    detector->detectAndCompute(grayFrame, cv::noArray(), frameKps, frameDesc);
+    cuFrame.upload(grayFrame);
+    detector->detectAndComputeAsync(cuFrame, cv::noArray(), cuKp, cuDesc, false, stream);
+    stream.waitForCompletion();
+    detector->convert(cuKp, frameKps);
 
 #ifdef LATENCY_BREAKDOWN
     blockEnd = getTimeStampNow();
@@ -141,6 +152,7 @@ int main(int argc, char const *argv[])
     std::vector<mxre::cv_types::MarkerInfo>::iterator markerInfo;
     for (markerInfo = registeredMarkers.begin(); markerInfo != registeredMarkers.end(); ++markerInfo)
     {
+      cv::cuda::GpuMat cuObjDesc;
       std::vector<std::vector<cv::DMatch>> matches;
       std::vector<cv::KeyPoint> objMatch, frameMatch;
       cv::Mat homography;
@@ -149,7 +161,10 @@ int main(int argc, char const *argv[])
       std::vector<cv::DMatch> inlierMatches;
 
       // 2.2. find matching descriptors between the frame and the object
-      matcher->knnMatch(markerInfo->desc, frameDesc, matches, knnParam);
+      cuObjDesc.upload(markerInfo->desc);
+      matcher->knnMatchAsync(cuObjDesc, cuDesc, cuMatches, 2, cv::noArray(), stream);
+      stream.waitForCompletion();
+      matcher->knnMatchConvert(cuMatches, matches);
 
 #ifdef LATENCY_BREAKDOWN
       blockEnd = getTimeStampNow();
@@ -242,7 +257,6 @@ int main(int argc, char const *argv[])
     /********************************
                 Overlay Objects
     *********************************/
-    //mxre::types::Frame mxreFrame(cachedFrame, frameIndex, frameTimestamp);
     if(glIsTexture(backgroundTexture))
       mxre::gl_utils::updateTextureFromFrame(&frame, backgroundTexture);
     else

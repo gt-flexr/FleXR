@@ -5,3 +5,15 @@ bag_file: ""
 bag_topic: ""
 bag_fps: 60
 
+# server/client
+server_addr: ""
+server_frame_port: 49992
+server_key_port: 49993
+server_decoder: "h264_cuvid"
+server_encoder: "h264_nvenc"
+
+client_addr: ""
+client_frame_port: 49994
+client_decoder: "h264"
+client_encoder: "libx264"
+
