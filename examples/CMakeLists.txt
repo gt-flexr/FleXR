@@ -7,6 +7,8 @@ list(APPEND EXAMPLE_SRCS
   marker_ar/local/orb_serialized.cc
   marker_ar/local/orb_local.cc
   marker_ar/offloading/orb_full_client.cc
+  marker_ar/offloading/orb_part_detector_client.cc
+  marker_ar/offloading/orb_part_perception_client.cc
 
   incubator/unity_test.cc
   incubator/unity_writer.cc
@@ -15,10 +17,12 @@ list(APPEND EXAMPLE_SRCS
 
 if(${USE_OPENCV_CUDA})
 list(APPEND EXAMPLE_SRCS
+  incubator/illixr_local_server.cc
   marker_ar/local/orb_serialized_cuda.cc
   marker_ar/local/orb_local_cuda.cc
   marker_ar/offloading/orb_full_server.cc
-  incubator/illixr_local_server.cc
+  marker_ar/offloading/orb_part_detector_server.cc
+  marker_ar/offloading/orb_part_perception_server.cc
 )
 endif(${USE_OPENCV_CUDA})
 
