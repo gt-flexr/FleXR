@@ -11,7 +11,7 @@ void runPipeline(raft::map *pipeline) { pipeline->exe(); }
 int main(int argc, char const *argv[])
 {
   string mxre_home = getenv("MXRE_HOME");
-  string config_yaml = mxre_home + "/examples/marker_ar_with_mock/full_offloading/config.yaml";
+  string config_yaml = mxre_home + "/examples/marker_ar/config.yaml";
   if(mxre_home.empty()) {
     cout << "Set MXRE_HOME as a environment variable" << endl;
     return 0;
@@ -63,8 +63,8 @@ int main(int argc, char const *argv[])
   recvPipe += rtpFrameReceiver["out_frame"] >> nonDisplay["in_frame"];
   std::thread recevThread(runPipeline, &recvPipe);
 
-  sendThread.join();
   recevThread.join();
+  sendThread.join();
 
   return 0;
 }
