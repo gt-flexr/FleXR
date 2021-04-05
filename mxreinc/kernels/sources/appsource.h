@@ -67,6 +67,26 @@ namespace mxre
         return true;
       }
 
+      void recv_cam_type(OUT_T* cam_data_) {
+        if (sock == NULL || ctx == NULL) {
+          std::cerr << "ILLIXRSink is not set." << std::endl;
+          return;
+        }
+        
+        mxre::kimera_type::cam_type *cam_data = (mxre::kimera_type::cam_type*)cam_data_;
+        zmq_recv(sock, cam_data, sizeof(mxre::kimera_type::cam_type), 0);
+
+        zmq_recv(sock, cam_data->img0, sizeof(cv::Mat),0);
+        cam_data->img0->create(cam_data->img0->rows, cam_data->img0->cols, cam_data->img0->type());
+        zmq_recv(sock, cam_data->img0->data(),cam_data->img0->total() * cam_data->img0->elemSize(),0);
+        zmq_recv(sock, cam_data->img1, sizeof(cv::Mat),0);
+        cam_data->img1->create(cam_data->img1->rows, cam_data->img1->cols, cam_data->img1->type());
+        zmq_recv(sock, cam_data->img1->data(),cam_data->img1->total() * cam_data->img1->elemSize(),0);
+  
+        zmq_send(sock, "ack", 3, 0);
+        return;
+      }
+
 
       virtual raft::kstatus run() {
 #ifdef __PROFILE__

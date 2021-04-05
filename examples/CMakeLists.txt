@@ -29,7 +29,7 @@ list(APPEND EXAMPLE_SRCS
   marker_ar_with_mock/serialized_mock_cam_cuda.cc
   marker_ar_with_mock/full_offloading/mock_server.cc
 
-  #incubator/illixr_local_server.cc
+  incubator/illixr_local_server.cc
 )
 endif(${USE_OPENCV_CUDA})
 

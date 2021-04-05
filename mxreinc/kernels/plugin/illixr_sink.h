@@ -5,6 +5,7 @@
 #include <zmq.h>
 #include "defs.h"
 #include "types/frame.h"
+#include "types/kimera/types.h"
 
 namespace mxre {
   namespace kernels {
@@ -52,24 +53,6 @@ namespace mxre {
         zmq_recv(sock, mxreFrame->data, mxreFrame->dataSize, 0);
       }
 
-
-      int recv(OUT_T *data) {
-        if(sock == NULL || ctx == NULL) {
-          std::cerr << "ILLIXRSink is not set." << std::endl;
-          return -1;
-        }
-
-        switch(dtype) {
-          case MXRE_DTYPE_PRIMITIVE:
-            recvPrimitive(data);
-            break;
-          case MXRE_DTYPE_FRAME:
-            recvFrame(data);
-            break;
-        }
-        zmq_send(sock, "ack", 3, 0);
-        return 1;
-      }
     };
 
   }

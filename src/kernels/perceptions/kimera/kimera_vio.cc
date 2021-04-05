@@ -1,0 +1,199 @@
+#include "kernels/perceptions/kimera/kimera_vio.h"
+
+ namespace mxre
+{
+  namespace kernels
+  {
+
+    std::string get_path() {
+        std::string KIMERA_ROOT = std::string("../../src/kernels/perceptions/kimera/ILLIXR");
+        return KIMERA_ROOT;
+    }
+
+    KimeraVIOKernel::KimeraVIOKernel()
+    : kimera_pipeline_params(get_path())
+    , kimera_pipeline(kimera_pipeline_params)
+    {
+      addInputPort<mxre::kimera_type::cam_type>("illixr_cam_input");
+	  addInputPort<std::vector<mxre::kimera_type::imu_type>>("illixr_imu_input");
+
+      addOutputPort<mxre::kimera_type::pose_type>("kimera_pose");
+
+
+      // TODO: read Kimera flag file path from runner and find a better way of passing it to gflag
+		kimera_pipeline.registerBackendOutputCallback(
+		std::bind(
+			&pose_callback,
+			vio_output,
+			datum,
+			kimera_pipeline_params,
+			&output
+		)
+		);
+
+    }
+
+    void KimeraVIOKernel::feed_imu_cam(kimera_type::imu_cam_type *datum) {
+
+		// Ensures that slam doesnt start before valid IMU readings come in
+		if (datum == NULL) {
+			assert(previous_timestamp == 0);
+			return;
+		}
+
+		// This ensures that every data point is coming in chronological order If youre failing this assert, 
+		// make sure that your data folder matches the name in offline_imu_cam/plugin.cc
+		assert(datum->dataset_time > previous_timestamp);
+		previous_timestamp = datum->dataset_time;
+
+		for (unsigned int i = 0; i < datum->imu_count; i++) {
+			VIO::Vector6 imu_raw_vals;
+			imu_raw_vals << datum->imu_readings.get()[i].linear_a.cast<double>(), datum->imu_readings.get()[i].angular_v.cast<double>();
+			kimera_pipeline.fillSingleImuQueue(VIO::ImuMeasurement(datum->imu_readings.get()[i].dataset_time, imu_raw_vals));
+		}
+
+		cv::Mat img0{*(datum->img0)};
+		cv::Mat img1{*(datum->img1)};
+
+		// VIOParams
+		VIO::CameraParams left_cam_info = kimera_pipeline_params.camera_params_.at(0);
+		VIO::CameraParams right_cam_info = kimera_pipeline_params.camera_params_.at(1);
+		const int kimera_current_frame_id = 0;//TODO: verify if this is correct
+		kimera_pipeline.fillLeftFrameQueue(VIO::make_unique<VIO::Frame>(kimera_current_frame_id,
+																	datum->dataset_time,
+																	left_cam_info, img0));
+		kimera_pipeline.fillRightFrameQueue(VIO::make_unique<VIO::Frame>(kimera_current_frame_id,
+																	datum->dataset_time,
+																	right_cam_info, img1));
+
+		kimera_pipeline.spin();
+        return;
+	}
+
+
+    raft::kstatus KimeraVIOKernel::run()
+    {
+	  //TODO: these two lines are not done yet.
+	  kimera_type::imu_cam_type& imu_cam_data(input["illixr_cam_input"].peek<kimera_type::imu_cam_type>());
+      kimera_type::imu_type& imu_imu_data(input["illixr_imu_input"].peek<kimera_type::imu_type>());
+      feed_imu_cam(&imu_cam_data);
+	  recyclePort("illixr_imu_cam_input");
+      return raft::proceed;
+    }
+
+	kimera_type::kimera_output form_kimera_output(kimera_type::imu_integrator_input* imu_integrator_input_data, kimera_type::pose_type* pose_type_data) {
+		kimera_type::kimera_output result;
+		//imu_integrator_input data
+		result.last_cam_integration_time= imu_integrator_input_data->last_cam_integration_time;
+		result.t_offset=imu_integrator_input_data->t_offset;
+		result.imu_params_gyro_noise=imu_integrator_input_data->params.gyro_noise;
+		result.imu_params_acc_noise=imu_integrator_input_data->params.acc_noise;
+		result.imu_params_gyro_walk=imu_integrator_input_data->params.gyro_walk;
+		result.imu_params_acc_walk=imu_integrator_input_data->params.acc_walk;
+		result.imu_params_n_gravity[0]=imu_integrator_input_data->params.n_gravity[0];
+		result.imu_params_n_gravity[1]=imu_integrator_input_data->params.n_gravity[1];
+		result.imu_params_n_gravity[2]=imu_integrator_input_data->params.n_gravity[2];
+		result.imu_params_imu_integration_sigma=imu_integrator_input_data->params.imu_integration_sigma;
+		result.imu_params_nominal_rate=imu_integrator_input_data->params.nominal_rate;
+		result.biasAcc[0]=imu_integrator_input_data->biasAcc[0];
+		result.biasAcc[1]=imu_integrator_input_data->biasAcc[1];
+		result.biasAcc[2]=imu_integrator_input_data->biasAcc[2];
+		result.biasGyro[0]=imu_integrator_input_data->biasGyro[0];
+		result.biasGyro[1]=imu_integrator_input_data->biasGyro[1];
+		result.biasGyro[2]=imu_integrator_input_data->biasGyro[2];
+		result.position[0]=imu_integrator_input_data->position(0,0);
+		result.position[1]=imu_integrator_input_data->position(1,0);
+		result.position[2]=imu_integrator_input_data->position(2,0);
+		result.velocity[0]=imu_integrator_input_data->velocity(0,0);
+		result.velocity[1]=imu_integrator_input_data->velocity(1,0);
+		result.velocity[2]=imu_integrator_input_data->velocity(2,0);
+		result.quat[0]=imu_integrator_input_data->quat.w();
+		result.quat[1]=imu_integrator_input_data->quat.x();
+		result.quat[2]=imu_integrator_input_data->quat.y();
+		result.quat[3]=imu_integrator_input_data->quat.z();
+		//pose_type data
+		result.sensor_time=pose_type_data->sensor_time;
+		result.pose_type_position[0]=pose_type_data->position[0];
+		result.pose_type_position[1]=pose_type_data->position[1];
+		result.pose_type_position[2]=pose_type_data->position[2];
+		result.orientation[0]=pose_type_data->orientation.w();
+		result.orientation[1]=pose_type_data->orientation.x();
+		result.orientation[2]=pose_type_data->orientation.y();
+		result.orientation[3]=pose_type_data->orientation.z();
+		return result;
+	}
+
+	// std::pair<kimera_type::imu_integrator_input, kimera_type::pose_type> unpack_kimera_output(kimera_type::kimera_output* kimera_output){
+	// 	kimera_type::imu_integrator_input imu_integrator_input_data;
+	// 	kimera_type::pose_type pose_type_data;
+	// 	imu_integrator_input.last_cam_integration_time=kimera_output->last_cam_integration_time;
+	// 	imu_integrator_input.t_offset=kimera_output->t_offset;
+	// 	imu_integrator_input.params.gyro_noise=;
+
+	// 	return make_pair<>(imu_integrator_input_data, pose_type_data);
+	// }
+
+
+
+    void KimeraVIOKernel::pose_callback(const std::shared_ptr<VIO::BackendOutput>& vio_output, const kimera_type::imu_cam_type* datum, VIO::VioParams kimera_pipeline_params, Port* output) {
+
+		const auto& cached_state = vio_output->W_State_Blkf_;
+		const auto& w_pose_blkf_trans = cached_state.pose_.translation().transpose();
+		const auto& w_pose_blkf_rot = cached_state.pose_.rotation().quaternion();
+		const auto& w_vel_blkf = cached_state.velocity_.transpose();
+		const auto& imu_bias_gyro = cached_state.imu_bias_.gyroscope().transpose();
+		const auto& imu_bias_acc = cached_state.imu_bias_.accelerometer().transpose();
+		// Get the pose returned from SLAM
+		Eigen::Quaternionf quat = Eigen::Quaternionf{w_pose_blkf_rot(0), w_pose_blkf_rot(1), w_pose_blkf_rot(2), w_pose_blkf_rot(3)};
+		Eigen::Quaterniond doub_quat = Eigen::Quaterniond{w_pose_blkf_rot(0), w_pose_blkf_rot(1), w_pose_blkf_rot(2), w_pose_blkf_rot(3)};
+		Eigen::Vector3f pos  = w_pose_blkf_trans.cast<float>();
+
+		assert(isfinite(quat.w()));
+		assert(isfinite(quat.x()));
+		assert(isfinite(quat.y()));
+		assert(isfinite(quat.z()));
+		assert(isfinite(pos[0]));
+		assert(isfinite(pos[1]));
+		assert(isfinite(pos[2]));
+
+		kimera_type::pose_type* pose_type_data = new kimera_type::pose_type{
+		.sensor_time = datum->time,
+		.position = pos,
+		.orientation = quat
+		};
+
+		kimera_type::imu_integrator_input* imu_integrator_input_data = new kimera_type::imu_integrator_input{
+			.last_cam_integration_time = (double(datum->dataset_time) / NANO_SEC),
+			.t_offset = -0.05,
+
+			.params = {
+		//TODO: several names are inconsistent with Kimera-VIO version in Illixr/.cache
+		//Check IMUParams definition in /usr/local/include/kimera-vio/imu-frontend/ImuFrontEndParams.h
+				.gyro_noise = kimera_pipeline_params.imu_params_.gyro_noise_density_,
+				.acc_noise = kimera_pipeline_params.imu_params_.acc_noise_density_,
+				.gyro_walk = kimera_pipeline_params.imu_params_.gyro_random_walk_,
+				.acc_walk = kimera_pipeline_params.imu_params_.acc_random_walk_,
+				.n_gravity = kimera_pipeline_params.imu_params_.n_gravity_,
+				.imu_integration_sigma = kimera_pipeline_params.imu_params_.imu_integration_sigma_,
+				.nominal_rate = kimera_pipeline_params.imu_params_.nominal_sampling_time_s_,
+			},
+
+			.biasAcc =imu_bias_acc,
+			.biasGyro = imu_bias_gyro,
+			.position = w_pose_blkf_trans,
+			.velocity = w_vel_blkf,
+			.quat = doub_quat,
+		};
+
+		kimera_type::kimera_output kimera_output_data = form_kimera_output(imu_integrator_input_data, pose_type_data);
+		delete pose_type_data;
+		delete imu_integrator_input_data;
+
+        auto &outKimeraPose((*output)["kimera_pose"].template allocate<kimera_type::kimera_output>());
+		outKimeraPose = kimera_output_data;
+        (*output)["kimera_pose"].send();
+
+        debug_print("END");
+	}
+  }
+}

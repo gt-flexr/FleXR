@@ -1,4 +1,7 @@
 #include <raft>
+#ifdef Success
+#undef Success
+#endif
 #include <mxre>
 #include <bits/stdc++.h>
 
