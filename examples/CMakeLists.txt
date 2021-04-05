@@ -1,13 +1,15 @@
 file(GLOB_RECURSE EXAMPLE_SRCS
      tutorials/*.cc
      tests/*.cc
-     incubator/*.cc
      )
 
 list(APPEND EXAMPLE_SRCS
   marker_ar/local/orb_serialized.cc
   marker_ar/local/orb_local.cc
   marker_ar/offloading/orb_full_client.cc
+
+  incubator/unity_test.cc
+  incubator/unity_writer.cc
 )
 
 
@@ -16,6 +18,7 @@ list(APPEND EXAMPLE_SRCS
   marker_ar/local/orb_serialized_cuda.cc
   marker_ar/local/orb_local_cuda.cc
   marker_ar/offloading/orb_full_server.cc
+  incubator/illixr_local_server.cc
 )
 endif(${USE_OPENCV_CUDA})
 

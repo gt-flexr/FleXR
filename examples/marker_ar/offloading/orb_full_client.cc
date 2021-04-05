@@ -19,13 +19,12 @@ int main(int argc, char const *argv[])
   else cout << config_yaml << endl;
 
   YAML::Node config = YAML::LoadFile(config_yaml);
-  string markerPath    = config["marker_path"].as<string>();
   int width            = config["width"].as<int>();
   int height           = config["height"].as<int>();
   string bagFile       = config["bag_file"].as<string>();
   string bagTopic      = config["bag_topic"].as<string>();
   int bagFPS           = config["bag_fps"].as<int>();
-  if(markerPath.empty() || bagFile.empty() || bagTopic.empty() || bagFPS == 0) {
+  if(bagFile.empty() || bagTopic.empty() || bagFPS == 0) {
     debug_print("Please put correct info on config.yaml");
     return -1;
   }
@@ -38,7 +37,7 @@ int main(int argc, char const *argv[])
   int serverFramePort  = config["server_frame_port"].as<int>();
   int serverKeyPort    = config["server_key_port"].as<int>();
 
-  if(markerPath.empty() || clientEncoder.empty() || clientDecoder.empty() || serverAddr.empty()) {
+  if(clientEncoder.empty() || clientDecoder.empty() || serverAddr.empty()) {
     debug_print("Please put correct info on config.yaml");
     return -1;
   }
