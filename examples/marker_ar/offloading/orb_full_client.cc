@@ -35,7 +35,7 @@ int main(int argc, char const *argv[])
 
   string serverAddr   = config["server_addr"].as<string>();
   int serverFramePort  = config["server_frame_port"].as<int>();
-  int serverKeyPort    = config["server_key_port"].as<int>();
+  int serverMessagePort    = config["server_message_port"].as<int>();
 
   if(clientEncoder.empty() || clientDecoder.empty() || serverAddr.empty()) {
     debug_print("Please put correct info on config.yaml");
@@ -49,8 +49,8 @@ int main(int argc, char const *argv[])
   bagCam.setFPS(bagFPS);
   mxre::kernels::Keyboard keyboard;
   mxre::kernels::RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder,
-                                               width, height, width*height*8, bagFPS);
-  mxre::kernels::MessageSender<char> keySender(serverAddr, serverKeyPort, mxre::utils::sendPrimitive<char>);
+                                               width, height, width*height*4, bagFPS);
+  mxre::kernels::MessageSender<char> keySender(serverAddr, serverMessagePort, mxre::utils::sendPrimitive<char>);
   sendPipe += bagCam["out_frame"] >> rtpFrameSender["in_frame"];
   sendPipe += keyboard["out_keystroke"] >> keySender["in_data"];
   std::thread sendThread(runPipeline, &sendPipe);

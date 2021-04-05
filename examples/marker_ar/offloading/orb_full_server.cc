@@ -24,7 +24,7 @@ int main(int argc, char const *argv[])
   int clientFramePort  = config["client_frame_port"].as<int>();
 
   int serverFramePort  = config["server_frame_port"].as<int>();
-  int serverKeyPort    = config["server_key_port"].as<int>();
+  int serverMessagePort    = config["server_message_port"].as<int>();
   string serverEncoder = config["server_encoder"].as<string>();
   string serverDecoder = config["server_decoder"].as<string>();
 
@@ -41,10 +41,10 @@ int main(int argc, char const *argv[])
 
   mxre::kernels::RTPFrameReceiver rtpFrameReceiver(serverFramePort, serverDecoder, width, height);
   rtpFrameReceiver.duplicateOutPort<mxre::types::Frame>("out_frame", "out_frame2");
-  mxre::kernels::MessageReceiver<char> keyReceiver(serverKeyPort, mxre::utils::recvPrimitive<char>);
+  mxre::kernels::MessageReceiver<char> keyReceiver(serverMessagePort, mxre::utils::recvPrimitive<char>);
 
   mxre::kernels::RTPFrameSender rtpFrameSender(clientAddr, clientFramePort, serverEncoder,
-                                               width, height, width*height*8, 60);
+                                               width, height, width*height*4, 60);
 
   mxre::kernels::CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
   mxre::kernels::MarkerCtxExtractor markerCtxExtractor(width, height);
