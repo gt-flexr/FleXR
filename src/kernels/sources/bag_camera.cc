@@ -39,7 +39,7 @@ namespace mxre
 
       auto &outFrame( output["out_frame"].allocate<mxre::types::Frame>() );
       outFrame = bagReader.getNextFrame();
-      outFrame.index = frameIndex;
+      outFrame.index = frameIndex++;
       outFrame.timestamp = getTimeStampNow();
 
       sendFrames("out_frame", &outFrame);

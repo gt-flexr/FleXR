@@ -87,6 +87,7 @@ namespace mxre
         exit(1);
       }
 #ifdef __PROFILE__
+      double encodingTimeStamp;
       startTimeStamp = getTimeStampNow();
 #endif
 
@@ -99,13 +100,19 @@ namespace mxre
       while (ret >= 0) {
         ret = avcodec_receive_packet(encoderContext, &encodingPacket);
         if(ret == 0) {
+#ifdef __PROFILE__
+          encodingTimeStamp = getTimeStampNow();
+#endif
           if(rtpSender.sendWithTrackingInfo(encodingPacket.data, encodingPacket.size,
                                             inFrame.index, inFrame.timestamp)) {
 #ifdef __PROFILE__
             endTimeStamp = getTimeStampNow();
-            logger->info("RecvTime/ExportTime/ExeTime\t{}\t {}\t {}", startTimeStamp, endTimeStamp,
-                endTimeStamp-startTimeStamp);
+            logger->info("encodingTime/rtpSendingTime/KernelExeTime\t{}\t {}\t {}",
+                encodingTimeStamp - startTimeStamp,
+                endTimeStamp - encodingTimeStamp,
+                endTimeStamp - startTimeStamp);
 #endif
+
           }
         }
         av_packet_unref(&encodingPacket);

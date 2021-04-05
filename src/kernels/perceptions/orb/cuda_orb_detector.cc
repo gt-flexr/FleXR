@@ -14,9 +14,9 @@ namespace mxre
       addOutputPort<std::vector<mxre::cv_types::DetectedMarker>>("out_detected_markers");
 
       // Object Detection Parameters
-      knnMatchRatio = 0.8f;
-      knnParam = 5;
-      ransacThresh = 2.5f;
+      knnMatchRatio = 0.9f;
+      knnParam = 3;
+      ransacThresh = 3.0f;
       minInlierThresh = 20;
 
       detector = cv::cuda::ORB::create();

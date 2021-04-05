@@ -72,7 +72,7 @@ namespace mxre
                                             &outFrame.index, &outFrame.timestamp))
       {
 #ifdef __PROFILE__
-      startTimeStamp = getTimeStampNow();
+        startTimeStamp = getTimeStampNow();
 #endif
 
         //debug_print("recvDataInfo: Index(%d) TS(%f) Size(%d) %p", outFrame.index, outFrame.timestamp,
@@ -93,7 +93,9 @@ namespace mxre
 
 #ifdef __PROFILE__
             endTimeStamp = getTimeStampNow();
-            logger->info("RecvTime/ExportTime/ExeTime\t{}\t {}\t {}", startTimeStamp, endTimeStamp,
+            logger->info("st/et/decodingTime\t{}\t {}\t {}",
+                startTimeStamp,
+                endTimeStamp,
                 endTimeStamp-startTimeStamp);
 #endif
           }
