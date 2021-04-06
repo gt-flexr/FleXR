@@ -51,10 +51,10 @@ int main(int argc, char const *argv[])
   mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), width, height);
 
   pipeline.link(&rtpFrameReceiver, "out_frame", &cudaORBDetector, "in_frame", 1);
-  pipeline += rtpFrameReceiver["out_frame"] >> cudaORBDetector["in_frame"];
+  //pipeline += rtpFrameReceiver["out_frame"] >> cudaORBDetector["in_frame"];
 
   pipeline.link(&cudaORBDetector, "out_detected_markers", &markerCtxExtractor, "in_detected_markers", 1);
-  pipeline += cudaORBDetector["out_detected_markers"] >> markerCtxExtractor["in_detected_markers"];
+  //pipeline += cudaORBDetector["out_detected_markers"] >> markerCtxExtractor["in_detected_markers"];
 
   pipeline.link(&keyReceiver, "out_data", &objRenderer, "in_keystroke", 1);
   pipeline.link(&rtpFrameReceiver, "out_frame2", &objRenderer, "in_frame", 1);

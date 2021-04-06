@@ -117,7 +117,6 @@ int main(int argc, char const *argv[])
 #endif
 
     // Camera Frequency
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000/bagFPS-1));
     mxre::types::Frame frame = bagFrameReader.getNextFrame();
     frameTimestamp = getTimeStampNow();
 
