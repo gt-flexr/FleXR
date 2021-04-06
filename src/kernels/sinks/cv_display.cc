@@ -31,11 +31,17 @@ namespace mxre
       uint32_t frameIndex = frame.index;
       double frameTimestamp = frame.timestamp;
 
+#ifdef __PROFILE__
+      startTimeStamp = getTimeStampNow();
+#endif
       logic(&frame);
-
 #ifdef __PROFILE__
       endTimeStamp = getTimeStampNow();
-      logger->info("{}th frame\t E2E latency\t{}", frameIndex, endTimeStamp - frameTimestamp);
+      logger->info("{}th frame disp_time/e2e_wo_disp/e2e_w_disp\t{}\t{}\t{}",
+          frameIndex,
+          endTimeStamp - startTimeStamp,
+          startTimeStamp - frameTimestamp,
+          endTimeStamp - frameTimestamp);
 #endif
       recyclePort("in_frame");
 

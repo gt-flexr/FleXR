@@ -50,12 +50,17 @@ int main(int argc, char const *argv[])
   mxre::kernels::MarkerCtxExtractor markerCtxExtractor(width, height);
   mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), width, height);
 
+  pipeline.link(&rtpFrameReceiver, "out_frame", &cudaORBDetector, "in_frame", 1);
   pipeline += rtpFrameReceiver["out_frame"] >> cudaORBDetector["in_frame"];
+
+  pipeline.link(&cudaORBDetector, "out_detected_markers", &markerCtxExtractor, "in_detected_markers", 1);
   pipeline += cudaORBDetector["out_detected_markers"] >> markerCtxExtractor["in_detected_markers"];
-  pipeline += keyReceiver["out_data"] >> objRenderer["in_keystroke"];
-  pipeline += rtpFrameReceiver["out_frame2"] >> objRenderer["in_frame"];
-  pipeline += markerCtxExtractor["out_marker_contexts"] >> objRenderer["in_marker_contexts"];
-  pipeline += objRenderer["out_frame"] >> rtpFrameSender["in_frame"];
+
+  pipeline.link(&keyReceiver, "out_data", &objRenderer, "in_keystroke", 1);
+  pipeline.link(&rtpFrameReceiver, "out_frame2", &objRenderer, "in_frame", 1);
+  pipeline.link(&markerCtxExtractor, "out_marker_contexts", &objRenderer, "in_marker_contexts", 1);
+
+  pipeline.link(&objRenderer, "out_frame", &rtpFrameSender, "in_frame", 1);
   pipeline.exe();
   return 0;
 }
