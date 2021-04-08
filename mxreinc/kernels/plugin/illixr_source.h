@@ -37,7 +37,7 @@ namespace mxre {
       void setup(std::string id, int dtype=MXRE_DTYPE_IMU_CAM) {
         this->dtype = dtype;
         ctx = zmq_ctx_new();
-        sock = zmq_socket(ctx, ZMQ_REQ);
+        sock = zmq_socket(ctx, ZMQ_PAIR);
         std::string connectAddr = std::string("ipc:///tmp/") + id;
         zmq_connect(sock, connectAddr.c_str());
       }
@@ -57,6 +57,18 @@ namespace mxre {
       //   return 1;
       // }
 
+      void sendFrame(mxre::types::Frame *data) {
+        mxre::types::Frame *frame = (mxre::types::Frame*)data;
+        //cv::Mat *mat = (cv::Mat*)data;
+        //mxre::types::Frame frame;
+        //frame.setFrameAttribFromCVMat(*mat);
+        debug_print("%d %d %d %d", frame->cols, frame->rows, frame->dataSize, frame->totalElem);
+
+        zmq_send(sock, frame, sizeof(mxre::types::Frame), 0);
+        zmq_send(sock, frame->data, frame->dataSize, 0);
+        frame->release();
+      }
+
       int send_cam_imu_type(IN_T* data) {
         if (sock == NULL || ctx == NULL) {
           std::cerr << "ILLIXRSource is not set." << std::endl;
@@ -64,18 +76,16 @@ namespace mxre {
         }
         
         mxre::kimera_type::imu_cam_type *cam_data = (mxre::kimera_type::imu_cam_type*) data;
-        zmq_send(sock, cam_data, sizeof(mxre::kimera_type::imu_cam_type), ZMQ_SNDMORE);
-        debug_print("Dataset Time %llu", cam_data->dataset_time);
-        
-        zmq_send(sock, cam_data->img0, sizeof(cv::Mat), ZMQ_SNDMORE);
-        zmq_send(sock, cam_data->img0->data(), cam_data->img0->total() * cam_data->img0->elemSize(), ZMQ_SNDMORE);
+        sendFrame(cam_data->img0);
+        sendFrame(cam_data->img1);
 
-        zmq_send(sock, cam_data->img1, sizeof(cv::Mat), ZMQ_SNDMORE);
-        zmq_send(sock, cam_data->img1->data(), cam_data->img1->total() * cam_data->img1->elemSize(), ZMQ_SNDMORE);
-
-        zmq_send(sock, cam_data->imu_readings.get(), cam_data->imu_count * sizeof(mxre::kimera_type::imu_type), ZMQ_SNDMORE);
-        
+        zmq_send(sock, &(cam_data->time), sizeof(cam_data->time), 0);
+        zmq_send(sock, &(cam_data->imu_count), sizeof(cam_data->imu_count), 0);
+        zmq_send(sock, &(cam_data->dataset_time) , sizeof(cam_data->dataset_time), 0);
+        zmq_send(sock, cam_data->imu_readings.get(), cam_data->imu_count * sizeof(mxre::kimera_type::imu_type), 0);
         zmq_recv(sock, ack, sizeof(ack), 0);
+
+        // debug_print("ILLIXR SENDING DATA FROM MXRE (1), DATASET TIME: %llu", cam_data->dataset_time);
         return 1;
       }
     };

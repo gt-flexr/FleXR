@@ -30,27 +30,26 @@ namespace mxre {
       }
 
 
-      void setup(std::string id, int dtype=MXRE_DTYPE_PRIMITIVE) {
+      void setup(std::string id) {
         this->dtype = dtype;
         ctx = zmq_ctx_new();
-        sock = zmq_socket(ctx, ZMQ_REP);
+        sock = zmq_socket(ctx, ZMQ_PAIR);
         std::string bindingAddr = "ipc:///tmp/" + id;
         zmq_bind(sock, bindingAddr.c_str());
       }
 
 
-      void recvPrimitive(OUT_T *data) {
-        zmq_recv(sock, data, sizeof(OUT_T), 0);
-        debug_print("%d \n", *data);
-      }
-
-
-      void recvFrame(void *frame) {
-        mxre::types::Frame *mxreFrame = (mxre::types::Frame*)frame;
-        zmq_recv(sock, mxreFrame, sizeof(mxre::types::Frame), 0);
-        mxreFrame->data = new unsigned char[mxreFrame->dataSize];
-
-        zmq_recv(sock, mxreFrame->data, mxreFrame->dataSize, 0);
+      void recv_kimera_output(OUT_T* kimera_output_) {
+        if (sock == NULL || ctx == NULL) {
+          std::cerr << "ILLIXRSink is not set." << std::endl;
+          return;
+        }
+        
+        mxre::kimera_type::kimera_output *kimera_output = (mxre::kimera_type::kimera_output*) kimera_output_;
+        zmq_recv(sock, kimera_output, sizeof(mxre::kimera_type::kimera_output), 0);
+        // debug_print("ILLIXR RECIEVED DATA FROM MXRE (4)");
+        
+        return;
       }
 
     };

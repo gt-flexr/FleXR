@@ -27,7 +27,7 @@ namespace mxre
       void *ctx;
       void *sock;
       int dtype;
-      char ack[3];
+      char ack[4];
 
     public:
       IllixrAppSink() {
@@ -41,10 +41,9 @@ namespace mxre
       }
 
 
-      void setup(std::string id, int dtype=MXRE_DTYPE_PRIMITIVE) {
-        this->dtype = dtype;
+      void setup(std::string id) {
         ctx = zmq_ctx_new();
-        sock = zmq_socket(ctx, ZMQ_REQ);
+        sock = zmq_socket(ctx, ZMQ_PAIR);
         std::string connectAddr = "ipc:///tmp/" + id;
         zmq_connect(sock, connectAddr.c_str());
 
@@ -52,21 +51,14 @@ namespace mxre
       }
 
 
-      void sendPrimitive(IN_T *data) {
-        zmq_send(sock, data, sizeof(IN_T), 0);
-      }
+      void sendKimeraOutput(IN_T* output_data_) {
+        if (sock == NULL || ctx == NULL) {
+          std::cerr << "ILLIXRSink is not set." << std::endl;
+          return;
+        }
 
-
-      void sendFrame(IN_T *data) {
-        mxre::types::Frame *frame = (mxre::types::Frame*)data;
-        //cv::Mat *mat = (cv::Mat*)data;
-        //mxre::types::Frame frame;
-        //frame.setFrameAttribFromCVMat(*mat);
-        debug_print("%d %d %d %d", frame->cols, frame->rows, frame->dataSize, frame->totalElem);
-
-        zmq_send(sock, frame, sizeof(mxre::types::Frame), ZMQ_SNDMORE);
-        zmq_send(sock, frame->data, frame->dataSize, 0);
-        frame->release();
+        mxre::kimera_type::kimera_output *output_data = (mxre::kimera_type::kimera_output*) output_data_;
+        zmq_send(sock, output_data, sizeof(mxre::kimera_type::kimera_output), 0);
       }
 
 
@@ -74,26 +66,20 @@ namespace mxre
 #ifdef __PROFILE__
         mxre::types::TimeVal start = getNow();
 #endif
+	      debug_print("MXRE SENDING DATA TO ILLIXR (3)");
+
         if(sock == NULL || ctx == NULL) {
           debug_print("AppSource is not set");
           return raft::stop;
         }
 
         auto &inData( input["in_data"].template peek<IN_T>() );
-
-        switch(dtype) {
-          case MXRE_DTYPE_PRIMITIVE:
-            sendPrimitive(&inData);
-            break;
-          case MXRE_DTYPE_FRAME:
-            sendFrame(&inData);
-            break;
-        }
-        zmq_recv(sock, ack, sizeof(ack), 0);
+        sendKimeraOutput(&inData);
+        // zmq_recv(sock, ack, sizeof(ack), 0);
 
 #ifdef __PROFILE__
         mxre::types::TimeVal end = getNow();
-        profile_print("Exe Time: %lfms", getExeTime(end, start));
+        profile_print("Exe Time ILLIXR Appsink: %lfms", getExeTime(end, start));
 #endif
 
         input["in_data"].recycle();

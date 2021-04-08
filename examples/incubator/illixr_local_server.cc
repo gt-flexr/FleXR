@@ -22,15 +22,17 @@ int main(int argc, char const *argv[])
 {
   raft::map xrPipeline;
   mxre::kernels::IllixrAppSource<mxre::kimera_type::imu_cam_type> appsource;
-  
-  mxre::kernels::IllixrAppSink<mxre::kimera_type::imu_cam_type> appsink;
-  // mxre::kernels::KimeraVIOKernel<mxre::kimera_type::imu_cam_type> appsink;
+  mxre::kernels::IllixrAppSink<mxre::kimera_type::kimera_output> appsink;
   mxre::kernels::KimeraVIOKernel KimeraVIOKernel;
+
   appsource.setup("source");
   appsink.setup("sink");
-  //TODO: message is not found
+
+  // TODO: message is not found
   // xrPipeline += ffmpeg["imu_data"] >>  KimeraVIOKernel["illixr_cam_input"];
   // xrPipeline += message["cam_data"] >>  KimeraVIOKernel["illixr_imu_input"];
+
+  xrPipeline += appsource["out_data"] >> KimeraVIOKernel["illixr_imu_cam_input"];
   xrPipeline += KimeraVIOKernel["kimera_pose"] >> appsink["in_data"];
 
   xrPipeline.exe();

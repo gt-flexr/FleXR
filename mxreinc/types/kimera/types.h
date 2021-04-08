@@ -7,6 +7,7 @@
 #undef Success
 #endif
 #include <eigen3/Eigen/Dense>
+#include "types/frame.h"
 
 namespace mxre
 {
@@ -22,6 +23,7 @@ namespace mxre
 		unsigned long long dataset_time;
 	} imu_type;
 
+	//TODO: check if cam_type need to use Frame type
 	typedef struct{
 		std::chrono::system_clock::time_point time;
 		cv::Mat* img0;
@@ -35,15 +37,17 @@ namespace mxre
 
 	typedef struct {
 		std::chrono::system_clock::time_point time;
-		cv::Mat* img0;
-		cv::Mat* img1;
+		types::Frame* img0;
+		types::Frame* img1;
+		// cv::Mat* img0;
+		// cv::Mat* img1;
 		unsigned int imu_count;
-		std::shared_ptr<imu_type> imu_readings;
-		unsigned long long dataset_time;
-		void release(){
-			delete img0;
-			delete img1;
-		}
+		std::shared_ptr<imu_type[]> imu_readings;
+		unsigned long dataset_time;
+		// void release(){
+		// 	delete img0;
+		// 	delete img1;
+		// }
 	} imu_cam_type;
 
     
@@ -99,7 +103,5 @@ namespace mxre
 		float orientation[4];
 
 	} kimera_output;
-
-
   }
 }

@@ -21,16 +21,20 @@
 
     class KimeraVIOKernel : public MXREKernel{
 		public:
-        KimeraVIOKernel();
-        static void pose_callback(const std::shared_ptr<VIO::BackendOutput>& vio_output, const kimera_type::imu_cam_type* datum, VIO::VioParams kimera_pipeline_params, Port* output);
-        raft::kstatus run();
-        void feed_imu_cam(kimera_type::imu_cam_type *datum);
-        VIO::VioParams kimera_pipeline_params;
-        VIO::Pipeline kimera_pipeline;
+      KimeraVIOKernel();
+      void pose_callback(const std::shared_ptr<VIO::BackendOutput>& vio_output);
+      raft::kstatus run();
+      void feed_imu_cam(kimera_type::imu_cam_type *datum);
 		private:
-		const kimera_type::imu_cam_type* datum;
-		double previous_timestamp = 0.0;
-		std::shared_ptr<VIO::BackendOutput> vio_output;
+      const kimera_type::imu_cam_type* datum;
+      double previous_timestamp = 0.0;
+      
+      std::queue<kimera_type::imu_cam_type*> imu_cam_buffer;
+      std::shared_ptr<VIO::BackendOutput> vio_output;
+      VIO::VioParams kimera_pipeline_params;
+      VIO::Pipeline kimera_pipeline;
+
+      // Port *output_port
     };
   }
 }

@@ -41,13 +41,22 @@ namespace mxre
 
       void setup(std::string id) {
         ctx = zmq_ctx_new();
-        sock = zmq_socket(ctx, ZMQ_REP);
+        sock = zmq_socket(ctx, ZMQ_PAIR);
         std::string bindingAddr = "ipc:///tmp/" + id;
         zmq_bind(sock, bindingAddr.c_str());
 
         debug_print("bindingAddr: %s connected\n", bindingAddr.c_str());
       }
 
+      int recvFrame(mxre::types::Frame *data) {
+        mxre::types::Frame *frame = (mxre::types::Frame*)data;
+        zmq_recv(sock, frame, sizeof(mxre::types::Frame), 0);
+        frame->data = new unsigned char[frame->dataSize];
+
+        zmq_recv(sock, frame->data, frame->dataSize, 0);
+
+        return true;
+      }
 
       void recv_cam_type(OUT_T* cam_data_) {
         if (sock == NULL || ctx == NULL) {
@@ -56,23 +65,29 @@ namespace mxre
         }
         
         mxre::kimera_type::imu_cam_type *cam_data = (mxre::kimera_type::imu_cam_type*) cam_data_;
-        zmq_recv(sock, cam_data, sizeof(mxre::kimera_type::imu_cam_type), 0);
+        //TODO: check Frame creation
 
-        zmq_recv(sock, cam_data->img0, sizeof(cv::Mat), 0);
-        cam_data->img0->create(cam_data->img0->rows, cam_data->img0->cols, cam_data->img0->type());
+        if (cam_data->img0!=NULL){
+          cam_data->img0->release();
+          cam_data->img1->release();
+        }
+        else{
+          cam_data->img0=new types::Frame();
+          cam_data->img1=new types::Frame();
+        }
         
-        zmq_recv(sock, cam_data->img0->data, (cam_data->img0->total()) * (cam_data->img0->elemSize()), 0);
+        recvFrame(cam_data->img0);
+        recvFrame(cam_data->img1);
 
-        zmq_recv(sock, cam_data->img1, sizeof(cv::Mat), 0);
-        cam_data->img1->create(cam_data->img1->rows, cam_data->img1->cols, cam_data->img1->type());
+        zmq_recv(sock, &(cam_data->time), sizeof(cam_data->time), 0);
+        zmq_recv(sock, &(cam_data->imu_count), sizeof(cam_data->imu_count), 0);
+        zmq_recv(sock, &(cam_data->dataset_time), sizeof(cam_data->dataset_time), 0);
         
-        zmq_recv(sock, cam_data->img1->data, (cam_data->img1->total()) * (cam_data->img1->elemSize()), 0);
-        kimera_type::imu_type* imu_readings_data = new kimera_type::imu_type[cam_data->imu_count];
-        //TODO: change shared_ptr to base address of primitive array to shared_ptr<std::array<...>>
-        cam_data->imu_readings = std::shared_ptr<kimera_type::imu_type>(imu_readings_data);
+        cam_data->imu_readings = std::shared_ptr<kimera_type::imu_type[]>(new kimera_type::imu_type[cam_data->imu_count]);
         zmq_recv(sock, cam_data->imu_readings.get(), cam_data->imu_count * sizeof(kimera_type::imu_type), 0);
-  
-        zmq_send(sock, "ack", 3, 0);
+        zmq_send(sock, "ack", 4, 0);
+
+        debug_print("MXRE RECEIVED DATA FROM ILLIXR (2), DATASET TIME: %llu", cam_data->dataset_time);
         return;
       }
 
@@ -86,22 +101,15 @@ namespace mxre
           debug_print("IllixrAppSource is not set");
           return raft::stop;
         }
-
-        auto &outData(output["out_data"].template allocate<OUT_T>());
+        auto &outData(output["out_data"].allocate<mxre::kimera_type::imu_cam_type>());
         int recvFlag = false;
-        //recvFlag = 
         recv_cam_type(&outData);
-        zmq_send(sock, "ack", 3, 0);
-        //TODO: recvFlag not working any more
-        // if (recvFlag) {
-        //   output["out_data"].send();
-        // }
 
 #ifdef __PROFILE__
         mxre::types::TimeVal end = getNow();
-        profile_print("Exe Time: %lfms", getExeTime(end, start));
+        profile_print("Exe Time ILLIXR Appsource: %lfms", getExeTime(end, start));
 #endif
-
+        output["out_data"].send();
         return raft::proceed;
       }
     };

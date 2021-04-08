@@ -28,6 +28,7 @@
 #include "./mxreinc/types/gl/model.h"
 #include "./mxreinc/types/gl/camera.h"
 #include "./mxreinc/types/gl/shader.h"
+#include "./mxreinc/types/kimera/types.h"
 
 #include "./mxreinc/types/ar/virtual_world.h"
 #include "./mxreinc/types/ar/virtual_object.h"
