@@ -45,7 +45,7 @@
 		previous_timestamp = datum->dataset_time;
 		imu_cam_buffer.push(datum);
 
-		for (int i = datum->imu_count-1; i >= 0; i--) {
+		for (int i = 0; i < datum->imu_count; i++) {
 			VIO::Vector6 imu_raw_vals;
 			imu_raw_vals << datum->imu_readings.get()[i].linear_a.cast<double>(), datum->imu_readings.get()[i].angular_v.cast<double>();
 			kimera_pipeline.fillSingleImuQueue(VIO::ImuMeasurement(datum->imu_readings.get()[i].dataset_time, imu_raw_vals));

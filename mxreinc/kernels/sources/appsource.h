@@ -78,10 +78,10 @@ namespace mxre
 
         zmq_recv(sock, cam_data->img0, sizeof(cv::Mat),0);
         cam_data->img0->create(cam_data->img0->rows, cam_data->img0->cols, cam_data->img0->type());
-        zmq_recv(sock, cam_data->img0->data(),cam_data->img0->total() * cam_data->img0->elemSize(),0);
+        zmq_recv(sock, cam_data->img0->data,cam_data->img0->total() * cam_data->img0->elemSize(),0);
         zmq_recv(sock, cam_data->img1, sizeof(cv::Mat),0);
         cam_data->img1->create(cam_data->img1->rows, cam_data->img1->cols, cam_data->img1->type());
-        zmq_recv(sock, cam_data->img1->data(),cam_data->img1->total() * cam_data->img1->elemSize(),0);
+        zmq_recv(sock, cam_data->img1->data,cam_data->img1->total() * cam_data->img1->elemSize(),0);
   
         zmq_send(sock, "ack", 3, 0);
         return;

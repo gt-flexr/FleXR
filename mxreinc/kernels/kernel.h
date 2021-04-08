@@ -113,20 +113,20 @@ namespace mxre
           }
         }
 
-        void send_imu_cam_type_copy(std::string id, void* data) {
-          mxre::kimera_type::imu_cam_type *cam_data = (mxre::kimera_type::imu_cam_type*) data;
-          auto portRange = oPortMap.equal_range(id);
-          for (auto i = portRange.first; i != portRange.second; ++i) {
-            auto &outData(output[i->second].allocate<mxre::kimera_type::imu_cam_type>());
-            mxre::kimera_type::imu_cam_type data_clone = *cam_data;
-            //TODO: release() somewhere
-            data_clone.img0 = new cv::Mat(*cam_data->img0);
-            data_clone.img1 = new cv::Mat(*cam_data->img1);
+        // void send_imu_cam_type_copy(std::string id, void* data) {
+        //   mxre::kimera_type::imu_cam_type *cam_data = (mxre::kimera_type::imu_cam_type*) data;
+        //   auto portRange = oPortMap.equal_range(id);
+        //   for (auto i = portRange.first; i != portRange.second; ++i) {
+        //     auto &outData(output[i->second].allocate<mxre::kimera_type::imu_cam_type>());
+        //     mxre::kimera_type::imu_cam_type data_clone = *cam_data;
+        //     //TODO: release() somewhere
+        //     data_clone.img0 = new cv::Mat(*cam_data->img0);
+        //     data_clone.img1 = new cv::Mat(*cam_data->img1);
           
-            outData = data_clone;
-            output[i->second].send();
-          }
-        }
+        //     outData = data_clone;
+        //     output[i->second].send();
+        //   }
+        // }
 
 #ifdef __PROFILE__
         void initLoggerST(std::string loggerName, std::string fileName) {
