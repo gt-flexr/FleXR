@@ -29,7 +29,7 @@
       const kimera_type::imu_cam_type* datum;
       double previous_timestamp = 0.0;
       
-      std::queue<kimera_type::imu_cam_type*> imu_cam_buffer;
+      kimera_type::imu_cam_type* imu_cam_buffer;
       std::shared_ptr<VIO::BackendOutput> vio_output;
       VIO::VioParams kimera_pipeline_params;
       VIO::Pipeline kimera_pipeline;

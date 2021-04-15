@@ -62,7 +62,7 @@ namespace mxre {
         //cv::Mat *mat = (cv::Mat*)data;
         //mxre::types::Frame frame;
         //frame.setFrameAttribFromCVMat(*mat);
-        debug_print("%d %d %d %d", frame->cols, frame->rows, frame->dataSize, frame->totalElem);
+        // debug_print("%d %d %d %d", frame->cols, frame->rows, frame->dataSize, frame->totalElem);
 
         zmq_send(sock, frame, sizeof(mxre::types::Frame), 0);
         zmq_send(sock, frame->data, frame->dataSize, 0);

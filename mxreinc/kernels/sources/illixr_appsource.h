@@ -87,7 +87,7 @@ namespace mxre
         zmq_recv(sock, cam_data->imu_readings.get(), cam_data->imu_count * sizeof(kimera_type::imu_type), 0);
         zmq_send(sock, "ack", 4, 0);
 
-        debug_print("MXRE RECEIVED DATA FROM ILLIXR (2), DATASET TIME: %llu", cam_data->dataset_time);
+        // debug_print("MXRE RECEIVED DATA FROM ILLIXR (2), DATASET TIME: %llu", cam_data->dataset_time);
         return;
       }
 
@@ -107,7 +107,7 @@ namespace mxre
 
 #ifdef __PROFILE__
         mxre::types::TimeVal end = getNow();
-        profile_print("Exe Time ILLIXR Appsource: %lfms", getExeTime(end, start));
+        // profile_print("Exe Time ILLIXR Appsource: %lfms", getExeTime(end, start));
 #endif
         output["out_data"].send();
         return raft::proceed;

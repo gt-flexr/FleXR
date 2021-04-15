@@ -66,7 +66,7 @@ namespace mxre
 #ifdef __PROFILE__
         mxre::types::TimeVal start = getNow();
 #endif
-	      debug_print("MXRE SENDING DATA TO ILLIXR (3)");
+	      // debug_print("MXRE SENDING DATA TO ILLIXR (3)");
 
         if(sock == NULL || ctx == NULL) {
           debug_print("AppSource is not set");
@@ -79,7 +79,7 @@ namespace mxre
 
 #ifdef __PROFILE__
         mxre::types::TimeVal end = getNow();
-        profile_print("Exe Time ILLIXR Appsink: %lfms", getExeTime(end, start));
+        // profile_print("Exe Time ILLIXR Appsink: %lfms", getExeTime(end, start));
 #endif
 
         input["in_data"].recycle();
