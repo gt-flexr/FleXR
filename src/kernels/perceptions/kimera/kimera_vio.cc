@@ -76,6 +76,10 @@
 	  // kimera_type::imu_cam_type& imu_cam_data(input["illixr_cam_input"].peek<kimera_type::imu_cam_type>());
       // kimera_type::imu_type& imu_imu_data(input["illixr_imu_input"].peek<kimera_type::imu_type>());
       kimera_type::imu_cam_type& imu_cam_data(input["illixr_imu_cam_input"].peek<kimera_type::imu_cam_type>());
+#ifdef __PROFILE__
+      start = getNow();
+#endif
+
 	  feed_imu_cam(&imu_cam_data);
 	  recyclePort("illixr_imu_cam_input");
       return raft::proceed;
@@ -179,9 +183,14 @@
 
         auto &outKimeraPose(output["kimera_pose"].template allocate<kimera_type::kimera_output>());
 		outKimeraPose = kimera_output_data;
-        output["kimera_pose"].send();
 
-        debug_print("Kimera send data! %llu\n", imu_cam_buffer->dataset_time);
+
+#ifdef __PROFILE__
+        mxre::types::TimeVal end = getNow();
+        profile_print("Exe Time Kimera: %lfms\n", getExeTime(end, start));
+#endif
+
+        output["kimera_pose"].send();
 	}
   }
 }

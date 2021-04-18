@@ -26,6 +26,7 @@
       raft::kstatus run();
       void feed_imu_cam(kimera_type::imu_cam_type *datum);
 		private:
+      std::chrono::high_resolution_clock::time_point start; 
       const kimera_type::imu_cam_type* datum;
       double previous_timestamp = 0.0;
       
