@@ -38,8 +38,9 @@ namespace mxre {
         this->dtype = dtype;
         ctx = zmq_ctx_new();
         sock = zmq_socket(ctx, ZMQ_PAIR);
-        std::string connectAddr = std::string("tcp://192.17.102.20:19436");
+        std::string connectAddr = std::string("tcp://")+std::string(dest_machine_ip)+std::string(":19436");
         zmq_connect(sock, connectAddr.c_str());
+        debug_print("connetingAddr: %s connected\n", connectAddr.c_str());
       }
 
       // int send_imu_type(OUT_T* data) {

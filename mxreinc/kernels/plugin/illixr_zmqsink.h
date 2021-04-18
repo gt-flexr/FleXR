@@ -34,8 +34,9 @@ namespace mxre {
         this->dtype = dtype;
         ctx = zmq_ctx_new();
         sock = zmq_socket(ctx, ZMQ_PAIR);
-        std::string bindingAddr = "tcp://192.17.102.20:19435";
+        std::string bindingAddr = std::string("tcp://")+std::string(this_machine_ip)+std::string(":19435");
         zmq_bind(sock, bindingAddr.c_str());
+        debug_print("bindingAddr: %s connected\n", bindingAddr.c_str());
       }
 
 
