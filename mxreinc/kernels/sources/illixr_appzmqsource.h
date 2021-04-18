@@ -1,5 +1,5 @@
-#ifndef __MXRE_ILLIXR_APP_SOURCE__
-#define __MXRE_ILLIXR_APP_SOURCE__
+#ifndef __MXRE_ILLIXR_APP_ZMQ_SOURCE__
+#define __MXRE_ILLIXR_APP_ZMQ_SOURCE__
 
 #include <bits/stdc++.h>
 #include <raft>
@@ -21,28 +21,29 @@ namespace mxre
   {
 
     template<typename OUT_T>
-    class IllixrAppSource: public MXREKernel
+    class IllixrAppZMQSource: public MXREKernel
     {
     protected:
       void *ctx;
       void *sock;
 
     public:
-      IllixrAppSource() {
+      IllixrAppZMQSource() {
         addOutputPort<OUT_T>("out_data");
       }
 
 
-      ~IllixrAppSource() {
+      ~IllixrAppZMQSource() {
         zmq_close(sock);
         zmq_ctx_destroy(ctx);
       }
 
 
-      void setup(std::string id) {
+      void setup(char const* this_machine_ip) {
         ctx = zmq_ctx_new();
         sock = zmq_socket(ctx, ZMQ_PAIR);
-        std::string bindingAddr = "ipc:///tmp/" + id;
+        std::string this_machine_ip_str=std::string(this_machine_ip);
+        std::string bindingAddr = std::string("tcp://")+this_machine_ip_str+std::string(":19436");
         zmq_bind(sock, bindingAddr.c_str());
 
         debug_print("bindingAddr: %s connected\n", bindingAddr.c_str());
@@ -98,7 +99,7 @@ namespace mxre
 #endif
 
         if(sock == NULL || ctx == NULL) {
-          debug_print("IllixrAppSource is not set");
+          debug_print("IllixrAppZMQSource is not set");
           return raft::stop;
         }
         auto &outData(output["out_data"].template allocate<mxre::kimera_type::imu_cam_type>());
