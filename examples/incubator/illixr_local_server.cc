@@ -10,6 +10,8 @@
 #include "types/kimera/types.h"
 #include "kernels/sinks/illixr_appsink.h"
 #include "kernels/sources/illixr_appsource.h"
+#include "kernels/sinks/illixr_appzmqsink.h"
+#include "kernels/sources/illixr_appzmqsource.h"
 
 #include <kimera-vio/frontend/Camera.h>
 
@@ -20,13 +22,18 @@ using namespace std;
 
 int main(int argc, char const *argv[])
 {
+  
+  if (argc < 3){
+    std::cerr << "Usage: ./illixr_local_server <this machine ip address> <ILLIXR machine ip address>" << std::endl;
+    return 1;
+  }
   raft::map xrPipeline;
-  mxre::kernels::IllixrAppSource<mxre::kimera_type::imu_cam_type> appsource;
-  mxre::kernels::IllixrAppSink<mxre::kimera_type::kimera_output> appsink;
+  mxre::kernels::IllixrAppZMQSource<mxre::kimera_type::imu_cam_type> appsource{};
+  mxre::kernels::IllixrAppZMQSink<mxre::kimera_type::kimera_output> appsink{};
   mxre::kernels::KimeraVIOKernel KimeraVIOKernel;
 
-  appsource.setup("source");
-  appsink.setup("sink");
+  appsource.setup(argv[1]);
+  appsink.setup(argv[2]);
 
   // TODO: message is not found
   // xrPipeline += ffmpeg["imu_data"] >>  KimeraVIOKernel["illixr_cam_input"];
