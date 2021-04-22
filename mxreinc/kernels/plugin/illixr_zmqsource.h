@@ -77,14 +77,36 @@ namespace mxre {
         }
         
         mxre::kimera_type::imu_cam_type *cam_data = (mxre::kimera_type::imu_cam_type*) data;
-        sendFrame(cam_data->img0);
-        sendFrame(cam_data->img1);
 
-        zmq_send(sock, &(cam_data->time), sizeof(cam_data->time), 0);
-        zmq_send(sock, &(cam_data->imu_count), sizeof(cam_data->imu_count), 0);
-        zmq_send(sock, &(cam_data->dataset_time) , sizeof(cam_data->dataset_time), 0);
-        zmq_send(sock, cam_data->imu_readings.get(), cam_data->imu_count * sizeof(mxre::kimera_type::imu_type), 0);
-        zmq_recv(sock, ack, sizeof(ack), 0);
+        uint8_t* buffer_cam_metadata = new uint8_t[sizeof(mxre::types::Frame)*2+sizeof(cam_data->time)+sizeof(cam_data->imu_count)+sizeof(cam_data->dataset_time)];
+        memcpy(buffer_cam_metadata,cam_data->img0,sizeof(mxre::types::Frame));
+        memcpy(&buffer_cam_metadata[sizeof(mxre::types::Frame)],cam_data->img1,sizeof(mxre::types::Frame));
+        memcpy(&buffer_cam_metadata[sizeof(mxre::types::Frame)*2],&(cam_data->time),sizeof(cam_data->time));
+        memcpy(&buffer_cam_metadata[sizeof(mxre::types::Frame)*2+sizeof(cam_data->time)],&(cam_data->imu_count),sizeof(cam_data->imu_count));
+        memcpy(&buffer_cam_metadata[sizeof(mxre::types::Frame)*2+sizeof(cam_data->time)+sizeof(cam_data->imu_count)],&(cam_data->dataset_time),sizeof(cam_data->dataset_time));
+        zmq_send(sock, buffer_cam_metadata, sizeof(mxre::types::Frame)*2+sizeof(cam_data->time)+sizeof(cam_data->imu_count)+sizeof(cam_data->dataset_time), 0);
+        
+        uint8_t* buffer_cam_imu_variable_data = new uint8_t[cam_data->img0->dataSize+cam_data->img1->dataSize+cam_data->imu_count*sizeof(mxre::kimera_type::imu_type)];
+        memcpy((void*)buffer_cam_imu_variable_data,cam_data->img0->data,cam_data->img0->dataSize);
+        memcpy((void*)(&buffer_cam_imu_variable_data[cam_data->img0->dataSize]),cam_data->img1->data,cam_data->img1->dataSize);
+        
+        memcpy((void*)(&buffer_cam_imu_variable_data[cam_data->img0->dataSize+cam_data->img1->dataSize]),cam_data->imu_readings.get(),cam_data->imu_count*sizeof(mxre::kimera_type::imu_type)),
+        zmq_send(sock, buffer_cam_imu_variable_data, cam_data->img0->dataSize+cam_data->img1->dataSize+cam_data->imu_count*sizeof(mxre::kimera_type::imu_type), 0);        
+        // printf("dataset_time imu_count sent %lu %u %llu %llu %llu\n",cam_data->dataset_time,cam_data->imu_count,cam_data->imu_readings.get()->dataset_time,cam_data->imu_readings.get()[1].dataset_time,cam_data->imu_readings[2].dataset_time);
+        // printf("%llu %llu %llu\n",((mxre::kimera_type::imu_type*) &buffer_cam_imu_variable_data[cam_data->img0->dataSize+cam_data->img1->dataSize])->dataset_time,((mxre::kimera_type::imu_type*) &buffer_cam_imu_variable_data[cam_data->img0->dataSize+cam_data->img1->dataSize])[1].dataset_time,((mxre::kimera_type::imu_type*) &buffer_cam_imu_variable_data[cam_data->img0->dataSize+cam_data->img1->dataSize])[2].dataset_time);
+        delete[] buffer_cam_metadata;
+        delete[] buffer_cam_imu_variable_data;
+
+
+
+        // sendFrame(cam_data->img0);
+        // sendFrame(cam_data->img1);
+
+        // zmq_send(sock, &(cam_data->time), sizeof(cam_data->time), 0);
+        // zmq_send(sock, &(cam_data->imu_count), sizeof(cam_data->imu_count), 0);
+        // zmq_send(sock, &(cam_data->dataset_time) , sizeof(cam_data->dataset_time), 0);
+        // zmq_send(sock, cam_data->imu_readings.get(), cam_data->imu_count * sizeof(mxre::kimera_type::imu_type), 0);
+        // zmq_recv(sock, ack, sizeof(ack), 0);
 
         // debug_print("ILLIXR SENDING DATA FROM MXRE (1), DATASET TIME: %llu", cam_data->dataset_time);
         return 1;

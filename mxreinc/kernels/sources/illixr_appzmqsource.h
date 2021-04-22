@@ -59,6 +59,13 @@ namespace mxre
         return true;
       }
 
+      //sizeof(mxre::types::Frame)=72
+      //frame->dataSize=360960
+      //sizeof(mxre::types::Frame)=72
+      //frame->dataSize=360960
+      //sizeof(cam_data->time)=8
+      //sizeof(cam_data->imu_count)=4
+      //sizeof(cam_data->dataset_time)=8
       void recv_cam_type(OUT_T* cam_data_) {
         if (sock == NULL || ctx == NULL) {
           std::cerr << "ILLIXRSink is not set." << std::endl;
@@ -76,19 +83,31 @@ namespace mxre
           cam_data->img0=new types::Frame();
           cam_data->img1=new types::Frame();
         }
-        
-        recvFrame(cam_data->img0);
-        recvFrame(cam_data->img1);
 
-        zmq_recv(sock, &(cam_data->time), sizeof(cam_data->time), 0);
-        zmq_recv(sock, &(cam_data->imu_count), sizeof(cam_data->imu_count), 0);
-        zmq_recv(sock, &(cam_data->dataset_time), sizeof(cam_data->dataset_time), 0);
+        uint8_t* buffer_cam_metadata = new uint8_t[sizeof(mxre::types::Frame)*2+sizeof(cam_data->time)+sizeof(cam_data->imu_count)+sizeof(cam_data->dataset_time)];
+        zmq_recv(sock, buffer_cam_metadata, sizeof(mxre::types::Frame)*2+sizeof(cam_data->time)+sizeof(cam_data->imu_count)+sizeof(cam_data->dataset_time), 0);
+        memcpy(cam_data->img0,buffer_cam_metadata,sizeof(mxre::types::Frame));
+        memcpy(cam_data->img1,&buffer_cam_metadata[sizeof(mxre::types::Frame)],sizeof(mxre::types::Frame));
+        // printf("%lu %lu\n",((mxre::types::Frame*)buffer_cam_metadata)->dataSize,((mxre::types::Frame*)&buffer_cam_metadata[sizeof(mxre::types::Frame)])->dataSize);
+        // printf("%lu %lu\n",cam_data->img0->dataSize,cam_data->img1->dataSize);
+
+        memcpy(&(cam_data->time),&buffer_cam_metadata[sizeof(mxre::types::Frame)*2],sizeof(cam_data->time));
+        memcpy(&(cam_data->imu_count),&buffer_cam_metadata[sizeof(mxre::types::Frame)*2+sizeof(cam_data->time)],sizeof(cam_data->imu_count));
+        memcpy(&(cam_data->dataset_time),&buffer_cam_metadata[sizeof(mxre::types::Frame)*2+sizeof(cam_data->time)+sizeof(cam_data->imu_count)],sizeof(cam_data->dataset_time));
+        
+        uint8_t* buffer_cam_imu_variable_data = new uint8_t[cam_data->img0->dataSize+cam_data->img1->dataSize+cam_data->imu_count*sizeof(kimera_type::imu_type)];
+        zmq_recv(sock, buffer_cam_imu_variable_data, cam_data->img0->dataSize+cam_data->img1->dataSize+cam_data->imu_count*sizeof(kimera_type::imu_type), 0);
+        cam_data->img0->data = new unsigned char[cam_data->img0->dataSize];
+        cam_data->img1->data = new unsigned char[cam_data->img1->dataSize];
+        memcpy(cam_data->img0->data,(void*)buffer_cam_imu_variable_data,cam_data->img0->dataSize);
+        memcpy(cam_data->img1->data,(void*)(&buffer_cam_imu_variable_data[cam_data->img0->dataSize]),cam_data->img1->dataSize);
         
         cam_data->imu_readings = std::shared_ptr<kimera_type::imu_type[]>(new kimera_type::imu_type[cam_data->imu_count]);
-        zmq_recv(sock, cam_data->imu_readings.get(), cam_data->imu_count * sizeof(kimera_type::imu_type), 0);
-        zmq_send(sock, "ack", 4, 0);
-
-        // debug_print("MXRE RECEIVED DATA FROM ILLIXR (2), DATASET TIME: %llu", cam_data->dataset_time);
+        memcpy(cam_data->imu_readings.get(),(void*)(&buffer_cam_imu_variable_data[cam_data->img0->dataSize+cam_data->img1->dataSize]),cam_data->imu_count*sizeof(kimera_type::imu_type)),
+        // printf("dataset_time imu_count received %lu %u %llu %llu %llu\n",cam_data->dataset_time,cam_data->imu_count,cam_data->imu_readings.get()->dataset_time,cam_data->imu_readings.get()[1].dataset_time,cam_data->imu_readings[2].dataset_time);
+        // printf("%lu %lu %llu %llu %llu\n",cam_data->img0->dataSize,cam_data->img1->dataSize,((mxre::kimera_type::imu_type*) &buffer_cam_imu_variable_data[cam_data->img0->dataSize+cam_data->img1->dataSize])->dataset_time,((mxre::kimera_type::imu_type*) &buffer_cam_imu_variable_data[cam_data->img0->dataSize+cam_data->img1->dataSize])[1].dataset_time,((mxre::kimera_type::imu_type*) &buffer_cam_imu_variable_data[cam_data->img0->dataSize+cam_data->img1->dataSize])[2].dataset_time);
+        delete[] buffer_cam_metadata;
+        delete[] buffer_cam_imu_variable_data;
         return;
       }
 

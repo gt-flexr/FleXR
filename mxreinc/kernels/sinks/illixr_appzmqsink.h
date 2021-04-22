@@ -51,7 +51,7 @@ namespace mxre
         debug_print("connectAddr: %s bound\n", connectAddr.c_str());
       }
 
-
+      //sizeof(mxre::kimera_type::kimera_output)==256
       void sendKimeraOutput(IN_T* output_data_) {
         if (sock == NULL || ctx == NULL) {
           std::cerr << "ILLIXRSink is not set." << std::endl;
