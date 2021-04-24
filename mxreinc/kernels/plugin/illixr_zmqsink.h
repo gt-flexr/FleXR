@@ -1,5 +1,5 @@
-#ifndef __MXRE_ILLIXR_SINK__
-#define __MXRE_ILLIXR_SINK__
+#ifndef __MXRE_ILLIXR_ZMQ_SINK__
+#define __MXRE_ILLIXR_ZMQ_SINK__
 
 #include <bits/stdc++.h>
 #include <zmq.h>
@@ -11,37 +11,38 @@ namespace mxre {
   namespace kernels {
 
     template<typename OUT_T>
-    class ILLIXRSink {
+    class ILLIXRZMQSink {
     private:
       void *ctx;
       void *sock;
       int dtype;
 
     public:
-      ILLIXRSink() {
+      ILLIXRZMQSink() {
         ctx = NULL;
         sock = NULL;
       }
 
 
-      ~ILLIXRSink() {
+      ~ILLIXRZMQSink() {
         if(sock) zmq_close(sock);
         if(ctx) zmq_ctx_destroy(ctx);
       }
 
 
-      void setup(std::string id) {
+      void setup(const char* this_machine_ip) {
         this->dtype = dtype;
         ctx = zmq_ctx_new();
         sock = zmq_socket(ctx, ZMQ_PAIR);
-        std::string bindingAddr = "ipc:///tmp/" + id;
+        std::string bindingAddr = std::string("tcp://")+std::string(this_machine_ip)+std::string(":19435");
         zmq_bind(sock, bindingAddr.c_str());
+        debug_print("bindingAddr: %s connected\n", bindingAddr.c_str());
       }
 
 
       void recv_kimera_output(OUT_T* kimera_output_) {
         if (sock == NULL || ctx == NULL) {
-          std::cerr << "ILLIXRSink is not set." << std::endl;
+          std::cerr << "ILLIXRZMQSink is not set." << std::endl;
           return;
         }
         

@@ -6,6 +6,9 @@
 #include <opencv/cv.hpp>
 #include "defs.h"
 #include "types/frame.h"
+#undef Success
+#include "types/kimera/types.h"
+
 
 namespace mxre {
   namespace kernels {
@@ -31,46 +34,58 @@ namespace mxre {
       }
 
 
-      void setup(std::string id, int dtype=MXRE_DTYPE_PRIMITIVE) {
+      void setup(std::string id, int dtype=MXRE_DTYPE_IMU_CAM) {
         this->dtype = dtype;
         ctx = zmq_ctx_new();
-        sock = zmq_socket(ctx, ZMQ_REQ);
+        sock = zmq_socket(ctx, ZMQ_PAIR);
         std::string connectAddr = std::string("ipc:///tmp/") + id;
         zmq_connect(sock, connectAddr.c_str());
       }
 
+      // int send_imu_type(OUT_T* data) {
+      //   if (sock == NULL || ctx == NULL) {
+      //     std::cerr << "ILLIXRSource is not set." << std::endl;
+      //     return -1;
+      //   }
 
-      void sendPrimitive(IN_T *data) {
-        zmq_send(sock, data, sizeof(IN_T), 0);
+      //   std::vector<mxre::kimera_type::imu_type> *imu_data = (std::vector<mxre::kimera_type::imu_type> *) data;
+      //   debug_print("Sending IMU Values");
+
+
+
+      //   zmq_recv(sock, ack, sizeof(ack), 0);
+      //   return 1;
+      // }
+
+      void sendFrame(mxre::types::Frame *data) {
+        mxre::types::Frame *frame = (mxre::types::Frame*)data;
+        //cv::Mat *mat = (cv::Mat*)data;
+        //mxre::types::Frame frame;
+        //frame.setFrameAttribFromCVMat(*mat);
+        // debug_print("%d %d %d %d", frame->cols, frame->rows, frame->dataSize, frame->totalElem);
+
+        zmq_send(sock, frame, sizeof(mxre::types::Frame), 0);
+        zmq_send(sock, frame->data, frame->dataSize, 0);
+        frame->release();
       }
 
-
-      void sendFrame(void* frame) {
-        mxre::types::Frame *mxreFrame = (mxre::types::Frame*) frame;
-        debug_print("%d %d %d %d", mxreFrame->cols, mxreFrame->rows, mxreFrame->dataSize, mxreFrame->totalElem);
-
-        zmq_send(sock, mxreFrame, sizeof(mxre::types::Frame), ZMQ_SNDMORE);
-        zmq_send(sock, mxreFrame->data, mxreFrame->dataSize, 0);
-        mxreFrame->release();
-      }
-
-
-      int send(IN_T *data) {
-        if(sock == NULL || ctx == NULL) {
+      int send_cam_imu_type(IN_T* data) {
+        if (sock == NULL || ctx == NULL) {
           std::cerr << "ILLIXRSource is not set." << std::endl;
           return -1;
         }
+        
+        mxre::kimera_type::imu_cam_type *cam_data = (mxre::kimera_type::imu_cam_type*) data;
+        sendFrame(cam_data->img0);
+        sendFrame(cam_data->img1);
 
-        switch(dtype) {
-          case MXRE_DTYPE_PRIMITIVE:
-            sendPrimitive(data);
-            break;
-          case MXRE_DTYPE_FRAME:
-            sendFrame(data);
-            break;
-        }
+        zmq_send(sock, &(cam_data->time), sizeof(cam_data->time), 0);
+        zmq_send(sock, &(cam_data->imu_count), sizeof(cam_data->imu_count), 0);
+        zmq_send(sock, &(cam_data->dataset_time) , sizeof(cam_data->dataset_time), 0);
+        zmq_send(sock, cam_data->imu_readings.get(), cam_data->imu_count * sizeof(mxre::kimera_type::imu_type), 0);
         zmq_recv(sock, ack, sizeof(ack), 0);
 
+        // debug_print("ILLIXR SENDING DATA FROM MXRE (1), DATASET TIME: %llu", cam_data->dataset_time);
         return 1;
       }
     };

@@ -10,6 +10,7 @@
 // Index for attributes of cvMat
 #define MXRE_DTYPE_PRIMITIVE 0
 #define MXRE_DTYPE_FRAME 1
+#define MXRE_DTYPE_IMU_CAM 2 
 
 #define MX_MAT_ATTR_NUM 4
 #define MX_MAT_SIZE_IDX 0
