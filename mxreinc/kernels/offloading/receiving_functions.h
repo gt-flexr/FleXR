@@ -12,9 +12,7 @@ namespace mxre {
     /* recvPrimitive */
     template<typename T>
     void recvPrimitive(T *data, zmq::socket_t *sock) {
-      zmq::message_t ackMsg("ack", 3);
       sock->recv( zmq::buffer(data, sizeof(T)) );
-      sock->send(ackMsg, zmq::send_flags::none);
     }
 
 
@@ -22,23 +20,18 @@ namespace mxre {
     template<typename T>
     void recvPrimitiveVector(T *data, zmq::socket_t *sock) {
       int numOfElem;
-      zmq::message_t ackMsg("ack", 3);
 
       sock->recv(zmq::buffer(&numOfElem, sizeof(int)), zmq::recv_flags::none);
       data->resize(numOfElem);
       sock->recv(zmq::buffer(*data), zmq::recv_flags::none);
-
-      sock->send(ackMsg, zmq::send_flags::none);
     }
 
 
     /* recvDetectedMarkers */
     void recvDetectedMarkers(std::vector<mxre::cv_types::DetectedMarker> *data, zmq::socket_t *sock) {
-      zmq::message_t ackMsg("ack", 3);
       int numOfDetectedMarkers;
 
       sock->recv(zmq::buffer(&numOfDetectedMarkers, sizeof(int)), zmq::recv_flags::none);
-      sock->send(ackMsg, zmq::send_flags::none);
 
       for(int i = 0; i < numOfDetectedMarkers; i++) {
         mxre::cv_types::DetectedMarker detectedMarker;
@@ -55,7 +48,6 @@ namespace mxre {
         sock->recv(zmq::buffer(&detectedMarker.index, sizeof(int)), zmq::recv_flags::none);
         sock->recv(zmq::buffer(defaultLocationIn3D), zmq::recv_flags::none);
         sock->recv(zmq::buffer(locationIn2D), zmq::recv_flags::none);
-        sock->send(ackMsg, zmq::send_flags::none);
         for(int i = 0; i < 4; i++) {
           cv::Point3f new3DPoint;
           new3DPoint.x = defaultLocationIn3D[i].x;

@@ -23,7 +23,7 @@ namespace mxre
         zmq::socket_t sock;
       public:
         MessageSender(std::string addr="localhost", int port=5555, void (*send)(IN_T*, zmq::socket_t*)=NULL,
-                      int sockType=ZMQ_REQ);
+                      int sockType=ZMQ_PAIR);
         ~MessageSender();
         virtual raft::kstatus run();
     };
@@ -39,12 +39,9 @@ namespace mxre
 
       this->send = send;
       addInputPort<IN_T>("in_data");
-
 #ifdef __PROFILE__
       if(logger == NULL) initLoggerST("message_sender", std::to_string(pid) + "/message_sender.log");
 #endif
-
-
     }
 
 
@@ -59,26 +56,21 @@ namespace mxre
 
     /* Run */
     template<typename IN_T>
-    raft::kstatus MessageSender<IN_T>::run() {
-
+    raft::kstatus MessageSender<IN_T>::run()
+    {
       auto &inData( input["in_data"].template peek<IN_T>() );
-
 #ifdef __PROFILE__
       startTimeStamp = getTimeStampNow();
 #endif
-
       if(send != NULL) send(&inData, &sock);
       else {
         debug_print("send function pointer is invalid.");
       }
-
       recyclePort("in_data");
-
 #ifdef __PROFILE__
       endTimeStamp = getTimeStampNow();
       logger->info("{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
 #endif
-
       return raft::proceed;
     }
 

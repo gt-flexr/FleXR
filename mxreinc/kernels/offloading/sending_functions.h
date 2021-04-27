@@ -13,7 +13,6 @@ namespace mxre {
     void sendPrimitive(T *data, zmq::socket_t *sock) {
       zmq::message_t sendingMsg(data, sizeof(T)), ackMsg;
       sock->send(sendingMsg, zmq::send_flags::none);
-      auto res = sock->recv(ackMsg);
     }
 
 
@@ -25,7 +24,6 @@ namespace mxre {
 
       sock->send(zmq::message_t(&numOfElem, sizeof(int)), zmq::send_flags::sndmore);
       sock->send(sendingMsg, zmq::send_flags::none);
-      auto res = sock->recv(ackMsg);
     }
 
 
@@ -36,7 +34,6 @@ namespace mxre {
       // send num of detected markers
       int numOfDetectedMarkers = data->size();
       sock->send(zmq::message_t(&numOfDetectedMarkers, sizeof(int)), zmq::send_flags::none);
-      sock->recv(ackMsg);
 
       for(int i = 0; i < data->size(); i++) {
         zmq::message_t indexMsg(&(*data)[i].index, sizeof(int));
@@ -63,8 +60,6 @@ namespace mxre {
         sock->send(indexMsg, zmq::send_flags::sndmore);
         sock->send(location3DMsg, zmq::send_flags::sndmore);
         sock->send(location2DMsg, zmq::send_flags::none);
-
-        auto res = sock->recv(ackMsg);
       }
     }
   }

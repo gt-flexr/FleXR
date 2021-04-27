@@ -21,7 +21,7 @@ namespace mxre
         zmq::context_t ctx;
         zmq::socket_t sock;
       public:
-        MessageReceiver(int port=5555, void (*recv)(OUT_T*, zmq::socket_t*)=NULL, int sockType = ZMQ_REP);
+        MessageReceiver(int port=5555, void (*recv)(OUT_T*, zmq::socket_t*)=NULL, int sockType = ZMQ_PAIR);
         ~MessageReceiver();
         virtual raft::kstatus run();
     };
