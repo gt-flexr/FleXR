@@ -83,14 +83,13 @@ int main(int argc, char const *argv[])
   //TestSink testSink;
 
   // Set the components
-  pipeline.link(&bagCam, "out_frame", &rtpFrameSender, "in_frame", 2);
-  //clientDag += detectedMarkerReceiver["out_data"] >> testSink["in_detected_markers"];
+  pipeline += bagCam["out_frame"] >> rtpFrameSender["in_frame"];
 
-  pipeline.link(&bagCam, "out_frame2", &objRenderer, "in_frame", 1);
-  pipeline.link(&markerCtxReceiver, "out_data", &objRenderer, "in_marker_contexts", 1);
+  pipeline += bagCam["out_frame2"] >> objRenderer["in_frame"];
+  pipeline += markerCtxReceiver["out_data"] >> objRenderer["in_marker_contexts"];
   pipeline.link(&keyboard, "out_keystroke", &objRenderer, "in_keystroke", 1);
 
-  pipeline.link(&objRenderer, "out_frame", &nonDisplay, "in_frame", 1);
+  pipeline += objRenderer["out_frame"] >> nonDisplay["in_frame"];
 
   pipeline.exe();
 

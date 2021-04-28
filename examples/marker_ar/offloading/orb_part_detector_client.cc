@@ -84,15 +84,14 @@ int main(int argc, char const *argv[])
   mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), width, height);
   mxre::kernels::NonDisplay nonDisplay;
 
-  pipeline.link(&bagCam, "out_frame", &rtpFrameSender, "in_frame", 2);
-  pipeline.link(&detectedMarkerReceiver, "out_data", &markerCtxExtractor, "in_detected_markers", 1);
-  //clientDag += detectedMarkerReceiver["out_data"] >> testSink["in_detected_markers"];
+  pipeline += bagCam["out_frame"] >> rtpFrameSender["in_frame"];
+  pipeline += detectedMarkerReceiver["out_data"] >> markerCtxExtractor["in_detected_markers"];
 
-  pipeline.link(&bagCam, "out_frame2", &objRenderer, "in_frame", 1);
-  pipeline.link(&markerCtxExtractor, "out_marker_contexts", &objRenderer, "in_marker_contexts", 1);
+  pipeline += bagCam["out_frame2"] >> objRenderer["in_frame"];
+  pipeline += markerCtxExtractor["out_marker_contexts"] >> objRenderer["in_marker_contexts"];
   pipeline.link(&keyboard, "out_keystroke", &objRenderer, "in_keystroke", 1);
 
-  pipeline.link(&objRenderer, "out_frame", &nonDisplay, "in_frame", 1);
+  pipeline += objRenderer["out_frame"] >> nonDisplay["in_frame"];
 
   pipeline.exe();
 
