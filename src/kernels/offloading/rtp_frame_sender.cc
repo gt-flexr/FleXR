@@ -103,14 +103,16 @@ namespace mxre
 #ifdef __PROFILE__
           encodingTimeStamp = getTimeStampNow();
 #endif
+          int sentSize = encodingPacket.size;
           if(rtpSender.sendWithTrackingInfo(encodingPacket.data, encodingPacket.size,
                                             inFrame.index, inFrame.timestamp)) {
 #ifdef __PROFILE__
             endTimeStamp = getTimeStampNow();
-            logger->info("encodingTime/rtpSendingTime/KernelExeTime\t{}\t {}\t {}",
+            logger->info("encodingTime/rtpSendingTime/KernelExeTime/Sent Size\t{}\t {}\t {}\t {}",
                 encodingTimeStamp - startTimeStamp,
                 endTimeStamp - encodingTimeStamp,
-                endTimeStamp - startTimeStamp);
+                endTimeStamp - startTimeStamp,
+                sentSize);
 #endif
 
           }

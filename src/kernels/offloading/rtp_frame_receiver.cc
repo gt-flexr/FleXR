@@ -93,10 +93,11 @@ namespace mxre
 
 #ifdef __PROFILE__
             endTimeStamp = getTimeStampNow();
-            logger->info("st/et/decodingTime\t{}\t {}\t {}",
+            logger->info("st/et/decodingTime/recvSize\t{}\t {}\t {}\t {}",
                 startTimeStamp,
                 endTimeStamp,
-                endTimeStamp-startTimeStamp);
+                endTimeStamp-startTimeStamp,
+                recvDataSize);
 #endif
           }
         }
