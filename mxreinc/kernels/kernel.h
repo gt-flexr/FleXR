@@ -20,6 +20,25 @@ namespace mxre
 {
   namespace kernels
   {
+    // To run multiple pipelines
+    // std::thread T1(runPipeline, &pipeline);
+    // T1.join();
+    static void runPipeline(raft::map *pipeline) {
+      pipeline->exe();
+    }
+
+    // the current raftlib does not support single kernel run. When a single kernel is offloaded, there is no way to
+    // run it.
+    //   std::thread T1(runSigleKernel, &kernel);
+    //   T1.join();
+    static void runSingleKernel (raft::kernel *kernel)
+    {
+      while (1) {
+        raft::kstatus ret = kernel->run();
+        if (ret == raft::stop) break;
+      }
+    }
+
     class MXREKernel : public raft::kernel
     {
       protected:
