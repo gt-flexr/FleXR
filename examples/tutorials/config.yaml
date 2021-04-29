@@ -18,3 +18,16 @@ bag_fps: 30
 width: 1920
 height: 1080
 
+# server/client
+server_addr: "127.0.0.1"
+server_frame_port: 49992
+server_message_port: 49993
+server_decoder: "h264_cuvid"
+server_encoder: "h264_nvenc"
+
+client_addr: "127.0.0.1"
+client_frame_port: 49994
+client_message_port: 49995
+client_decoder: "h264_cuvid"
+client_encoder: "h264_nvenc"
+
