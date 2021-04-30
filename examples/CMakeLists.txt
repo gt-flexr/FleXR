@@ -9,6 +9,8 @@ list(APPEND EXAMPLE_SRCS
   marker_ar/offloading/orb_full_client.cc
   marker_ar/offloading/orb_part_detector_client.cc
   marker_ar/offloading/orb_part_perception_client.cc
+  marker_ar/offloading/renderer_client.cc
+  marker_ar/offloading/renderer_server.cc
 
   incubator/unity_test.cc
   incubator/unity_writer.cc
