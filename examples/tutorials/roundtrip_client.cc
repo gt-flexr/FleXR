@@ -35,18 +35,19 @@ int main()
   bagCam.setFramesToCache(400, 400);
   bagCam.setFPS(fps);
   mxre::kernels::RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder, width, height,
-                                               width*height*4, fps);
+                                               width*height*4, 60);
   sendingPipeline += bagCam["out_frame"] >> rtpFrameSender["in_frame"];
+  std::thread sendThread(mxre::kernels::runPipeline, &sendingPipeline);
 
   raft::map receivingPipeline;
   mxre::kernels::RTPFrameReceiver rtpFrameReceiver(clientFramePort, clientDecoder, width, height);
   mxre::kernels::NonDisplay nonDisplay;
   receivingPipeline += rtpFrameReceiver["out_frame"] >> nonDisplay["in_frame"];
-
-  std::thread sendThread(mxre::kernels::runPipeline, &sendingPipeline);
   std::thread recvThread(mxre::kernels::runPipeline, &receivingPipeline);
 
-  sendThread.join();
   recvThread.join();
+  sendThread.join();
+
+  return 0;
 }
 
