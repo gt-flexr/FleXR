@@ -20,6 +20,25 @@ namespace mxre
 {
   namespace kernels
   {
+    // To run multiple pipelines
+    // std::thread T1(runPipeline, &pipeline);
+    // T1.join();
+    static void runPipeline(raft::map *pipeline) {
+      pipeline->exe();
+    }
+
+    // the current raftlib does not support single kernel run. When a single kernel is offloaded, there is no way to
+    // run it.
+    //   std::thread T1(runSigleKernel, &kernel);
+    //   T1.join();
+    static void runSingleKernel (raft::kernel *kernel)
+    {
+      while (1) {
+        raft::kstatus ret = kernel->run();
+        if (ret == raft::stop) break;
+      }
+    }
+
     class MXREKernel : public raft::kernel
     {
       protected:
@@ -59,6 +78,10 @@ namespace mxre
 
         /* setSleepPeriodMS() */
         void setSleepPeriodMS(int period) { periodMS = period; }
+
+
+        /* setFPS() */
+        void setFPS(unsigned int fps) { setSleepPeriodMS((int)(1000/fps)); }
 
 
         /* run(): set in/out ports and call logic() */
@@ -102,14 +125,14 @@ namespace mxre
 
 
         /* sendCopyFrame: propagate the primitive-type data into duplicated output ports */
-        void sendFrameCopy(std::string id, void* data) {
-          mxre::types::Frame *frame = (mxre::types::Frame*)data;
+        void sendFrames(std::string id, mxre::types::Frame *frame) {
           auto portRange = oPortMap.equal_range(id);
           for(auto i = portRange.first; i != portRange.second; ++i) {
             auto &outData(output[i->second].allocate<mxre::types::Frame>());
             outData = frame->clone();
             output[i->second].send();
           }
+          output[id].send();
         }
 
 #ifdef __PROFILE__
