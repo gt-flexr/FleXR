@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project(MXRE CXX)
 set(CMAKE_CXX_COMPILER g++)
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_BUILD_TYPE Debug)
 
 include(cmake/utils/Util.cmake)
 
@@ -21,8 +23,8 @@ endif()
 build_option(DEBUG "Set Debug/Release" ON)
 build_option(PROFILE "Set kernel profiling" ON)
 
-mxre_option(USE_FFMPEG_NVCODEC "Use nvcodec with ffmpeg" ON)
-mxre_option(USE_OPENCV_CUDA "Use cuda-accelerated functions of OpenCV" ON)
+mxre_option(USE_FFMPEG_NVCODEC "Use nvcodec with ffmpeg" OFF)
+mxre_option(USE_OPENCV_CUDA "Use cuda-accelerated functions of OpenCV" OFF)
 
 # Source codes & headers
 configure_file(config/root_directory.h.in config/root_directory.h)
@@ -49,11 +51,10 @@ message(STATUS "[MXRE COMPILE INFO]")
 message("\t MXRE_CXX_FLAGS: ${MXRE_CXX_FLAGS}")
 message("\t MXRE_LINKER_FLAGS: ${MXRE_LINKER_FLAGS}")
 message("\t MXRE_LINKER_LIBS: ${MXRE_LINKER_LIBS}")
-message("\t MXRE_SRCS: ${MXRE_SRCS}")
 
 add_subdirectory(third-party)
-add_subdirectory(src)
 add_subdirectory(mxreinc)
+add_subdirectory(source)
 add_subdirectory(examples)
 
 # Install

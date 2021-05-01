@@ -39,47 +39,54 @@
 #include "./mxreinc/types/ar/virtual_world_manager.h"
 
 /* Components */
-#include "./mxreinc/components/rtp_sender.h"
-#include "./mxreinc/components/rtp_receiver.h"
 #include "./mxreinc/components/rosbag_reader.h"
 #include "./mxreinc/components/rosbag_frame_reader.h"
 
-/* Kernels */
+#include "./mxreinc/components/rtp_sender.h"
+#include "./mxreinc/components/rtp_receiver.h"
+#include "./mxreinc/components/sending_functions.h"
+#include "./mxreinc/components/receiving_functions.h"
+
+#include "./mxreinc/components/cv_camera.h"
+#include "./mxreinc/components/logger.h"
+
+/* Kernels
+ *   - 3 Types: Source, Intermediate, Sink
+ *   - Source      : output ports only
+ *   - Intermediate: input and output ports
+ *   - Sink        : input ports only
+ */
 #include "./mxreinc/kernels/kernel.h"
 
 #include "./mxreinc/kernels/plugin/illixr_source.h"
 #include "./mxreinc/kernels/plugin/illixr_sink.h"
 #include "./mxreinc/kernels/plugin/unity_frame_writer.h"
 
-#include "./mxreinc/kernels/sources/cv_camera.h"
-#include "./mxreinc/kernels/sources/keyboard.h"
-#include "./mxreinc/kernels/sources/image_loader.h"
-#include "./mxreinc/kernels/sources/mock_camera.h"
-#include "./mxreinc/kernels/sources/bag_camera.h"
-#include "./mxreinc/kernels/sources/appsource.h"
+#include "./mxreinc/kernels/source/appsource.h"
+#include "./mxreinc/kernels/source/bag_camera.h"
+#include "./mxreinc/kernels/source/cv_camera.h"
+#include "./mxreinc/kernels/source/ffmpeg_rtp_receiver.h"
+#include "./mxreinc/kernels/source/image_loader.h"
+#include "./mxreinc/kernels/source/keyboard.h"
+#include "./mxreinc/kernels/source/message_receiver.h"
+#include "./mxreinc/kernels/source/mock_camera.h"
+#include "./mxreinc/kernels/source/prediction_receiver.h"
+#include "./mxreinc/kernels/source/rtp_frame_receiver.h"
 
-#include "./mxreinc/kernels/sinks/cv_display.h"
-#include "./mxreinc/kernels/sinks/non_display.h"
-#include "./mxreinc/kernels/sinks/appsink.h"
+#include "./mxreinc/kernels/sink/appsink.h"
+#include "./mxreinc/kernels/sink/cv_display.h"
+#include "./mxreinc/kernels/sink/ffmpeg_rtp_sender.h"
+#include "./mxreinc/kernels/sink/message_sender.h"
+#include "./mxreinc/kernels/sink/non_display.h"
+#include "./mxreinc/kernels/sink/rtp_frame_sender.h"
 
-#include "./mxreinc/kernels/perceptions/prediction_receiver.h"
-#include "./mxreinc/kernels/perceptions/orb/orb_detector.h"
-#include "./mxreinc/kernels/perceptions/orb/cuda_orb_detector.h"
-#include "./mxreinc/kernels/perceptions/orb/marker_ctx_extractor.h"
-
-#include "./mxreinc/kernels/offloading/message_sender.h"
-#include "./mxreinc/kernels/offloading/sending_functions.h"
-#include "./mxreinc/kernels/offloading/message_receiver.h"
-#include "./mxreinc/kernels/offloading/receiving_functions.h"
-#include "./mxreinc/kernels/offloading/rtp_frame_sender.h"
-#include "./mxreinc/kernels/offloading/rtp_frame_receiver.h"
-#include "./mxreinc/kernels/offloading/ffmpeg_rtp_sender.h"
-#include "./mxreinc/kernels/offloading/ffmpeg_rtp_receiver.h"
-#include "./mxreinc/kernels/offloading/ffmpeg_encoder.h"
-#include "./mxreinc/kernels/offloading/ffmpeg_decoder.h"
-
-#include "./mxreinc/kernels/app/object_renderer.h"
-#include "./mxreinc/kernels/app/complexyolo_renderer.h"
+#include "./mxreinc/kernels/intermediate/complexyolo_renderer.h"
+#include "./mxreinc/kernels/intermediate/cuda_orb_detector.h"
+#include "./mxreinc/kernels/intermediate/ffmpeg_decoder.h"
+#include "./mxreinc/kernels/intermediate/ffmpeg_encoder.h"
+#include "./mxreinc/kernels/intermediate/marker_ctx_extractor.h"
+#include "./mxreinc/kernels/intermediate/object_renderer.h"
+#include "./mxreinc/kernels/intermediate/orb_detector.h"
 
 #endif
 
