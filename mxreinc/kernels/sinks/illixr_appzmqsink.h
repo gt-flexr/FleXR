@@ -53,7 +53,7 @@ namespace mxre
         debug_print("connectAddr: %s bound\n", connectAddr.c_str());
       }
 
-      void print_current_date(void){
+      void print_current_date(string label){
         std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
         auto duration = now.time_since_epoch();
 
@@ -74,12 +74,12 @@ namespace mxre
             duration -= microseconds;
         auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration);
 
-        profile_print("%u:%u:%u:%u:%u:%u", hours.count(), minutes.count(), seconds.count(), milliseconds.count(), microseconds.count(), nanoseconds.count());
+        profile_print("%s %u:%u:%u:%u:%u:%u", label, hours.count(), minutes.count(), seconds.count(), milliseconds.count(), microseconds.count(), nanoseconds.count());
       }
 
       //sizeof(mxre::kimera_type::kimera_output)==256
       void sendKimeraOutput(IN_T* output_data_) {
-        print_current_date();
+        print_current_date("3A");
         if (sock == NULL || ctx == NULL) {
           std::cerr << "ILLIXRSink is not set." << std::endl;
           return;
@@ -87,7 +87,7 @@ namespace mxre
 
         mxre::kimera_type::kimera_output *output_data = (mxre::kimera_type::kimera_output*) output_data_;
         zmq_send(sock, output_data, sizeof(mxre::kimera_type::kimera_output), 0);
-        print_current_date();
+        print_current_date("3B");
       }
 
 

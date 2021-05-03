@@ -41,7 +41,7 @@ namespace mxre {
         debug_print("bindingAddr: %s connected\n", bindingAddr.c_str());
       }
 
-      void print_current_date(void){
+      void print_current_date(string label){
         std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
         auto duration = now.time_since_epoch();
 
@@ -62,12 +62,12 @@ namespace mxre {
             duration -= microseconds;
         auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration);
 
-        profile_print("%u:%u:%u:%u:%u:%u", hours.count(), minutes.count(), seconds.count(), milliseconds.count(), microseconds.count(), nanoseconds.count());
+        profile_print("%s %u:%u:%u:%u:%u:%u", label, hours.count(), minutes.count(), seconds.count(), milliseconds.count(), microseconds.count(), nanoseconds.count());
       }
 
 
       void recv_kimera_output(OUT_T* kimera_output_) {
-        print_current_date();
+        print_current_date("4A");
         mxre::types::TimeVal start = getNow();
         
         if (sock == NULL || ctx == NULL) {
@@ -77,7 +77,7 @@ namespace mxre {
         mxre::kimera_type::kimera_output *kimera_output = (mxre::kimera_type::kimera_output*) kimera_output_;
         zmq_recv(sock, kimera_output, sizeof(mxre::kimera_type::kimera_output), 0);
         
-        print_current_date();
+        print_current_date("4B");
         mxre::types::TimeVal end = getNow();
         debug_print("Exe Time ILLIXR Appsource: %lfms", getExeTime(end, start));
         

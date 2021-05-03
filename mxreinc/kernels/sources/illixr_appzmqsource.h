@@ -61,7 +61,7 @@ namespace mxre
         return true;
       }
 
-      void print_current_date(void){
+      void print_current_date(string label){
         std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
         auto duration = now.time_since_epoch();
 
@@ -82,7 +82,7 @@ namespace mxre
             duration -= microseconds;
         auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration);
 
-        profile_print("%u:%u:%u:%u:%u:%u", hours.count(), minutes.count(), seconds.count(), milliseconds.count(), microseconds.count(), nanoseconds.count());
+        profile_print("%s %u:%u:%u:%u:%u:%u", label, hours.count(), minutes.count(), seconds.count(), milliseconds.count(), microseconds.count(), nanoseconds.count());
       }
 
       //sizeof(mxre::types::Frame)=72
@@ -93,7 +93,7 @@ namespace mxre
       //sizeof(cam_data->imu_count)=4
       //sizeof(cam_data->dataset_time)=8
       void recv_cam_type(OUT_T* cam_data_) {
-        print_current_date();
+        print_current_date("2A");
 
         if (sock == NULL || ctx == NULL) {
           std::cerr << "ILLIXRSink is not set." << std::endl;
@@ -137,7 +137,7 @@ namespace mxre
         delete[] buffer_cam_metadata;
         delete[] buffer_cam_imu_variable_data;
         //usleep(50000);
-        print_current_date();
+        print_current_date("2B");
 
         return;
       }
