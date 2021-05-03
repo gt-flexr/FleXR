@@ -60,7 +60,7 @@ namespace mxre {
       //   return 1;
       // }
 
-      void print_current_date(string label){
+      void print_current_date(std::string label){
         std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
         auto duration = now.time_since_epoch();
 
@@ -81,7 +81,7 @@ namespace mxre {
             duration -= microseconds;
         auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration);
 
-        profile_print("%s %u:%u:%u:%u:%u:%u", label, hours.count(), minutes.count(), seconds.count(), milliseconds.count(), microseconds.count(), nanoseconds.count());
+        profile_print("%s %u:%u:%u:%u:%u:%u", label.c_str(), hours.count(), minutes.count(), seconds.count(), milliseconds.count(), microseconds.count(), nanoseconds.count());
       }
 
       void sendFrame(mxre::types::Frame *data) {
@@ -97,12 +97,13 @@ namespace mxre {
       }
 
       int send_cam_imu_type(IN_T* data) {
-        print_current_date("1A");
+        
         if (sock == NULL || ctx == NULL) {
           std::cerr << "ILLIXRZMQSource is not set." << std::endl;
           return -1;
         }
         
+        print_current_date("Before send_cam_imu_type");
         mxre::kimera_type::imu_cam_type *cam_data = (mxre::kimera_type::imu_cam_type*) data;
 
         uint8_t* buffer_cam_metadata = new uint8_t[sizeof(mxre::types::Frame)*2+sizeof(cam_data->time)+sizeof(cam_data->imu_count)+sizeof(cam_data->dataset_time)];
@@ -124,7 +125,7 @@ namespace mxre {
         delete[] buffer_cam_metadata;
         delete[] buffer_cam_imu_variable_data;
 
-        print_current_date("1B");
+        print_current_date("After send_cam_imu_type");
 
         // sendFrame(cam_data->img0);
         // sendFrame(cam_data->img1);
