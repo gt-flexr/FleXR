@@ -85,7 +85,8 @@ namespace mxre
           else if(decoderName == "h264_cuvid") cv::cvtColor(yuvFrame, outFrame.useAsCVMat(), cv::COLOR_YUV2BGR_NV12);
 
           debug_print("ret == 0 DECODE...2");
-          sendFrames("out_frame", &outFrame);
+          //sendFrames("out_frame", &outFrame);
+          output["out_frame"].send();
 
           debug_print("ret == 0 DECODE...3");
 #ifdef __PROFILE__

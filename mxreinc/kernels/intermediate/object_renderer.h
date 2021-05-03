@@ -41,8 +41,10 @@ namespace mxre
       ObjectRenderer(std::vector<mxre::cv_types::MarkerInfo> registeredMarkers, int width, int height);
       ~ObjectRenderer();
       virtual raft::kstatus run();
-      bool logic(mxre::types::Frame *inFrame, std::vector<mxre::gl_types::ObjectContext> *inMarkerContexts, char inKey,
-                 mxre::types::Frame *outFrame);
+      bool logic(types::Message<types::Frame> &inFrame,
+                 types::Message<std::vector<gl_types::ObjectContext>> &inMarkerContexts,
+                 char inKey,
+                 types::Message<types::Frame> &outFrame);
     };
 
   }   // kernels

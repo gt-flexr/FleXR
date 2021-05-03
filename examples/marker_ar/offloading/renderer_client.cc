@@ -89,7 +89,7 @@ int main(int argc, char const *argv[])
   pipeline.link(&bagCam, "out_frame2", &orbDetector, "in_frame", 1);
   pipeline += orbDetector["out_detected_markers"] >> markerCtxExtractor["in_detected_markers"];
   pipeline += markerCtxExtractor["out_marker_contexts"] >> objectCtxSender["in_data"];
-  pipeline.link(&keyboard, "out_keystroke", &keySender, "in_data", 1);
+  pipeline.link(&keyboard, "out_key", &keySender, "in_data", 1);
   std::thread sendThread(mxre::kernels::runPipeline, &pipeline);
 
   recvPipe += rtpFrameReceiver["out_frame"] >> nonDisplay["in_frame"];

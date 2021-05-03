@@ -2,8 +2,10 @@
 #include <bits/stdc++.h>
 
 namespace mxre {
-  namespace components {
-    RTPReceiver::~RTPReceiver() {
+  namespace components
+  {
+    RTPReceiver::~RTPReceiver()
+    {
       rtpSession->destroy_stream(rtpStream);
       rtpContext.destroy_session(rtpSession);
     }
@@ -14,16 +16,14 @@ namespace mxre {
       rtpStream = rtpSession->create_stream(even_port, -1, RTP_FORMAT_GENERIC, RCE_FRAGMENT_GENERIC);
     }
 
-
-
-
-    bool RTPReceiver::receiveDynamic(uint8_t **outDataBuffer, uint32_t *outDataSize) {
+    bool RTPReceiver::receiveDynamic(uint8_t **outDataBuffer, uint32_t &outDataSize)
+    {
       uvg_rtp::frame::rtp_frame *rtpFrame = nullptr;
       if(*outDataBuffer) { delete *outDataBuffer; *outDataBuffer = nullptr; }
 
       rtpFrame = rtpStream->pull_frame();
       if(rtpFrame != nullptr) {
-        *outDataSize = rtpFrame->payload_len;
+        outDataSize = rtpFrame->payload_len;
         *outDataBuffer = rtpFrame->payload;
         unrefFrameExceptData(rtpFrame);
 
@@ -35,8 +35,8 @@ namespace mxre {
     }
 
 
-    bool RTPReceiver::receiveDynamicWithTrackinInfo(uint8_t **outDataBuffer, uint32_t *outDataSize,
-                                         uint32_t *outIndex, double *outTimestamp)
+    bool RTPReceiver::receiveDynamicWithTrackinInfo(uint8_t **outDataBuffer, uint32_t &outDataSize,
+                                                    std::string &outTag, uint32_t &outSeq, double &outTs)
     {
       types::RTPTrackingInfo trackingInfo;
       // RTP message: | trackinInfo |   Data   |
@@ -46,7 +46,9 @@ namespace mxre {
       //   - if tracking info is fine, receive data
       if(receiveStatic(sizeof(types::RTPTrackingInfo), &trackingInfo)) {
         if(trackingInfo.invoice == MXRE_RTP_TRACKING_INVOICE) {
-          *outIndex = trackingInfo.index; *outTimestamp = trackingInfo.timestamp;
+          outTag = trackingInfo.tag;
+          outSeq = trackingInfo.seq;
+          outTs = trackingInfo.ts;
           if(receiveDynamic(outDataBuffer, outDataSize)) return true;
         }
       }
@@ -74,7 +76,7 @@ namespace mxre {
 
 
     bool RTPReceiver::receiveStaticWithTrackinInfo(uint32_t inDataSize, uint8_t *outReceivedData,
-                                                   uint32_t *outIndex, double *outTimestamp)
+                                                   std::string &outTag, uint32_t &outSeq, double &outTs)
     {
       types::RTPTrackingInfo trackingInfo;
       // RTP message: | trackinInfo |   Data   |
@@ -84,7 +86,9 @@ namespace mxre {
       //   - if tracking info is fine, receive data
       if(receiveStatic(sizeof(types::RTPTrackingInfo), &trackingInfo)) {
         if(trackingInfo.invoice == MXRE_RTP_TRACKING_INVOICE) {
-          *outIndex = trackingInfo.index; *outTimestamp = trackingInfo.timestamp;
+          outTag = trackingInfo.tag;
+          outSeq = trackingInfo.seq;
+          outTs = trackingInfo.ts;
           if(receiveStatic(inDataSize, outReceivedData)) return true;
         }
       }

@@ -4,16 +4,21 @@
 #include <bits/stdc++.h>
 #include <raft>
 #include "defs.h"
+#include "types/types.h"
+#include "kernels/kernel.h"
 
 namespace mxre
 {
   namespace kernels
   {
 
-    class Keyboard : public raft::kernel
+    class Keyboard : public MXREKernel
     {
+    private:
+      uint32_t seq;
+
     public:
-      Keyboard();
+      Keyboard(std::string tag="keystroke");
       ~Keyboard();
       virtual raft::kstatus run();
     };

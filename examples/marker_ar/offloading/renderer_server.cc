@@ -44,7 +44,7 @@ int main(int argc, char const *argv[])
 
   mxre::kernels::RTPFrameSender rtpFrameSender(clientAddr, clientFramePort, serverEncoder, width, height, width*height*4, 60);
   pipeline += rtpFrameReceiver["out_frame"] >> objRenderer["in_frame"];
-  pipeline += keyReceiver["out_data"] >> objRenderer["in_keystroke"];
+  pipeline += keyReceiver["out_data"] >> objRenderer["in_key"];
   pipeline += objectCtxReceiver["out_data"] >> objRenderer["in_marker_contexts"];
   pipeline += objRenderer["out_frame"] >> rtpFrameSender["in_frame"];
 

@@ -8,9 +8,20 @@ namespace mxre {
   namespace types {
     typedef struct RTPTrackingInfo {
       int32_t invoice; // for sanity check
-      uint32_t index;
-      double timestamp;
+      std::string tag;
+      uint32_t seq;
+      double ts;
     } RTPTrackingInfo;
+
+    template <class T>
+    class Message
+    {
+      public:
+      std::string tag;
+      uint32_t seq;
+      double ts;
+      T data;
+    };
   }
 }
 #endif

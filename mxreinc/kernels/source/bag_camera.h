@@ -23,7 +23,7 @@ namespace mxre
       mxre::components::ROSBagFrameReader bagReader;
 
     public:
-      BagCamera(std::string bagPath="", std::string bagTopic="");
+      BagCamera(std::string tag="", std::string bagPath="", std::string bagTopic="");
       void setFramesToCache(int numFrames, int startFrameIndex);
       ~BagCamera();
       virtual raft::kstatus run();

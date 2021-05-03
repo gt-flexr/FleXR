@@ -5,8 +5,10 @@ namespace mxre
 {
   namespace kernels
   {
-    Keyboard::Keyboard() {
-      output.addPort<char>("out_keystroke");
+    Keyboard::Keyboard(std::string tag): MXREKernel(tag)
+    {
+      seq = 0;
+      output.addPort<types::Message<char>>("out_key");
     }
 
 
@@ -14,9 +16,14 @@ namespace mxre
 
 
     raft::kstatus Keyboard::run() {
-      auto keystroke(output["out_keystroke"].template allocate_s<char>());
+      types::Message<char> &key = output["out_key"].template allocate<types::Message<char>>();
 
-      (*keystroke) = mxre::utils::getch();
+      key.data = mxre::utils::getch();
+      key.tag  = tag;
+      key.seq  = seq++;
+      key.ts   = getTimeStampNow();
+
+      sendPrimitiveCopy<types::Message<char>>("out_key", key);
 
       return raft::proceed;
     }

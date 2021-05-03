@@ -9,13 +9,14 @@ namespace mxre
     ORBDetector::ORBDetector(std::vector<mxre::cv_types::MarkerInfo> registeredMarkers):
       MXREKernel(), registeredMarkers(registeredMarkers)
     {
-      addInputPort<mxre::types::Frame>("in_frame");
-      addOutputPort<std::vector<mxre::cv_types::DetectedMarker>>("out_detected_markers");
+      addInputPort<types::Message<types::Frame>>("in_frame");
+      addOutputPort<types::Message<std::vector<cv_types::DetectedMarker>>>("out_detected_markers");
+
 
       // Object Detection Parameters
-      knnMatchRatio = 0.8f;
-      knnParam = 5;
-      ransacThresh = 2.5f;
+      knnMatchRatio = 0.9f;
+      knnParam = 3;
+      ransacThresh = 3.0f;
       minInlierThresh = 20;
 
       detector = cv::ORB::create();
@@ -24,7 +25,6 @@ namespace mxre
 #ifdef __PROFILE__
       if(logger == NULL) initLoggerST("orb_detector", "logs/" + std::to_string(pid) + "/orb_detector.log");
 #endif
-
     }
 
 
@@ -33,19 +33,22 @@ namespace mxre
 
 
     /* Kernel Logic */
-    bool ORBDetector::logic(mxre::types::Frame *inFrame,
-                            std::vector<mxre::cv_types::DetectedMarker> *outDetectedMarkers) {
+    bool ORBDetector::logic(types::Message<types::Frame> &inFrame,
+                            types::Message<std::vector<cv_types::DetectedMarker>> &outDetectedMarkers)
+    {
       std::vector<cv::KeyPoint> frameKps;
       cv::Mat frameDesc;
+      outDetectedMarkers.tag = inFrame.tag;
+      outDetectedMarkers.seq = inFrame.seq;
+      outDetectedMarkers.ts  = inFrame.ts;
 
       // 0. prepare gary frame
-      cv::Mat grayFrame = inFrame->useAsCVMat();
+      cv::Mat grayFrame = inFrame.data.useAsCVMat();
       cv::cvtColor(grayFrame, grayFrame, CV_BGR2GRAY);
-
 
       // 1. figure out frame keypoints and descriptors to detect objects in the frame
       detector->detectAndCompute(grayFrame, cv::noArray(), frameKps, frameDesc);
-      inFrame->release(); // deallocate the frame memory
+      inFrame.data.release(); // deallocate the frame memory
 
       // multiple object detection
       std::vector<mxre::cv_types::MarkerInfo>::iterator markerInfo;
@@ -102,7 +105,7 @@ namespace mxre
             detectedMarker.index = markerInfo->index;
             detectedMarker.defaultLocationIn3D = markerInfo->defaultLocationIn3D;
             perspectiveTransform(markerInfo->defaultLocationIn2D, detectedMarker.locationIn2D, homography);
-            outDetectedMarkers->push_back(detectedMarker);
+            outDetectedMarkers.data.push_back(detectedMarker);
             //mxre::cv_utils::drawBoundingBox(frame.cvMat, objIter->location2D);
           }
         }
@@ -114,17 +117,17 @@ namespace mxre
 
     /* Kernel Run */
     raft::kstatus ORBDetector::run() {
-      auto &inFrame( input["in_frame"].peek<mxre::types::Frame>() );
-      auto &outDetectedMarkers(output["out_detected_markers"].allocate<std::vector<mxre::cv_types::DetectedMarker>>());
+      types::Message<types::Frame> &inFrame = input["in_frame"].peek<types::Message<types::Frame>>();
+      types::Message<std::vector<cv_types::DetectedMarker>> &outDetectedMarkers = \
+                output["out_detected_markers"].allocate<types::Message<std::vector<cv_types::DetectedMarker>>>();
 
 #ifdef __PROFILE__
       startTimeStamp = getTimeStampNow();
 #endif
 
-
-      if(logic(&inFrame, &outDetectedMarkers)) {
+      if(logic(inFrame, outDetectedMarkers)) {
         output["out_detected_markers"].send();
-        sendPrimitiveCopy("out_detected_markers", &outDetectedMarkers);
+        sendPrimitiveCopy("out_detected_markers", outDetectedMarkers);
       }
 
       recyclePort("in_frame");

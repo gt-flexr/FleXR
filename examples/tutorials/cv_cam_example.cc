@@ -18,7 +18,7 @@ int main()
   int height = config["height"].as<int>();
 
   raft::map pipeline;
-  mxre::kernels::CVCamera cvCam(camIdx, width, height);
+  mxre::kernels::CVCamera cvCam("cvcam", camIdx, width, height);
   mxre::kernels::CVDisplay cvDisplay;
 
   pipeline += cvCam["out_frame"] >> cvDisplay["in_frame"];

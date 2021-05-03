@@ -10,8 +10,8 @@ namespace mxre
     CudaORBDetector::CudaORBDetector(std::vector<mxre::cv_types::MarkerInfo> registeredMarkers) :
       MXREKernel(), registeredMarkers(registeredMarkers)
     {
-      addInputPort<mxre::types::Frame>("in_frame");
-      addOutputPort<std::vector<mxre::cv_types::DetectedMarker>>("out_detected_markers");
+      addInputPort<types::Message<types::Frame>>("in_frame");
+      addOutputPort<types::Message<std::vector<cv_types::DetectedMarker>>>("out_detected_markers");
 
       // Object Detection Parameters
       knnMatchRatio = 0.9f;
@@ -27,13 +27,16 @@ namespace mxre
     }
 
 
-    bool CudaORBDetector::logic(mxre::types::Frame *inFrame,
-                                std::vector<mxre::cv_types::DetectedMarker> *outDetectedMarkers)
+    bool CudaORBDetector::logic(types::Message<types::Frame> &inFrame,
+                                types::Message<std::vector<cv_types::DetectedMarker>> &outDetectedMarkers)
     {
       std::vector<cv::KeyPoint> frameKps;
+      outDetectedMarkers.tag = inFrame.tag;
+      outDetectedMarkers.seq = inFrame.seq;
+      outDetectedMarkers.ts  = inFrame.ts;
 
       // 1. prepare gary frame
-      cv::Mat grayFrame = inFrame->useAsCVMat();
+      cv::Mat grayFrame = inFrame.data.useAsCVMat();
       cv::cvtColor(grayFrame, grayFrame, CV_BGR2GRAY);
       cuFrame.upload(grayFrame);
 
@@ -41,7 +44,7 @@ namespace mxre
       detector->detectAndComputeAsync(cuFrame, cv::noArray(), cuKp, cuDesc, false, stream);
       stream.waitForCompletion();
       detector->convert(cuKp, frameKps);
-      inFrame->release(); // deallocate the frame memory
+      inFrame.data.release(); // deallocate the frame memory
 
       // 3. multi-obj detection
       std::vector<mxre::cv_types::MarkerInfo>::iterator markerInfo;
@@ -97,7 +100,7 @@ namespace mxre
             detectedMarker.index = markerInfo->index;
             detectedMarker.defaultLocationIn3D = markerInfo->defaultLocationIn3D;
             perspectiveTransform(markerInfo->defaultLocationIn2D, detectedMarker.locationIn2D, homography);
-            outDetectedMarkers->push_back(detectedMarker);
+            outDetectedMarkers.data.push_back(detectedMarker);
           }
         }
       }
@@ -107,17 +110,18 @@ namespace mxre
 
 
     raft::kstatus CudaORBDetector::run() {
-      auto &inFrame(input["in_frame"].peek<mxre::types::Frame>());
-      auto &outDetectedMarkers(output["out_detected_markers"].allocate<std::vector<mxre::cv_types::DetectedMarker>>());
+      types::Message<types::Frame> &inFrame = input["in_frame"].peek<types::Message<types::Frame>>();
+      types::Message<std::vector<cv_types::DetectedMarker>> &outDetectedMarkers = \
+                output["out_detected_markers"].allocate<types::Message<std::vector<cv_types::DetectedMarker>>>();
 
 #ifdef __PROFILE__
       startTimeStamp = getTimeStampNow();
 #endif
 
 
-      if(logic(&inFrame, &outDetectedMarkers)) {
+      if(logic(inFrame, outDetectedMarkers)) {
         output["out_detected_markers"].send();
-        sendPrimitiveCopy("out_detected_markers", &outDetectedMarkers);
+        sendPrimitiveCopy("out_detected_markers", outDetectedMarkers);
       }
 
       recyclePort("in_frame");

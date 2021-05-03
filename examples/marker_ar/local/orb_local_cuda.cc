@@ -53,7 +53,7 @@ int main()
   // obj ctx extractor - obj renderer
   pipeline.link(&bagCam, "out_frame2", &objRenderer, "in_frame", 1);
   pipeline.link(&markerCtxExtractor, "out_marker_contexts", &objRenderer, "in_marker_contexts", 1);
-  pipeline.link(&keyboard, "out_keystroke", &objRenderer, "in_keystroke", 1);
+  pipeline.link(&keyboard, "out_key", &objRenderer, "in_key", 1);
 
   // obj renderer - test sink
   pipeline.link(&objRenderer, "out_frame", &nonDisplay, "in_frame", 1);

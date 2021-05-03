@@ -87,7 +87,7 @@ int main(int argc, char const *argv[])
 
   pipeline += bagCam["out_frame2"] >> objRenderer["in_frame"];
   pipeline += markerCtxExtractor["out_marker_contexts"] >> objRenderer["in_marker_contexts"];
-  pipeline.link(&keyboard, "out_keystroke", &objRenderer, "in_keystroke", 1);
+  pipeline.link(&keyboard, "out_key", &objRenderer, "in_key", 1);
 
   pipeline += objRenderer["out_frame"] >> nonDisplay["in_frame"];
 

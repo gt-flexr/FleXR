@@ -18,7 +18,8 @@ namespace mxre {
       ~RTPSender();
       RTPSender(std::string dest, int even_port);
       bool send(uint8_t *inData, uint32_t inDataSize);
-      bool sendWithTrackingInfo(uint8_t *inData, uint32_t inDataSize, uint32_t index, double timestamp);
+      bool sendWithTrackingInfo(uint8_t *inData, uint32_t inDataSize,
+                                std::string tag, uint32_t seq, double ts);
     };
   }
 }

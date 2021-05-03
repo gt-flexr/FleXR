@@ -34,8 +34,8 @@ namespace mxre
       void setIntrinsic(cv::Mat inIntrinsic) {camIntrinsic = inIntrinsic.clone();}
       void setDistCoeffs(cv::Mat inDistCoeffs) {camDistCoeffs = inDistCoeffs.clone();}
       virtual raft::kstatus run();
-      bool logic(std::vector<mxre::cv_types::DetectedMarker> *inDetectedMarkers,
-                 std::vector<mxre::gl_types::ObjectContext> *outMarkerContexts);
+      bool logic(types::Message<std::vector<cv_types::DetectedMarker>> &inDetectedMarkers,
+                 types::Message<std::vector<gl_types::ObjectContext>> &outMarkerContexts);
     };
 
   }   // namespace pipeline

@@ -7,11 +7,11 @@ namespace mxre
 {
   namespace kernels
   {
-    BagCamera::BagCamera(std::string bagPath, std::string bagTopic): MXREKernel()
+    BagCamera::BagCamera(std::string tag, std::string bagPath, std::string bagTopic): MXREKernel(tag)
     {
       if(!bagReader.openBag(bagPath, bagTopic)) exit(1);
       frameIndex = 0;
-      addOutputPort<mxre::types::Frame>("out_frame");
+      addOutputPort<types::Message<types::Frame>>("out_frame");
 
 #ifdef __PROFILE__
       if(logger == NULL) initLoggerST("bag_camera", "logs/" + std::to_string(pid) + "/bag_camera.log");
@@ -36,12 +36,14 @@ namespace mxre
       sleepForMS((periodMS-periodAdj >= 0) ? periodMS-periodAdj : 0); // control read frequency
       periodStart = getTimeStampNowUint();
 
-      auto &outFrame( output["out_frame"].allocate<mxre::types::Frame>() );
-      outFrame = bagReader.getNextFrame();
-      outFrame.index = frameIndex++;
-      outFrame.timestamp = getTimeStampNow();
+      types::Message<types::Frame> &outFrame = output["out_frame"].allocate<types::Message<types::Frame>>();
 
-      sendFrames("out_frame", &outFrame);
+      outFrame.data = bagReader.getNextFrame();
+      outFrame.tag  = tag;
+      outFrame.seq  = frameIndex++;
+      outFrame.ts   = getTimeStampNow();
+
+      sendFrames("out_frame", outFrame);
 
       periodEnd = getTimeStampNowUint();
       periodAdj = periodEnd - periodStart;
