@@ -14,6 +14,8 @@
 #include "utils/cv_utils.h"
 #include "kernels/kernel.h"
 #include "types/kimera/types.h"
+#include <ctime>
+#include <chrono>
 
 namespace mxre
 {
@@ -59,6 +61,30 @@ namespace mxre
         return true;
       }
 
+      void print_current_date(void){
+        std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
+        auto duration = now.time_since_epoch();
+
+        typedef std::chrono::duration<int, std::ratio_multiply<std::chrono::hours::period, std::ratio<8>
+        >::type> Days; /* UTC: +8:00 */
+
+        Days days = std::chrono::duration_cast<Days>(duration);
+            duration -= days;
+        auto hours = std::chrono::duration_cast<std::chrono::hours>(duration);
+            duration -= hours;
+        auto minutes = std::chrono::duration_cast<std::chrono::minutes>(duration);
+            duration -= minutes;
+        auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration);
+            duration -= seconds;
+        auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+            duration -= milliseconds;
+        auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(duration);
+            duration -= microseconds;
+        auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration);
+
+        profile_print("%u:%u:%u:%u:%u:%u", hours.count(), minutes.count(), seconds.count(), milliseconds.count(), microseconds.count(), nanoseconds.count());
+      }
+
       //sizeof(mxre::types::Frame)=72
       //frame->dataSize=360960
       //sizeof(mxre::types::Frame)=72
@@ -67,6 +93,8 @@ namespace mxre
       //sizeof(cam_data->imu_count)=4
       //sizeof(cam_data->dataset_time)=8
       void recv_cam_type(OUT_T* cam_data_) {
+        print_current_date();
+
         if (sock == NULL || ctx == NULL) {
           std::cerr << "ILLIXRSink is not set." << std::endl;
           return;
@@ -108,6 +136,9 @@ namespace mxre
         // printf("%lu %lu %llu %llu %llu\n",cam_data->img0->dataSize,cam_data->img1->dataSize,((mxre::kimera_type::imu_type*) &buffer_cam_imu_variable_data[cam_data->img0->dataSize+cam_data->img1->dataSize])->dataset_time,((mxre::kimera_type::imu_type*) &buffer_cam_imu_variable_data[cam_data->img0->dataSize+cam_data->img1->dataSize])[1].dataset_time,((mxre::kimera_type::imu_type*) &buffer_cam_imu_variable_data[cam_data->img0->dataSize+cam_data->img1->dataSize])[2].dataset_time);
         delete[] buffer_cam_metadata;
         delete[] buffer_cam_imu_variable_data;
+        //usleep(50000);
+        print_current_date();
+
         return;
       }
 

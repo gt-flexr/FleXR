@@ -6,6 +6,8 @@
 #include "defs.h"
 #include "types/frame.h"
 #include "types/kimera/types.h"
+#include <ctime>
+#include <chrono>
 
 namespace mxre {
   namespace kernels {
@@ -39,16 +41,45 @@ namespace mxre {
         debug_print("bindingAddr: %s connected\n", bindingAddr.c_str());
       }
 
+      void print_current_date(void){
+        std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
+        auto duration = now.time_since_epoch();
+
+        typedef std::chrono::duration<int, std::ratio_multiply<std::chrono::hours::period, std::ratio<8>
+        >::type> Days; /* UTC: +8:00 */
+
+        Days days = std::chrono::duration_cast<Days>(duration);
+            duration -= days;
+        auto hours = std::chrono::duration_cast<std::chrono::hours>(duration);
+            duration -= hours;
+        auto minutes = std::chrono::duration_cast<std::chrono::minutes>(duration);
+            duration -= minutes;
+        auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration);
+            duration -= seconds;
+        auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+            duration -= milliseconds;
+        auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(duration);
+            duration -= microseconds;
+        auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration);
+
+        profile_print("%u:%u:%u:%u:%u:%u", hours.count(), minutes.count(), seconds.count(), milliseconds.count(), microseconds.count(), nanoseconds.count());
+      }
+
 
       void recv_kimera_output(OUT_T* kimera_output_) {
+        print_current_date();
+        mxre::types::TimeVal start = getNow();
+        
         if (sock == NULL || ctx == NULL) {
           std::cerr << "ILLIXRZMQSink is not set." << std::endl;
           return;
         }
-        
         mxre::kimera_type::kimera_output *kimera_output = (mxre::kimera_type::kimera_output*) kimera_output_;
         zmq_recv(sock, kimera_output, sizeof(mxre::kimera_type::kimera_output), 0);
-        // debug_print("ILLIXR RECIEVED DATA FROM MXRE (4)");
+        
+        print_current_date();
+        mxre::types::TimeVal end = getNow();
+        debug_print("Exe Time ILLIXR Appsource: %lfms", getExeTime(end, start));
         
         return;
       }
@@ -59,4 +90,3 @@ namespace mxre {
 }
 
 #endif
-

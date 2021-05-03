@@ -14,6 +14,8 @@
 #include "types/kimera/types.h"
 #include "utils/cv_utils.h"
 #include "kernels/kernel.h"
+#include <ctime>
+#include <chrono>
 
 namespace mxre
 {
@@ -51,8 +53,33 @@ namespace mxre
         debug_print("connectAddr: %s bound\n", connectAddr.c_str());
       }
 
+      void print_current_date(void){
+        std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
+        auto duration = now.time_since_epoch();
+
+        typedef std::chrono::duration<int, std::ratio_multiply<std::chrono::hours::period, std::ratio<8>
+        >::type> Days; /* UTC: +8:00 */
+
+        Days days = std::chrono::duration_cast<Days>(duration);
+            duration -= days;
+        auto hours = std::chrono::duration_cast<std::chrono::hours>(duration);
+            duration -= hours;
+        auto minutes = std::chrono::duration_cast<std::chrono::minutes>(duration);
+            duration -= minutes;
+        auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration);
+            duration -= seconds;
+        auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+            duration -= milliseconds;
+        auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(duration);
+            duration -= microseconds;
+        auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration);
+
+        profile_print("%u:%u:%u:%u:%u:%u", hours.count(), minutes.count(), seconds.count(), milliseconds.count(), microseconds.count(), nanoseconds.count());
+      }
+
       //sizeof(mxre::kimera_type::kimera_output)==256
       void sendKimeraOutput(IN_T* output_data_) {
+        print_current_date();
         if (sock == NULL || ctx == NULL) {
           std::cerr << "ILLIXRSink is not set." << std::endl;
           return;
@@ -60,6 +87,7 @@ namespace mxre
 
         mxre::kimera_type::kimera_output *output_data = (mxre::kimera_type::kimera_output*) output_data_;
         zmq_send(sock, output_data, sizeof(mxre::kimera_type::kimera_output), 0);
+        print_current_date();
       }
 
 
