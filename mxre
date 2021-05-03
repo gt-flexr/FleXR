@@ -66,10 +66,8 @@
 #include "./mxreinc/kernels/source/bag_camera.h"
 #include "./mxreinc/kernels/source/cv_camera.h"
 #include "./mxreinc/kernels/source/ffmpeg_rtp_receiver.h"
-#include "./mxreinc/kernels/source/image_loader.h"
 #include "./mxreinc/kernels/source/keyboard.h"
 #include "./mxreinc/kernels/source/message_receiver.h"
-#include "./mxreinc/kernels/source/mock_camera.h"
 #include "./mxreinc/kernels/source/prediction_receiver.h"
 #include "./mxreinc/kernels/source/rtp_frame_receiver.h"
 
