@@ -11,7 +11,8 @@ namespace mxre {
 
     /* sendPrimitive */
     template<typename T>
-    void sendPrimitive(T *data, zmq::socket_t *sock) {
+    void sendPrimitive(T *data, zmq::socket_t *sock)
+    {
       zmq::message_t sendingMsg(data, sizeof(T)), ackMsg;
       sock->send(sendingMsg, zmq::send_flags::none);
     }
@@ -19,7 +20,8 @@ namespace mxre {
 
     /* sendPrimitiveVector */
     template<typename T>
-    void sendPrimitiveVector(T *data, zmq::socket_t *sock) {
+    void sendPrimitiveVector(T *data, zmq::socket_t *sock)
+    {
       int numOfElem = data->size();
       zmq::message_t sendingMsg(data->begin(), data->end()), ackMsg;
 
@@ -30,12 +32,15 @@ namespace mxre {
 
     /* sendDetectedMarkers */
     using DetectedMarkerMessageType = types::Message<std::vector<cv_types::DetectedMarker>>;
-    void sendDetectedMarkers(DetectedMarkerMessageType *data, zmq::socket_t *sock) {
+    void sendDetectedMarkers(DetectedMarkerMessageType *data, zmq::socket_t *sock)
+    {
       zmq::message_t ackMsg;
 
       // send num of detected markers
       int numOfDetectedMarkers = data->data.size();
-      sock->send(zmq::message_t(data, sizeof(DetectedMarkerMessageType)), zmq::send_flags::sndmore);
+      sock->send(zmq::message_t(data->tag, MXRE_MSG_TAG_SIZE), zmq::send_flags::sndmore);
+      sock->send(zmq::message_t(&data->seq, sizeof(data->seq)), zmq::send_flags::sndmore);
+      sock->send(zmq::message_t(&data->ts, sizeof(data->ts)), zmq::send_flags::sndmore);
       sock->send(zmq::message_t(&numOfDetectedMarkers, sizeof(int)), zmq::send_flags::none);
 
       for(int i = 0; i < data->data.size(); i++) {

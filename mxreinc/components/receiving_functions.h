@@ -12,14 +12,16 @@ namespace mxre {
 
     /* recvPrimitive */
     template<typename T>
-    void recvPrimitive(T *data, zmq::socket_t *sock) {
+    void recvPrimitive(T *data, zmq::socket_t *sock)
+    {
       sock->recv( zmq::buffer(data, sizeof(T)) );
     }
 
 
     /* recvPrimitiveVector */
     template<typename T>
-    void recvPrimitiveVector(T *data, zmq::socket_t *sock) {
+    void recvPrimitiveVector(T *data, zmq::socket_t *sock)
+    {
       int numOfElem;
 
       sock->recv(zmq::buffer(&numOfElem, sizeof(int)), zmq::recv_flags::none);
@@ -30,23 +32,22 @@ namespace mxre {
 
     /* recvDetectedMarkers */
     using DetectedMarkerMessageType = types::Message<std::vector<cv_types::DetectedMarker>>;
-    void recvDetectedMarkers(DetectedMarkerMessageType *data, zmq::socket_t *sock) {
+    void recvDetectedMarkers(DetectedMarkerMessageType *data, zmq::socket_t *sock)
+    {
       int numOfDetectedMarkers;
 
-      sock->recv(zmq::buffer(data, sizeof(DetectedMarkerMessageType)), zmq::recv_flags::none);
+      sock->recv(zmq::buffer(data->tag, MXRE_MSG_TAG_SIZE), zmq::recv_flags::none);
+      sock->recv(zmq::buffer(&data->seq, sizeof(data->seq)), zmq::recv_flags::none);
+      sock->recv(zmq::buffer(&data->ts, sizeof(data->ts)), zmq::recv_flags::none);
       sock->recv(zmq::buffer(&numOfDetectedMarkers, sizeof(int)), zmq::recv_flags::none);
+      debug_print("%s %d %f %d", data->tag, data->seq, data->ts, numOfDetectedMarkers);
 
       for(int i = 0; i < numOfDetectedMarkers; i++) {
         mxre::cv_types::DetectedMarker detectedMarker;
-        //detectedMarker.defaultLocationIn3D.resize(4);
-        //detectedMarker.locationIn2D.resize(4);
         std::vector<mxre::cv_types::Point3fForCommunication> defaultLocationIn3D;
         std::vector<mxre::cv_types::Point2fForCommunication> locationIn2D;
         defaultLocationIn3D.resize(4);
         locationIn2D.resize(4);
-
-        //zmq::message_t defaultLocationIn3DMsg(defaultLocationIn3D.begin(), defaultLocationIn3D.end());
-        //zmq::message_t locationIn2DMsg(locationIn2D.begin(), locationIn2D.end());
 
         sock->recv(zmq::buffer(&detectedMarker.index, sizeof(int)), zmq::recv_flags::none);
         sock->recv(zmq::buffer(defaultLocationIn3D), zmq::recv_flags::none);
