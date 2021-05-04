@@ -55,19 +55,17 @@ namespace mxre
 
 
     /* Kernel Logic */
-    bool ObjectRenderer::logic(types::Message<types::Frame> &inFrame,
-                               types::Message<std::vector<gl_types::ObjectContext>> &inMarkerContexts,
+    bool ObjectRenderer::logic(types::Message<std::vector<gl_types::ObjectContext>> &inMarkerContexts,
                                char inKey,
                                types::Message<types::Frame> &outFrame)
     {
       // 1. Create/update background texture & release previous CV frame
       if(glIsTexture(backgroundTexture)) {
-        mxre::gl_utils::updateTextureFromFrame(&inFrame.data, backgroundTexture);
+        mxre::gl_utils::updateTextureFromFrame(&cachedBackgroundFrame, backgroundTexture);
       }
       else {
-        mxre::gl_utils::makeTextureFromFrame(&inFrame.data, backgroundTexture);
+        mxre::gl_utils::makeTextureFromFrame(&cachedBackgroundFrame, backgroundTexture);
       }
-      inFrame.data.release();
 
       // 2. Draw background frame
       glClearColor(1.0, 1.0, 1.0, 1.0);
@@ -103,13 +101,18 @@ namespace mxre
       }
 
       // 0.0.Get inputs from the previous kernel: ObjectDetector
-      types::Message<types::Frame> &inFrame = input["in_frame"].peek<types::Message<types::Frame>>();
       types::Message<std::vector<gl_types::ObjectContext>> &inMarkerContexts = \
                               input["in_marker_contexts"].peek<types::Message<std::vector<gl_types::ObjectContext>>>();
       types::Message<types::Frame> &outFrame = output["out_frame"].allocate<types::Message<types::Frame>>();
 #ifdef __PROFILE__
       startTimeStamp = getTimeStampNow();
 #endif
+      if (checkPort("in_frame")) {
+        types::Message<types::Frame> &inFrame = input["in_frame"].peek<types::Message<types::Frame>>();
+        cachedBackgroundFrame = inFrame.data.clone();
+        inFrame.data.release();
+        recyclePort("in_frame");
+      }
 
       // 0.1.Get input keystroke from Keyboard
       char key;
@@ -123,7 +126,7 @@ namespace mxre
 
       // 0.2.Set output
 
-      if(logic(inFrame, inMarkerContexts, key, outFrame)) {
+      if(logic(inMarkerContexts, key, outFrame)) {
         sendFrames("out_frame", outFrame);
       }
 

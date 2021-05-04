@@ -1,10 +1,11 @@
 #ifndef __MXRE_RECEIVING_FUNCS__
 #define __MXRE_RECEIVING_FUNCS__
 
-#include<zmq.hpp>
-#include<zmq_addon.hpp>
-#include"defs.h"
-#include"types/cv/types.h"
+#include <zmq.hpp>
+#include <zmq_addon.hpp>
+#include "defs.h"
+#include "types/cv/types.h"
+#include "types/types.h"
 
 namespace mxre {
   namespace utils {
@@ -28,9 +29,11 @@ namespace mxre {
 
 
     /* recvDetectedMarkers */
-    void recvDetectedMarkers(std::vector<mxre::cv_types::DetectedMarker> *data, zmq::socket_t *sock) {
+    using DetectedMarkerMessageType = types::Message<std::vector<cv_types::DetectedMarker>>;
+    void recvDetectedMarkers(DetectedMarkerMessageType *data, zmq::socket_t *sock) {
       int numOfDetectedMarkers;
 
+      sock->recv(zmq::buffer(data, sizeof(DetectedMarkerMessageType)), zmq::recv_flags::none);
       sock->recv(zmq::buffer(&numOfDetectedMarkers, sizeof(int)), zmq::recv_flags::none);
 
       for(int i = 0; i < numOfDetectedMarkers; i++) {
@@ -61,7 +64,7 @@ namespace mxre {
           detectedMarker.locationIn2D.push_back(new2DPoint);
         }
 
-        data->push_back(detectedMarker);
+        data->data.push_back(detectedMarker);
       }
     }
 
