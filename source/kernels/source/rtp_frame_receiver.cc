@@ -69,7 +69,7 @@ namespace mxre
       uint8_t *recvDataBuffer = nullptr;
       uint32_t recvDataSize = 0;
 
-      if(rtpReceiver.receiveDynamicWithTrackinInfo(&recvDataBuffer, recvDataSize,
+      if(rtpReceiver.receiveDynamicWithTrackingInfo(&recvDataBuffer, recvDataSize,
                                                    outFrame.tag, outFrame.seq, outFrame.ts))
       {
 #ifdef __PROFILE__

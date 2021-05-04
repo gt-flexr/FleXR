@@ -35,7 +35,7 @@ namespace mxre {
     }
 
 
-    bool RTPReceiver::receiveDynamicWithTrackinInfo(uint8_t **outDataBuffer, uint32_t &outDataSize,
+    bool RTPReceiver::receiveDynamicWithTrackingInfo(uint8_t **outDataBuffer, uint32_t &outDataSize,
                                                     std::string &outTag, uint32_t &outSeq, double &outTs)
     {
       types::RTPTrackingInfo trackingInfo;
@@ -75,7 +75,7 @@ namespace mxre {
     }
 
 
-    bool RTPReceiver::receiveStaticWithTrackinInfo(uint32_t inDataSize, uint8_t *outReceivedData,
+    bool RTPReceiver::receiveStaticWithTrackingInfo(uint32_t inDataSize, uint8_t *outReceivedData,
                                                    std::string &outTag, uint32_t &outSeq, double &outTs)
     {
       types::RTPTrackingInfo trackingInfo;

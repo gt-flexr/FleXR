@@ -1,9 +1,10 @@
 #ifndef __MXRE_SENDING_FUNCS__
 #define __MXRE_SENDING_FUNCS__
 
-#include<zmq.hpp>
-#include"defs.h"
-#include"types/cv/types.h"
+#include <zmq.hpp>
+#include "defs.h"
+#include "types/cv/types.h"
+#include "types/types.h"
 
 namespace mxre {
   namespace utils {
@@ -28,29 +29,31 @@ namespace mxre {
 
 
     /* sendDetectedMarkers */
-    void sendDetectedMarkers(std::vector<mxre::cv_types::DetectedMarker> *data, zmq::socket_t *sock) {
+    using DetectedMarkerMessageType = types::Message<std::vector<cv_types::DetectedMarker>>;
+    void sendDetectedMarkers(DetectedMarkerMessageType *data, zmq::socket_t *sock) {
       zmq::message_t ackMsg;
 
       // send num of detected markers
-      int numOfDetectedMarkers = data->size();
+      int numOfDetectedMarkers = data->data.size();
+      sock->send(zmq::message_t(data, sizeof(DetectedMarkerMessageType)), zmq::send_flags::sndmore);
       sock->send(zmq::message_t(&numOfDetectedMarkers, sizeof(int)), zmq::send_flags::none);
 
-      for(int i = 0; i < data->size(); i++) {
-        zmq::message_t indexMsg(&(*data)[i].index, sizeof(int));
+      for(int i = 0; i < data->data.size(); i++) {
+        zmq::message_t indexMsg(&(data->data)[i].index, sizeof(int));
 
         std::vector<mxre::cv_types::Point3fForCommunication> defaultLocationIn3D;
         std::vector<mxre::cv_types::Point2fForCommunication> locationIn2D;
 
         for(int j = 0; j < 4; j++) {
           mxre::cv_types::Point3fForCommunication new3DPoint;
-          new3DPoint.x = (*data)[i].defaultLocationIn3D[j].x;
-          new3DPoint.y = (*data)[i].defaultLocationIn3D[j].y;
-          new3DPoint.z = (*data)[i].defaultLocationIn3D[j].z;
+          new3DPoint.x = (data->data)[i].defaultLocationIn3D[j].x;
+          new3DPoint.y = (data->data)[i].defaultLocationIn3D[j].y;
+          new3DPoint.z = (data->data)[i].defaultLocationIn3D[j].z;
           defaultLocationIn3D.push_back(new3DPoint);
 
           mxre::cv_types::Point2fForCommunication new2DPoint;
-          new2DPoint.x = (*data)[i].locationIn2D[j].x;
-          new2DPoint.y = (*data)[i].locationIn2D[j].y;
+          new2DPoint.x = (data->data)[i].locationIn2D[j].x;
+          new2DPoint.y = (data->data)[i].locationIn2D[j].y;
           locationIn2D.push_back(new2DPoint);
         }
 
