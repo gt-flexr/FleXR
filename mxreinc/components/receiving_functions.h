@@ -18,15 +18,18 @@ namespace mxre {
     }
 
 
-    /* recvPrimitiveVector */
+    // recvPrimitiveVector type T should be mxre::types::Message<vector<TYPE>>
     template<typename T>
     void recvPrimitiveVector(T *data, zmq::socket_t *sock)
     {
       int numOfElem;
 
+      sock->recv(zmq::buffer(data->tag, MXRE_MSG_TAG_SIZE), zmq::recv_flags::none);
+      sock->recv(zmq::buffer(&data->seq, sizeof(data->seq)), zmq::recv_flags::none);
+      sock->recv(zmq::buffer(&data->ts, sizeof(data->ts)), zmq::recv_flags::none);
       sock->recv(zmq::buffer(&numOfElem, sizeof(int)), zmq::recv_flags::none);
-      data->resize(numOfElem);
-      sock->recv(zmq::buffer(*data), zmq::recv_flags::none);
+      data->data.resize(numOfElem);
+      sock->recv(zmq::buffer(data->data), zmq::recv_flags::none);
     }
 
 

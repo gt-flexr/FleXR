@@ -22,9 +22,12 @@ namespace mxre {
     template<typename T>
     void sendPrimitiveVector(T *data, zmq::socket_t *sock)
     {
-      int numOfElem = data->size();
-      zmq::message_t sendingMsg(data->begin(), data->end()), ackMsg;
+      int numOfElem = data->data.size();
+      zmq::message_t sendingMsg(data->data.begin(), data->data.end()), ackMsg;
 
+      sock->send(zmq::message_t(data->tag, MXRE_MSG_TAG_SIZE), zmq::send_flags::sndmore);
+      sock->send(zmq::message_t(&data->seq, sizeof(data->seq)), zmq::send_flags::sndmore);
+      sock->send(zmq::message_t(&data->ts, sizeof(data->ts)), zmq::send_flags::sndmore);
       sock->send(zmq::message_t(&numOfElem, sizeof(int)), zmq::send_flags::sndmore);
       sock->send(sendingMsg, zmq::send_flags::none);
     }

@@ -2,6 +2,7 @@
 #include <raftinc/rafttypes.hpp>
 
 using namespace std;
+using ObjectContextMessageType = mxre::types::Message<std::vector<mxre::gl_types::ObjectContext>>;
 
 class TestSink: public mxre::kernels::MXREKernel {
   public:
@@ -66,16 +67,16 @@ int main(int argc, char const *argv[])
 
   // Create mxre components
   raft::map pipeline;
-  mxre::kernels::BagCamera bagCam(bagFile, bagTopic);
+  mxre::kernels::BagCamera bagCam("bag_frame", bagFile, bagTopic);
   bagCam.setFramesToCache(400, 400);
   bagCam.setFPS(bagFPS);
-  bagCam.duplicateOutPort<mxre::types::Frame>("out_frame", "out_frame2");
+  bagCam.duplicateOutPort<mxre::types::Message<mxre::types::Frame>>("out_frame", "out_frame2");
   mxre::kernels::Keyboard keyboard;
   mxre::kernels::RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder,
                                                width, height, width*height*4, bagFPS);
-  mxre::kernels::MessageReceiver<std::vector<mxre::gl_types::ObjectContext>> markerCtxReceiver(
-      clientMessagePort,
-      mxre::utils::recvPrimitiveVector<std::vector<mxre::gl_types::ObjectContext>>);
+  mxre::kernels::MessageReceiver<ObjectContextMessageType> markerCtxReceiver(
+                                                          clientMessagePort,
+                                                          mxre::utils::recvPrimitiveVector<ObjectContextMessageType>);
   mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), width, height);
   mxre::kernels::NonDisplay nonDisplay;
   //TestSink testSink;
