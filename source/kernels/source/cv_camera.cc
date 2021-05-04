@@ -6,7 +6,7 @@ namespace mxre
   namespace kernels
   {
     /* Constructor */
-    CVCamera::CVCamera(std::string tag, int dev_idx, int width, int height) : MXREKernel(tag),
+    CVCamera::CVCamera(std::string id, int dev_idx, int width, int height) : MXREKernel(id),
         intrinsic(3, 3, CV_64FC1),
         distCoeffs(4, 1, CV_64FC1, {0, 0, 0, 0}), width(width), height(height)
     {
@@ -61,7 +61,7 @@ namespace mxre
       cv::Mat outFrameAsCVMat = outFrame.data.useAsCVMat();
       cam.read(outFrameAsCVMat);
 
-      outFrame.tag  = tag;
+      strcpy(outFrame.tag, "cvcam_frame");
       outFrame.seq  = frameIndex++;
       outFrame.ts   = getTimeStampNow();
 

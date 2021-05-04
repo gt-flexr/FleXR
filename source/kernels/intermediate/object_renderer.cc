@@ -85,7 +85,7 @@ namespace mxre
       worldManager.startWorlds(inKey, inMarkerContexts.data);
 
       outFrame.data = mxre::gl_utils::exportGLBufferToCV(width, height, 0, 0);
-      outFrame.tag = inMarkerContexts.tag;
+      strcpy(outFrame.tag, inMarkerContexts.tag);
       outFrame.seq = inMarkerContexts.seq;
       outFrame.ts  = inMarkerContexts.ts;
       return true;

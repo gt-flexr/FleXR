@@ -19,10 +19,10 @@ namespace mxre {
       RTPReceiver(std::string ip, int even_port);
       bool receiveDynamic(uint8_t **outDataBuffer, uint32_t &outDataSize);
       bool receiveDynamicWithTrackingInfo(uint8_t **outDataBuffer, uint32_t &outDataSize,
-                                         std::string &outTag, uint32_t &outSeq, double &outTs);
+                                         char *outTag, uint32_t &outSeq, double &outTs);
       bool receiveStatic(uint32_t inDataSize, void *outReceivedData);
       bool receiveStaticWithTrackingInfo(uint32_t inDataSize, uint8_t *outReceivedData,
-                                        std::string &outTag, uint32_t &outSeq, double &outTs);
+                                         char *outTag, uint32_t &outSeq, double &outTs);
 
       void unrefFrameExceptData(uvg_rtp::frame::rtp_frame *rtpFrame);
     };

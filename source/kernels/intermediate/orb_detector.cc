@@ -38,7 +38,7 @@ namespace mxre
     {
       std::vector<cv::KeyPoint> frameKps;
       cv::Mat frameDesc;
-      outDetectedMarkers.tag = inFrame.tag;
+      strcpy(outDetectedMarkers.tag, inFrame.tag);
       outDetectedMarkers.seq = inFrame.seq;
       outDetectedMarkers.ts  = inFrame.ts;
 

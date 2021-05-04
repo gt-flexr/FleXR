@@ -18,7 +18,7 @@ namespace mxre
       uint32_t seq;
 
     public:
-      Keyboard(std::string tag="keystroke");
+      Keyboard();
       ~Keyboard();
       virtual raft::kstatus run();
     };

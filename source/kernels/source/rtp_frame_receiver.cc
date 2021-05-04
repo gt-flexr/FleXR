@@ -70,14 +70,14 @@ namespace mxre
       uint32_t recvDataSize = 0;
 
       if(rtpReceiver.receiveDynamicWithTrackingInfo(&recvDataBuffer, recvDataSize,
-                                                   outFrame.tag, outFrame.seq, outFrame.ts))
+                                                    outFrame.tag, outFrame.seq, outFrame.ts))
       {
 #ifdef __PROFILE__
         startTimeStamp = getTimeStampNow();
 #endif
 
-        //debug_print("recvDataInfo: Index(%d) TS(%f) Size(%d) %p", outFrame.index, outFrame.timestamp,
-        //                                                          recvDataSize, recvDataBuffer);
+        debug_print("recvDataInfo: Index(%d) TS(%f) Size(%d) %p", outFrame.seq, outFrame.ts,
+                                                                  recvDataSize, recvDataBuffer);
 
         av_packet_from_data(&decodingPacket, recvDataBuffer, recvDataSize);
         ret = avcodec_send_packet(decoderContext, &decodingPacket);

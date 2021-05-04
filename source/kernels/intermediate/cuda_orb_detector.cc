@@ -31,7 +31,7 @@ namespace mxre
                                 types::Message<std::vector<cv_types::DetectedMarker>> &outDetectedMarkers)
     {
       std::vector<cv::KeyPoint> frameKps;
-      outDetectedMarkers.tag = inFrame.tag;
+      strcpy(outDetectedMarkers.tag, inFrame.tag);
       outDetectedMarkers.seq = inFrame.seq;
       outDetectedMarkers.ts  = inFrame.ts;
 

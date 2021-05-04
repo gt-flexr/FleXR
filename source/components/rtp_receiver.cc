@@ -36,7 +36,7 @@ namespace mxre {
 
 
     bool RTPReceiver::receiveDynamicWithTrackingInfo(uint8_t **outDataBuffer, uint32_t &outDataSize,
-                                                    std::string &outTag, uint32_t &outSeq, double &outTs)
+                                                     char *outTag, uint32_t &outSeq, double &outTs)
     {
       types::RTPTrackingInfo trackingInfo;
       // RTP message: | trackinInfo |   Data   |
@@ -46,7 +46,7 @@ namespace mxre {
       //   - if tracking info is fine, receive data
       if(receiveStatic(sizeof(types::RTPTrackingInfo), &trackingInfo)) {
         if(trackingInfo.invoice == MXRE_RTP_TRACKING_INVOICE) {
-          outTag = trackingInfo.tag;
+          strcpy(outTag, trackingInfo.tag);
           outSeq = trackingInfo.seq;
           outTs = trackingInfo.ts;
           if(receiveDynamic(outDataBuffer, outDataSize)) return true;
@@ -76,7 +76,7 @@ namespace mxre {
 
 
     bool RTPReceiver::receiveStaticWithTrackingInfo(uint32_t inDataSize, uint8_t *outReceivedData,
-                                                   std::string &outTag, uint32_t &outSeq, double &outTs)
+                                                   char *outTag, uint32_t &outSeq, double &outTs)
     {
       types::RTPTrackingInfo trackingInfo;
       // RTP message: | trackinInfo |   Data   |
@@ -86,7 +86,7 @@ namespace mxre {
       //   - if tracking info is fine, receive data
       if(receiveStatic(sizeof(types::RTPTrackingInfo), &trackingInfo)) {
         if(trackingInfo.invoice == MXRE_RTP_TRACKING_INVOICE) {
-          outTag = trackingInfo.tag;
+          strcpy(outTag, trackingInfo.tag);
           outSeq = trackingInfo.seq;
           outTs = trackingInfo.ts;
           if(receiveStatic(inDataSize, outReceivedData)) return true;

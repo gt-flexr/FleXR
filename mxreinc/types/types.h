@@ -2,13 +2,14 @@
 #define __MXRE_TYPES__
 
 #include <bits/stdc++.h>
+#include <defs.h>
 
 // TODO: integrate all the types into this file
 namespace mxre {
   namespace types {
     typedef struct RTPTrackingInfo {
       int32_t invoice; // for sanity check
-      std::string tag;
+      char tag[MXRE_MSG_TAG_SIZE];
       uint32_t seq;
       double ts;
     } RTPTrackingInfo;
@@ -17,7 +18,7 @@ namespace mxre {
     class Message
     {
       public:
-      std::string tag;
+      char tag[MXRE_MSG_TAG_SIZE];
       uint32_t seq;
       double ts;
       T data;

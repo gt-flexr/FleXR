@@ -54,7 +54,7 @@ namespace mxre
     bool MarkerCtxExtractor::logic(types::Message<std::vector<cv_types::DetectedMarker>> &inDetectedMarkers,
                                    types::Message<std::vector<gl_types::ObjectContext>> &outMarkerContexts)
     {
-      outMarkerContexts.tag = inDetectedMarkers.tag;
+      strcpy(outMarkerContexts.tag, inDetectedMarkers.tag);
       outMarkerContexts.seq = inDetectedMarkers.seq;
       outMarkerContexts.ts  = inDetectedMarkers.ts;
 

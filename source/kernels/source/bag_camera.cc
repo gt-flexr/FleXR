@@ -39,7 +39,7 @@ namespace mxre
       types::Message<types::Frame> &outFrame = output["out_frame"].allocate<types::Message<types::Frame>>();
 
       outFrame.data = bagReader.getNextFrame();
-      outFrame.tag  = tag;
+      strcpy(outFrame.tag, "bagcam_frame");
       outFrame.seq  = frameIndex++;
       outFrame.ts   = getTimeStampNow();
 

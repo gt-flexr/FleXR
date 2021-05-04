@@ -43,7 +43,7 @@ namespace mxre
     class MXREKernel : public raft::kernel
     {
       protected:
-        std::string tag;
+        std::string id;
         unsigned int periodMS;
         unsigned int periodStart, periodEnd, periodAdj;
         std::multimap<std::string, std::string> oPortMap;
@@ -69,15 +69,13 @@ namespace mxre
           periodStart = 0;
           periodEnd = 0;
           periodAdj = 0;
-          tag = "no_tag";
-#ifdef __PROFILE__
+          id = "no_id";
           pid = getpid();
-#endif
         }
 
-        MXREKernel(std::string tag): MXREKernel()
+        MXREKernel(std::string id): MXREKernel()
         {
-          this->tag = tag;
+          this->id = id;
         }
 
 
@@ -138,7 +136,7 @@ namespace mxre
           auto portRange = oPortMap.equal_range(id);
           for(auto i = portRange.first; i != portRange.second; ++i) {
             types::Message<types::Frame> &copiedFrame = output[i->second].allocate<types::Message<types::Frame>>();
-            copiedFrame.tag = frame.tag;
+            strcpy(copiedFrame.tag, frame.tag);
             copiedFrame.seq = frame.seq;
             copiedFrame.ts = frame.ts;
             copiedFrame.data = frame.data.clone();

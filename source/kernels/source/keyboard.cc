@@ -5,7 +5,7 @@ namespace mxre
 {
   namespace kernels
   {
-    Keyboard::Keyboard(std::string tag): MXREKernel(tag)
+    Keyboard::Keyboard(): MXREKernel()
     {
       seq = 0;
       output.addPort<types::Message<char>>("out_key");
@@ -19,7 +19,7 @@ namespace mxre
       types::Message<char> &key = output["out_key"].template allocate<types::Message<char>>();
 
       key.data = mxre::utils::getch();
-      key.tag  = tag;
+      strcpy(key.tag, "keystroke");
       key.seq  = seq++;
       key.ts   = getTimeStampNow();
 

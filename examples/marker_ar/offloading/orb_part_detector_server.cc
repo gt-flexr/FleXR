@@ -1,6 +1,7 @@
 #include <mxre>
 
 using namespace std;
+using DetectedMarkerMessageType = mxre::types::Message<std::vector<mxre::cv_types::DetectedMarker>>;
 
 int main(int argc, char const *argv[])
 {
@@ -36,10 +37,8 @@ int main(int argc, char const *argv[])
   raft::map pipeline;
   mxre::kernels::RTPFrameReceiver rtpFrameReceiver(serverFramePort, serverDecoder, width, height);
   mxre::kernels::CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
-  mxre::kernels::MessageSender<std::vector<mxre::cv_types::DetectedMarker>> detectedMarkerSender(
-      clientAddr,
-      clientMessagePort,
-      mxre::utils::sendDetectedMarkers);
+  mxre::kernels::MessageSender<DetectedMarkerMessageType> detectedMarkerSender(clientAddr, clientMessagePort,
+                                                                               mxre::utils::sendDetectedMarkers);
 
   pipeline += rtpFrameReceiver["out_frame"] >> cudaORBDetector["in_frame"];
   pipeline += cudaORBDetector["out_detected_markers"] >> detectedMarkerSender["in_data"];
