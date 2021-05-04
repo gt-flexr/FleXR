@@ -12,6 +12,7 @@ namespace mxre {
 
     RTPReceiver::RTPReceiver(std::string ip, int even_port)
     {
+      debug_print("Receive RTP stream from %s:%d", ip.c_str(), even_port);
       rtpSession = rtpContext.create_session(ip);
       rtpStream = rtpSession->create_stream(even_port, -1, RTP_FORMAT_GENERIC, RCE_FRAGMENT_GENERIC);
     }
