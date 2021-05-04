@@ -32,7 +32,8 @@ namespace mxre
     /* Constructor */
     template<typename IN_T>
     MessageSender<IN_T>::MessageSender(std::string addr, int port, void (*send)(IN_T*, zmq::socket_t*),
-        int sockType): MXREKernel() {
+                                       int sockType): MXREKernel()
+    {
       sock = zmq::socket_t(ctx, sockType);
       std::string connectingAddr = "tcp://" + addr + ":" + std::to_string(port);
       sock.connect(connectingAddr);

@@ -97,7 +97,8 @@ namespace mxre
               sendPrimitiveCopy("out_data", &outData);
               break;
             case MXRE_DTYPE_FRAME:
-              sendFrames("out_data", &outData);
+              //sendFrames("out_data", &outData);
+              output["out_data"].send();
               break;
           }
         }

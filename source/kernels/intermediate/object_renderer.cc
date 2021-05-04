@@ -12,10 +12,10 @@ namespace mxre
     ObjectRenderer::ObjectRenderer(std::vector<mxre::cv_types::MarkerInfo> registeredMarkers, int width, int height) :
       MXREKernel(), width(width), height(height)
     {
-      addInputPort<mxre::types::Frame>("in_frame");
-      addInputPort<std::vector<mxre::gl_types::ObjectContext>>("in_marker_contexts");
-      addInputPort<char>("in_keystroke");
-      addOutputPort<mxre::types::Frame>("out_frame");
+      addInputPort<types::Message<types::Frame>>("in_frame");
+      addInputPort<types::Message<std::vector<gl_types::ObjectContext>>>("in_marker_contexts");
+      addInputPort<types::Message<char>>("in_key");
+      addOutputPort<types::Message<types::Frame>>("out_frame");
 
       // 0. Create pbuf as a context
       pbuf = new mxre::egl_types::pbuffer;
@@ -55,19 +55,17 @@ namespace mxre
 
 
     /* Kernel Logic */
-    bool ObjectRenderer::logic(mxre::types::Frame *inFrame,
-                               std::vector<mxre::gl_types::ObjectContext> *inMarkerContexts,
-                               char inKey, mxre::types::Frame *outFrame)
+    bool ObjectRenderer::logic(types::Message<std::vector<gl_types::ObjectContext>> &inMarkerContexts,
+                               char inKey,
+                               types::Message<types::Frame> &outFrame)
     {
-      uint32_t frameIndex = inFrame->index;
-      double frameTimestamp = inFrame->timestamp;
-
       // 1. Create/update background texture & release previous CV frame
-      if(glIsTexture(backgroundTexture))
-        mxre::gl_utils::updateTextureFromFrame(inFrame, backgroundTexture);
-      else
-        mxre::gl_utils::makeTextureFromFrame(inFrame, backgroundTexture);
-      inFrame->release();
+      if(glIsTexture(backgroundTexture)) {
+        mxre::gl_utils::updateTextureFromFrame(&cachedBackgroundFrame, backgroundTexture);
+      }
+      else {
+        mxre::gl_utils::makeTextureFromFrame(&cachedBackgroundFrame, backgroundTexture);
+      }
 
       // 2. Draw background frame
       glClearColor(1.0, 1.0, 1.0, 1.0);
@@ -84,9 +82,12 @@ namespace mxre
       glEnd();
       mxre::gl_utils::endBackground();
 
-      worldManager.startWorlds(inKey, *inMarkerContexts);
+      worldManager.startWorlds(inKey, inMarkerContexts.data);
 
-      *outFrame = mxre::gl_utils::exportGLBufferToCV(width, height, frameIndex, frameTimestamp);
+      outFrame.data = mxre::gl_utils::exportGLBufferToCV(width, height, 0, 0);
+      strcpy(outFrame.tag, inMarkerContexts.tag);
+      outFrame.seq = inMarkerContexts.seq;
+      outFrame.ts  = inMarkerContexts.ts;
       return true;
     }
 
@@ -100,27 +101,33 @@ namespace mxre
       }
 
       // 0.0.Get inputs from the previous kernel: ObjectDetector
-      auto &inFrame( input["in_frame"].peek<mxre::types::Frame>() );
-      auto &inMarkerContexts( input["in_marker_contexts"].peek<std::vector<mxre::gl_types::ObjectContext>>() );
-
+      types::Message<std::vector<gl_types::ObjectContext>> &inMarkerContexts = \
+                              input["in_marker_contexts"].peek<types::Message<std::vector<gl_types::ObjectContext>>>();
+      types::Message<types::Frame> &outFrame = output["out_frame"].allocate<types::Message<types::Frame>>();
 #ifdef __PROFILE__
       startTimeStamp = getTimeStampNow();
 #endif
+      if (checkPort("in_frame")) {
+        types::Message<types::Frame> &inFrame = input["in_frame"].peek<types::Message<types::Frame>>();
+        cachedBackgroundFrame = inFrame.data.clone();
+        inFrame.data.release();
+        recyclePort("in_frame");
+      }
 
       // 0.1.Get input keystroke from Keyboard
-      char inKey;
-      if(checkPort("in_keystroke")) {
-        inKey = input ["in_keystroke"].peek<char>();
-        std::cout << "Input Key captured object_renderer: " << inKey << std::endl;
-        recyclePort("in_keystroke");
+      char key;
+      if(checkPort("in_key")) {
+        types::Message<char> inKey = input ["in_key"].peek<types::Message<char>>();
+        std::cout << "Input Key captured object_renderer: " << inKey.data << std::endl;
+        key = inKey.data;
+        recyclePort("in_key");
       }
-      else inKey = 0;
+      else key = 0;
 
       // 0.2.Set output
-      auto &outFrame( output["out_frame"].allocate<mxre::types::Frame>() );
 
-      if(logic(&inFrame, &inMarkerContexts, inKey, &outFrame)) {
-        sendFrames("out_frame", &outFrame);
+      if(logic(inMarkerContexts, key, outFrame)) {
+        sendFrames("out_frame", outFrame);
       }
 
       recyclePort("in_frame");

@@ -33,6 +33,7 @@ namespace mxre
     private:
       mxre::egl_types::pbuffer *pbuf;
       mxre::ar_types::VirtualWorldManager worldManager;
+      types::Frame cachedBackgroundFrame;
       GLuint backgroundTexture;
       bool binding;
       int width, height;
@@ -41,8 +42,9 @@ namespace mxre
       ObjectRenderer(std::vector<mxre::cv_types::MarkerInfo> registeredMarkers, int width, int height);
       ~ObjectRenderer();
       virtual raft::kstatus run();
-      bool logic(mxre::types::Frame *inFrame, std::vector<mxre::gl_types::ObjectContext> *inMarkerContexts, char inKey,
-                 mxre::types::Frame *outFrame);
+      bool logic(types::Message<std::vector<gl_types::ObjectContext>> &inMarkerContexts,
+                 char inKey,
+                 types::Message<types::Frame> &outFrame);
     };
 
   }   // kernels

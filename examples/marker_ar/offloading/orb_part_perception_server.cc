@@ -1,6 +1,7 @@
 #include <mxre>
 
 using namespace std;
+using ObjectContextMessageType = mxre::types::Message<std::vector<mxre::gl_types::ObjectContext>>;
 
 int main(int argc, char const *argv[])
 {
@@ -37,10 +38,8 @@ int main(int argc, char const *argv[])
   mxre::kernels::RTPFrameReceiver rtpFrameReceiver(serverFramePort, serverDecoder, width, height);
   mxre::kernels::CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
   mxre::kernels::MarkerCtxExtractor markerCtxExtractor(width, height);
-  mxre::kernels::MessageSender<std::vector<mxre::gl_types::ObjectContext>> markerCtxSender(
-      clientAddr,
-      clientMessagePort,
-      mxre::utils::sendPrimitiveVector<std::vector<mxre::gl_types::ObjectContext>>);
+  mxre::kernels::MessageSender<ObjectContextMessageType> markerCtxSender(clientAddr, clientMessagePort,
+                                                          mxre::utils::sendPrimitiveVector<ObjectContextMessageType>);
 
   pipeline += rtpFrameReceiver["out_frame"] >> cudaORBDetector["in_frame"];
   pipeline += cudaORBDetector["out_detected_markers"] >> markerCtxExtractor["in_detected_markers"];

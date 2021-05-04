@@ -52,7 +52,7 @@ int main(int argc, char const *argv[])
                                                width, height, width*height*4, bagFPS);
   mxre::kernels::MessageSender<char> keySender(serverAddr, serverMessagePort, mxre::utils::sendPrimitive<char>);
   sendPipe.link(&bagCam, "out_frame", &rtpFrameSender, "in_frame", 1);
-  sendPipe.link(&keyboard, "out_keystroke", &keySender, "in_data", 1);
+  sendPipe.link(&keyboard, "out_key", &keySender, "in_data", 1);
   std::thread sendThread(runPipeline, &sendPipe);
 
   // 2. create & run a receiving pipeline

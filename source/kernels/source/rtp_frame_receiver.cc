@@ -13,7 +13,7 @@ namespace mxre
       width(width), height(height), decoderName(decoderName),
       MXREKernel()
     {
-      addOutputPort<mxre::types::Frame>("out_frame");
+      addOutputPort<types::Message<types::Frame>>("out_frame");
 
       // Decoder
       av_register_all();
@@ -51,32 +51,33 @@ namespace mxre
 
 
     /* Destructor() */
-    RTPFrameReceiver::~RTPFrameReceiver() {
+    RTPFrameReceiver::~RTPFrameReceiver()
+    {
       av_frame_free(&decodingFrame);
       avcodec_close(decoderContext);
     }
 
     /* Run() */
-    raft::kstatus RTPFrameReceiver::run() {
-      auto &outFrame( output["out_frame"].allocate<mxre::types::Frame>() );
+    raft::kstatus RTPFrameReceiver::run()
+    {
+      types::Message<types::Frame> &outFrame = output["out_frame"].allocate<types::Message<types::Frame>>();
 
-      outFrame = mxre::types::Frame(height, width, CV_8UC3, -1, -1);
+      outFrame.data = mxre::types::Frame(height, width, CV_8UC3, -1, -1);
       AVPacket decodingPacket;
       int ret = 0;
 
       uint8_t *recvDataBuffer = nullptr;
       uint32_t recvDataSize = 0;
 
-
-      if(rtpReceiver.receiveDynamicWithTrackinInfo(&recvDataBuffer, &recvDataSize,
-                                            &outFrame.index, &outFrame.timestamp))
+      if(rtpReceiver.receiveDynamicWithTrackingInfo(&recvDataBuffer, recvDataSize,
+                                                    outFrame.tag, outFrame.seq, outFrame.ts))
       {
 #ifdef __PROFILE__
         startTimeStamp = getTimeStampNow();
 #endif
 
-        //debug_print("recvDataInfo: Index(%d) TS(%f) Size(%d) %p", outFrame.index, outFrame.timestamp,
-        //                                                          recvDataSize, recvDataBuffer);
+        debug_print("recvDataInfo: Index(%d) TS(%f) Size(%d) %p", outFrame.seq, outFrame.ts,
+                                                                  recvDataSize, recvDataBuffer);
 
         av_packet_from_data(&decodingPacket, recvDataBuffer, recvDataSize);
         ret = avcodec_send_packet(decoderContext, &decodingPacket);
@@ -86,10 +87,11 @@ namespace mxre
             av_image_copy_to_buffer(yuvFrame.data, yuvFrame.total(), decodingFrame->data, decodingFrame->linesize,
                                     static_cast<AVPixelFormat>(decodingFrame->format),
                                     decodingFrame->width, decodingFrame->height, 1);
-            if(decoderName == "h264") cv::cvtColor(yuvFrame, outFrame.useAsCVMat(), cv::COLOR_YUV420p2RGB);
-            else if(decoderName == "h264_cuvid") cv::cvtColor(yuvFrame, outFrame.useAsCVMat(), cv::COLOR_YUV2BGR_NV12);
+            if(decoderName == "h264") cv::cvtColor(yuvFrame, outFrame.data.useAsCVMat(), cv::COLOR_YUV420p2RGB);
+            else if(decoderName == "h264_cuvid") cv::cvtColor(yuvFrame, outFrame.data.useAsCVMat(),
+                                                              cv::COLOR_YUV2BGR_NV12);
 
-            sendFrames("out_frame", &outFrame);
+            sendFrames("out_frame", outFrame);
 
 #ifdef __PROFILE__
             endTimeStamp = getTimeStampNow();

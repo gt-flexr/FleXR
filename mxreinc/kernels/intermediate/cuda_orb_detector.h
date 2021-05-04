@@ -40,8 +40,9 @@ namespace mxre
 
       public:
         CudaORBDetector(std::vector<mxre::cv_types::MarkerInfo> registeredObjs);
-        virtual raft::kstatus run();
-        bool logic(mxre::types::Frame *inFrame, std::vector<mxre::cv_types::DetectedMarker> *outDetectedMarkers);
+        raft::kstatus run() override;
+        bool logic(types::Message<types::Frame> &inFrame,
+                   types::Message<std::vector<cv_types::DetectedMarker>> &outDetectedMarkers);
     };
 
   }   // namespace kernels

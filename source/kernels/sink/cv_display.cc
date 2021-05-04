@@ -8,7 +8,7 @@ namespace mxre
   {
     CVDisplay::CVDisplay()
     {
-      addInputPort<mxre::types::Frame>("in_frame");
+      addInputPort<types::Message<types::Frame>>("in_frame");
 #ifdef __PROFILE__
       if(logger == NULL) initLoggerST("cv_display", "logs/" + std::to_string(pid) + "/cv_display.log");
 #endif
@@ -16,31 +16,29 @@ namespace mxre
 
 
     bool CVDisplay::logic(mxre::types::Frame *inFrame) {
-      cv::imshow("CVDisplay", inFrame->useAsCVMat());
-      int inKey = cv::waitKey(1) & 0xFF;
-
-      inFrame->release();
       return true;
     }
 
 
     raft::kstatus CVDisplay::run()
     {
-      auto &frame( input["in_frame"].peek<mxre::types::Frame>() );
-      uint32_t frameIndex = frame.index;
-      double frameTimestamp = frame.timestamp;
+      types::Message<types::Frame> frame = input["in_frame"].peek<types::Message<types::Frame>>();
 
 #ifdef __PROFILE__
       startTimeStamp = getTimeStampNow();
 #endif
-      logic(&frame);
+      cv::imshow("CVDisplay", frame.data.useAsCVMat());
+      int inKey = cv::waitKey(1) & 0xFF;
+
+      frame.data.release();
+
 #ifdef __PROFILE__
       endTimeStamp = getTimeStampNow();
       logger->info("{}th frame disp_time/e2e_wo_disp/e2e_w_disp\t{}\t{}\t{}",
-          frameIndex,
+          frame.seq,
           endTimeStamp - startTimeStamp,
-          startTimeStamp - frameTimestamp,
-          endTimeStamp - frameTimestamp);
+          startTimeStamp - frame.ts,
+          endTimeStamp - frame.ts);
 #endif
       recyclePort("in_frame");
 

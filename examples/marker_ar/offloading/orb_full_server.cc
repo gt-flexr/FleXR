@@ -56,7 +56,7 @@ int main(int argc, char const *argv[])
   pipeline.link(&cudaORBDetector, "out_detected_markers", &markerCtxExtractor, "in_detected_markers", 1);
   //pipeline += cudaORBDetector["out_detected_markers"] >> markerCtxExtractor["in_detected_markers"];
 
-  pipeline.link(&keyReceiver, "out_data", &objRenderer, "in_keystroke", 1);
+  pipeline.link(&keyReceiver, "out_data", &objRenderer, "in_key", 1);
   pipeline.link(&rtpFrameReceiver, "out_frame2", &objRenderer, "in_frame", 1);
   pipeline.link(&markerCtxExtractor, "out_marker_contexts", &objRenderer, "in_marker_contexts", 1);
 

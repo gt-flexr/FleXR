@@ -29,7 +29,8 @@ namespace mxre
 
     /* Constructor */
     template<typename OUT_T>
-    MessageReceiver<OUT_T>::MessageReceiver(int port, void (*recv)(OUT_T*, zmq::socket_t*), int sockType): MXREKernel() {
+    MessageReceiver<OUT_T>::MessageReceiver(int port, void (*recv)(OUT_T*, zmq::socket_t*), int sockType): MXREKernel()
+    {
       sock = zmq::socket_t(ctx, sockType);
       std::string bindingAddr = "tcp://*:" + std::to_string(port);
       sock.bind(bindingAddr);
@@ -45,7 +46,8 @@ namespace mxre
 
     /* Destructor */
     template<typename OUT_T>
-    MessageReceiver<OUT_T>::~MessageReceiver() {
+    MessageReceiver<OUT_T>::~MessageReceiver()
+    {
       sock.close();
       ctx.shutdown();
       ctx.close();
@@ -54,7 +56,8 @@ namespace mxre
 
     /* Run */
     template<typename OUT_T>
-    raft::kstatus MessageReceiver<OUT_T>::run() {
+    raft::kstatus MessageReceiver<OUT_T>::run()
+    {
       auto &outData( output["out_data"].template allocate<OUT_T>() );
       if(recv != NULL) recv(&outData, &sock);
       else {

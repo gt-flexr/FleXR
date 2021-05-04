@@ -25,6 +25,8 @@ class TestSink: public mxre::kernels::MXREKernel {
   };
 };
 
+using DetectedMarkerMessageType = mxre::types::Message<std::vector<mxre::cv_types::DetectedMarker>>;
+
 int main(int argc, char const *argv[])
 {
   string mxre_home = getenv("MXRE_HOME");
@@ -66,17 +68,16 @@ int main(int argc, char const *argv[])
 
   // Create mxre components
   raft::map pipeline;
-  mxre::kernels::BagCamera bagCam(bagFile, bagTopic);
+  mxre::kernels::BagCamera bagCam("bag_camera", bagFile, bagTopic);
   bagCam.setFramesToCache(400, 400);
   bagCam.setFPS(bagFPS);
-  bagCam.duplicateOutPort<mxre::types::Frame>("out_frame", "out_frame2");
+  bagCam.duplicateOutPort<mxre::types::Message<mxre::types::Frame>>("out_frame", "out_frame2");
 
   mxre::kernels::Keyboard keyboard;
   mxre::kernels::RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder,
                                                width, height, width*height*4, bagFPS);
-  mxre::kernels::MessageReceiver<std::vector<mxre::cv_types::DetectedMarker>> detectedMarkerReceiver(
-      clientMessagePort,
-      mxre::utils::recvDetectedMarkers);
+  mxre::kernels::MessageReceiver<DetectedMarkerMessageType> detectedMarkerReceiver(clientMessagePort,
+                                                                                   mxre::utils::recvDetectedMarkers);
 
   mxre::kernels::MarkerCtxExtractor markerCtxExtractor(width, height);
   mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), width, height);
@@ -87,7 +88,7 @@ int main(int argc, char const *argv[])
 
   pipeline += bagCam["out_frame2"] >> objRenderer["in_frame"];
   pipeline += markerCtxExtractor["out_marker_contexts"] >> objRenderer["in_marker_contexts"];
-  pipeline.link(&keyboard, "out_keystroke", &objRenderer, "in_keystroke", 1);
+  pipeline.link(&keyboard, "out_key", &objRenderer, "in_key", 1);
 
   pipeline += objRenderer["out_frame"] >> nonDisplay["in_frame"];
 

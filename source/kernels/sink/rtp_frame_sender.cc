@@ -11,7 +11,7 @@ namespace mxre
       rtpSender(destAddr, destPortBase),
       encoderName(encoderName), width(width), height(height)
     {
-      addInputPort<mxre::types::Frame>("in_frame");
+      addInputPort<types::Message<types::Frame>>("in_frame");
 
       // Encoder
       av_register_all();
@@ -70,28 +70,32 @@ namespace mxre
 
 
     /* Destructor() */
-    RTPFrameSender::~RTPFrameSender() {
+    RTPFrameSender::~RTPFrameSender()
+    {
       avcodec_close(encoderContext);
       av_frame_free(&encodingFrame);
     }
 
 
     /* Run() */
-    raft::kstatus RTPFrameSender::run() {
+    raft::kstatus RTPFrameSender::run()
+    {
       AVPacket encodingPacket;
       av_init_packet(&encodingPacket);
 
-      auto &inFrame( input["in_frame"].template peek<mxre::types::Frame>() );
-      if(inFrame.rows != (size_t)height || inFrame.cols != (size_t)width) {
+      types::Message<types::Frame> &inFrame = input["in_frame"].template peek<types::Message<types::Frame>>();
+      if(inFrame.data.rows != (size_t)height || inFrame.data.cols != (size_t)width) {
         debug_print("inMat size is not compatible.");
-        exit(1);
+        inFrame.data.release();
+        return raft::proceed;
       }
+
 #ifdef __PROFILE__
       double encodingTimeStamp;
       startTimeStamp = getTimeStampNow();
 #endif
 
-      cv::cvtColor(inFrame.useAsCVMat(), yuvFrame, cv::COLOR_RGB2YUV_YV12);
+      cv::cvtColor(inFrame.data.useAsCVMat(), yuvFrame, cv::COLOR_RGB2YUV_YV12);
       av_image_fill_arrays(encodingFrame->data, encodingFrame->linesize, yuvFrame.data,
                            static_cast<AVPixelFormat>(encodingFrame->format),
                            encodingFrame->width, encodingFrame->height, 1);
@@ -105,7 +109,7 @@ namespace mxre
 #endif
           int sentSize = encodingPacket.size;
           if(rtpSender.sendWithTrackingInfo(encodingPacket.data, encodingPacket.size,
-                                            inFrame.index, inFrame.timestamp)) {
+                                            inFrame.tag, inFrame.seq, inFrame.ts)) {
 #ifdef __PROFILE__
             endTimeStamp = getTimeStampNow();
             logger->info("encodingTime/rtpSendingTime/KernelExeTime/Sent Size\t{}\t {}\t {}\t {}",
@@ -120,7 +124,7 @@ namespace mxre
         av_packet_unref(&encodingPacket);
       }
 
-      inFrame.release();
+      inFrame.data.release();
       recyclePort("in_frame");
       return raft::proceed;
     }

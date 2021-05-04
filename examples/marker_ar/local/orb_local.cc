@@ -35,10 +35,10 @@ int main()
   std::vector<mxre::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
 
   raft::map pipeline;
-  mxre::kernels::BagCamera bagCam(bagFile, bagTopic);
+  mxre::kernels::BagCamera bagCam("bag_frame",  bagFile, bagTopic);
   bagCam.setFramesToCache(400, 400);
   bagCam.setFPS(bagFPS);
-  bagCam.duplicateOutPort<mxre::types::Frame>("out_frame", "out_frame2");
+  bagCam.duplicateOutPort<mxre::types::Message<mxre::types::Frame>>("out_frame", "out_frame2");
 
   mxre::kernels::Keyboard keyboard;
   mxre::kernels::ORBDetector orbDetector(orbMarkerTracker.getRegisteredObjects());
@@ -55,7 +55,7 @@ int main()
   // obj ctx extractor - obj renderer
   pipeline.link(&bagCam, "out_frame2", &objRenderer, "in_frame", 1);
   pipeline.link(&markerCtxExtractor, "out_marker_contexts", &objRenderer, "in_marker_contexts", 1);
-  pipeline.link(&keyboard, "out_keystroke", &objRenderer, "in_keystroke", 1);
+  pipeline.link(&keyboard, "out_key", &objRenderer, "in_key", 1);
 
   // obj renderer - test sink
   pipeline.link(&objRenderer, "out_frame", &nonDisplay, "in_frame", 1);

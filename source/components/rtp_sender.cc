@@ -36,10 +36,15 @@ namespace mxre {
     }
 
 
-    bool RTPSender::sendWithTrackingInfo(uint8_t *inData, uint32_t inDataSize, uint32_t index, double timestamp) {
+    bool RTPSender::sendWithTrackingInfo(uint8_t *inData, uint32_t inDataSize,
+                                         char *tag, uint32_t seq, double ts)
+    {
       types::RTPTrackingInfo trackingInfo;
       trackingInfo.invoice = MXRE_RTP_TRACKING_INVOICE;
-      trackingInfo.index = index; trackingInfo.timestamp = timestamp;
+
+      strcpy(trackingInfo.tag, tag);
+      trackingInfo.seq     = seq;
+      trackingInfo.ts      = ts;
 
       if( send((uint8_t*)&trackingInfo, sizeof(types::RTPTrackingInfo)) )
         return send(inData, inDataSize);

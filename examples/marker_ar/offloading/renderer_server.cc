@@ -1,6 +1,7 @@
 #include <mxre>
 
 using namespace std;
+using ObjectContextMessageType = mxre::types::Message<std::vector<mxre::gl_types::ObjectContext>>;
 
 int main(int argc, char const *argv[])
 {
@@ -39,12 +40,12 @@ int main(int argc, char const *argv[])
   mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), width, height);
 
   mxre::kernels::RTPFrameReceiver rtpFrameReceiver(serverFramePort, serverDecoder, width, height);
-  mxre::kernels::MessageReceiver<char> keyReceiver(serverMessagePort, mxre::utils::recvPrimitive<char>);
-  mxre::kernels::MessageReceiver<std::vector<mxre::gl_types::ObjectContext>> objectCtxReceiver(serverMessagePort2, mxre::utils::recvPrimitiveVector); 
+  mxre::kernels::MessageReceiver<mxre::types::Message<char>> keyReceiver(serverMessagePort, mxre::utils::recvPrimitive);
+  mxre::kernels::MessageReceiver<ObjectContextMessageType> objectCtxReceiver(serverMessagePort2, mxre::utils::recvPrimitiveVector);
 
   mxre::kernels::RTPFrameSender rtpFrameSender(clientAddr, clientFramePort, serverEncoder, width, height, width*height*4, 60);
   pipeline += rtpFrameReceiver["out_frame"] >> objRenderer["in_frame"];
-  pipeline += keyReceiver["out_data"] >> objRenderer["in_keystroke"];
+  pipeline += keyReceiver["out_data"] >> objRenderer["in_key"];
   pipeline += objectCtxReceiver["out_data"] >> objRenderer["in_marker_contexts"];
   pipeline += objRenderer["out_frame"] >> rtpFrameSender["in_frame"];
 

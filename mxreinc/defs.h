@@ -2,7 +2,6 @@
 #define __MXRE_DEFS__
 
 #define MAX_OBJS 5
-#define TOTAL_FRAMES 1000
 
 // GL scale factor
 #define SCALE_FACTOR 10
@@ -23,6 +22,9 @@
 // RTP payload size for uvgRTP
 #define MXRE_RTP_PAYLOAD_UNIT_SIZE 1443
 #define MXRE_RTP_TRACKING_INVOICE (-777777)
+
+// For Message
+#define MXRE_MSG_TAG_SIZE 32
 
 // color-print reference: http://web.theurbanpenguin.com/adding-color-to-your-output-from-c/
 #define debug_print(...) do { if (__DEBUG__) { \

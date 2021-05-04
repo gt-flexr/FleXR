@@ -6,7 +6,8 @@ namespace mxre
   namespace kernels
   {
     /* Constructor */
-    CVCamera::CVCamera(int dev_idx, int width, int height) : MXREKernel(), intrinsic(3, 3, CV_64FC1),
+    CVCamera::CVCamera(std::string id, int dev_idx, int width, int height) : MXREKernel(id),
+        intrinsic(3, 3, CV_64FC1),
         distCoeffs(4, 1, CV_64FC1, {0, 0, 0, 0}), width(width), height(height)
     {
       cam.open(dev_idx, cv::CAP_ANY);
@@ -30,7 +31,7 @@ namespace mxre
       this->intrinsic.at<double>(2, 1) = 0;
       this->intrinsic.at<double>(2, 2) = 1;
 
-      addOutputPort<mxre::types::Frame>("out_frame");
+      addOutputPort<types::Message<types::Frame>>("out_frame");
 
 #ifdef __PROFILE__
       if(logger == NULL) initLoggerST("cv_camera", "logs/" + std::to_string(pid) + "/cv_camera.log");
@@ -44,21 +45,6 @@ namespace mxre
     }
 
 
-    /* Kernel Logic */
-    bool CVCamera::logic(mxre::types::Frame *outFrame) {
-      *outFrame = mxre::types::Frame(height, width, CV_8UC3, 0, 0);
-      cv::Mat outFrameAsCVMat = outFrame->useAsCVMat();
-      cam.read(outFrameAsCVMat);
-      outFrame->index = frameIndex++;
-      outFrame->timestamp = getTimeStampNow();
-
-      if(outFrameAsCVMat.empty()) {
-        std::cerr << "ERROR: blank frame grabbed" << std::endl;
-        return false;
-      }
-      return true;
-    }
-
 
     /* Kernel Run */
     raft::kstatus CVCamera::run()
@@ -69,15 +55,25 @@ namespace mxre
       sleepForMS((periodMS-periodAdj >= 0) ? periodMS-periodAdj : 0); // control read frequency
       periodStart = getTimeStampNowUint();
 
-      auto &outFrame(output["out_frame"].allocate<mxre::types::Frame>());
+      types::Message<types::Frame> outFrame = output["out_frame"].allocate<types::Message<types::Frame>>();
 
-      if(logic(&outFrame)) {
-        sendFrames("out_frame", &outFrame);
-      }
+      outFrame.data = types::Frame(height, width, CV_8UC3, 0, 0);
+      cv::Mat outFrameAsCVMat = outFrame.data.useAsCVMat();
+      cam.read(outFrameAsCVMat);
+
+      strcpy(outFrame.tag, "cvcam_frame");
+      outFrame.seq  = frameIndex++;
+      outFrame.ts   = getTimeStampNow();
 
       periodEnd = getTimeStampNowUint();
       periodAdj = periodEnd - periodStart;
 
+      if(outFrameAsCVMat.empty()) {
+        std::cerr << "ERROR: blank frame grabbed" << std::endl;
+        return raft::proceed;
+      }
+
+      sendFrames("out_frame", outFrame);
 
 #ifdef __PROFILE__
       endTimeStamp = getTimeStampNow();

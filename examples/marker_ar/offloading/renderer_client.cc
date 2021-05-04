@@ -1,6 +1,7 @@
 #include <mxre>
 
 using namespace std;
+using ObjectContextMessageType = mxre::types::Message<std::vector<mxre::gl_types::ObjectContext>>;
 
 class TestSink: public mxre::kernels::MXREKernel {
   public:
@@ -67,19 +68,19 @@ int main(int argc, char const *argv[])
 
   // Create mxre components
   raft::map pipeline;
-  mxre::kernels::BagCamera bagCam(bagFile, bagTopic);
+  mxre::kernels::BagCamera bagCam("bag_frame", bagFile, bagTopic);
   bagCam.setFramesToCache(400, 400);
   bagCam.setFPS(bagFPS);
-  bagCam.duplicateOutPort<mxre::types::Frame>("out_frame", "out_frame2");
+  bagCam.duplicateOutPort<mxre::types::Message<mxre::types::Frame>>("out_frame", "out_frame2");
   mxre::kernels::ORBDetector orbDetector(orbMarkerTracker.getRegisteredObjects());
   mxre::kernels::MarkerCtxExtractor markerCtxExtractor(width, height);
   mxre::kernels::Keyboard keyboard;
 
   mxre::kernels::RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder,
                                                width, height, width*height*4, bagFPS);
-  mxre::kernels::MessageSender<char> keySender(serverAddr, serverMessagePort, mxre::utils::sendPrimitive);
-  mxre::kernels::MessageSender<std::vector<mxre::gl_types::ObjectContext>> objectCtxSender(serverAddr,
-      serverMessagePort2, mxre::utils::sendPrimitiveVector);
+  mxre::kernels::MessageSender<mxre::types::Message<char>> keySender(serverAddr, serverMessagePort, mxre::utils::sendPrimitive);
+  mxre::kernels::MessageSender<ObjectContextMessageType> objectCtxSender(serverAddr, serverMessagePort2,
+                                                                         mxre::utils::sendPrimitiveVector);
 
   raft::map recvPipe;
   mxre::kernels::RTPFrameReceiver rtpFrameReceiver(clientFramePort, clientDecoder, width, height);
@@ -89,7 +90,7 @@ int main(int argc, char const *argv[])
   pipeline.link(&bagCam, "out_frame2", &orbDetector, "in_frame", 1);
   pipeline += orbDetector["out_detected_markers"] >> markerCtxExtractor["in_detected_markers"];
   pipeline += markerCtxExtractor["out_marker_contexts"] >> objectCtxSender["in_data"];
-  pipeline.link(&keyboard, "out_keystroke", &keySender, "in_data", 1);
+  pipeline.link(&keyboard, "out_key", &keySender, "in_data", 1);
   std::thread sendThread(mxre::kernels::runPipeline, &pipeline);
 
   recvPipe += rtpFrameReceiver["out_frame"] >> nonDisplay["in_frame"];

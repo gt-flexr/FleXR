@@ -19,7 +19,6 @@ list(APPEND EXAMPLE_SRCS
 
 if(${USE_OPENCV_CUDA})
 list(APPEND EXAMPLE_SRCS
-  incubator/illixr_local_server.cc
   marker_ar/local/orb_serialized_cuda.cc
   marker_ar/local/orb_local_cuda.cc
   marker_ar/offloading/orb_full_server.cc

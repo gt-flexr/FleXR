@@ -36,8 +36,9 @@ namespace mxre
       public:
         ORBDetector(std::vector<mxre::cv_types::MarkerInfo> registeredMarkers);
         ~ORBDetector();
-        bool logic(mxre::types::Frame *inFrame, std::vector<mxre::cv_types::DetectedMarker> *outDetectedMarkers);
-        virtual raft::kstatus run();
+        raft::kstatus run() override;
+        bool logic(types::Message<types::Frame> &inFrame,
+                   types::Message<std::vector<cv_types::DetectedMarker>> &outDetectedMarkers);
     };
 
   }   // namespace pipeline

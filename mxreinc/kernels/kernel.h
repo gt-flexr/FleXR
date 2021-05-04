@@ -14,6 +14,7 @@
 
 #include "defs.h"
 #include "types/clock_types.h"
+#include "types/types.h"
 #include "types/frame.h"
 
 namespace mxre
@@ -42,6 +43,7 @@ namespace mxre
     class MXREKernel : public raft::kernel
     {
       protected:
+        std::string id;
         unsigned int periodMS;
         unsigned int periodStart, periodEnd, periodAdj;
         std::multimap<std::string, std::string> oPortMap;
@@ -61,14 +63,19 @@ namespace mxre
 
       public:
         /* Constructor */
-        MXREKernel(){
+        MXREKernel()
+        {
           periodMS = 0;
           periodStart = 0;
           periodEnd = 0;
           periodAdj = 0;
-#ifdef __PROFILE__
+          id = "no_id";
           pid = getpid();
-#endif
+        }
+
+        MXREKernel(std::string id): MXREKernel()
+        {
+          this->id = id;
         }
 
 
@@ -104,7 +111,7 @@ namespace mxre
         }
 
 
-        /* duplicateOutPort(): duplicate output port for propagating multi downstream kernels */
+        /* duplicateOutPort<T>(origin, newOut): duplicate output port for propagating multi downstream kernels */
         template<typename T>
         void duplicateOutPort(std::string origin, std::string newOut) {
           oPortMap.insert(std::make_pair<std::string, std::string>(origin.c_str(), newOut.c_str()));
@@ -112,24 +119,27 @@ namespace mxre
         }
 
 
-        /* sendPrimitiveDuplicate<T>: propagate the primitive-type data into duplicated output ports */
+        /* sendPrimitiveCopy<T>(id, data): propagate the primitive-type data into duplicated output ports */
         template<typename T>
-        void sendPrimitiveCopy(std::string id, T* data) {
+        void sendPrimitiveCopy(std::string id, T& data) {
           auto portRange = oPortMap.equal_range(id);
           for(auto i = portRange.first; i != portRange.second; ++i) {
-            auto &outData(output[i->second].allocate<T>());
-            outData = *data;
+            T &outData = output[i->second].allocate<T>();
+            outData = data;
             output[i->second].send();
           }
         }
 
 
-        /* sendCopyFrame: propagate the primitive-type data into duplicated output ports */
-        void sendFrames(std::string id, mxre::types::Frame *frame) {
+        /* sendFrames: propagate the primitive-type data into duplicated output ports */
+        void sendFrames(std::string id, types::Message<types::Frame> &frame) {
           auto portRange = oPortMap.equal_range(id);
           for(auto i = portRange.first; i != portRange.second; ++i) {
-            auto &outData(output[i->second].allocate<mxre::types::Frame>());
-            outData = frame->clone();
+            types::Message<types::Frame> &copiedFrame = output[i->second].allocate<types::Message<types::Frame>>();
+            strcpy(copiedFrame.tag, frame.tag);
+            copiedFrame.seq = frame.seq;
+            copiedFrame.ts = frame.ts;
+            copiedFrame.data = frame.data.clone();
             output[i->second].send();
           }
           output[id].send();

@@ -7,7 +7,8 @@
 
 namespace mxre {
   namespace components {
-    class RTPReceiver {
+    class RTPReceiver
+    {
     private:
       uvg_rtp::context rtpContext;
       uvg_rtp::session *rtpSession;
@@ -16,12 +17,12 @@ namespace mxre {
     public:
       ~RTPReceiver();
       RTPReceiver(std::string ip, int even_port);
-      bool receiveDynamic(uint8_t **outDataBuffer, uint32_t *outDataSize);
-      bool receiveDynamicWithTrackinInfo(uint8_t **outDataBuffer, uint32_t *outDataSize,
-                                         uint32_t *outIndex, double *outTimestamp);
+      bool receiveDynamic(uint8_t **outDataBuffer, uint32_t &outDataSize);
+      bool receiveDynamicWithTrackingInfo(uint8_t **outDataBuffer, uint32_t &outDataSize,
+                                         char *outTag, uint32_t &outSeq, double &outTs);
       bool receiveStatic(uint32_t inDataSize, void *outReceivedData);
-      bool receiveStaticWithTrackinInfo(uint32_t inDataSize, uint8_t *outReceivedData,
-                                        uint32_t *outIndex, double *outTimestamp);
+      bool receiveStaticWithTrackingInfo(uint32_t inDataSize, uint8_t *outReceivedData,
+                                         char *outTag, uint32_t &outSeq, double &outTs);
 
       void unrefFrameExceptData(uvg_rtp::frame::rtp_frame *rtpFrame);
     };
