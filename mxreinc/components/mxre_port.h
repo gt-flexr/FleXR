@@ -61,25 +61,25 @@ namespace mxre
         }
 
         template <typename T>
-        void activateAsRemoteInput(int port)
+        void activateAsRemoteInput(int portNumber)
         {
           if(activated) {
             debug_print("Port %s is already activated.", tag.c_str());
             return;
           }
-          remotePort.bind(port);
+          remotePort.bind(portNumber);
           state = PortState::REMOTE;
           activated = true;
         }
 
         template <typename T>
-        void activateAsRemoteOutput(const std::string addr, int port)
+        void activateAsRemoteOutput(const std::string addr, int portNumber)
         {
           if(activated) {
             debug_print("Port %s is already activated.", tag.c_str());
             return;
           }
-          remotePort.connect(addr, port);
+          remotePort.connect(addr, portNumber);
           state = PortState::REMOTE;
           activated = true;
         }
@@ -137,7 +137,7 @@ namespace mxre
         }
 
         template <typename T>
-        void sendOutput(T* data)
+        void sendOutput(T* msg)
         {
           if(!activated) {
             debug_print("Cannot sendOutput with inactivated port %s", tag.c_str());
@@ -149,27 +149,27 @@ namespace mxre
             (*localPort)[tag].send();
             break;
           case PortState::REMOTE:
-            sendRemote(this, data);
+            sendRemote(this, msg);
             break;
           }
         }
 
         template <typename T>
-        void freeInput(T* data)
+        void freeInput(T* msg)
         {
           if(!activated) {
             debug_print("Cannot freeInput with inactivated port %s", tag.c_str());
             return;
           }
 
-          if(data == nullptr) return;
+          if(msg == nullptr) return;
 
           switch(state) {
           case PortState::LOCAL:
             (*localPort)[tag].recycle();
             break;
           case PortState::REMOTE:
-            delete [] data;
+            delete [] msg;
             break;
           }
         }

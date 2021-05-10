@@ -18,10 +18,10 @@ namespace mxre {
     class Message
     {
       public:
-      char tag[MXRE_MSG_TAG_SIZE];
+      char     tag[MXRE_MSG_TAG_SIZE];
       uint32_t seq;
-      double ts;
-      T data;
+      double   ts;
+      T        data;
     };
   }
 }
