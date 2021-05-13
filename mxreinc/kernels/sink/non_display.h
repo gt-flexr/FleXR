@@ -15,14 +15,17 @@ namespace mxre
 {
   namespace kernels
   {
+    using NonDisplayMsgType = types::Message<types::Frame>;
 
     class NonDisplay : public MXREKernel
     {
-    private:
-      unsigned long long int frameIndex;
     public:
       NonDisplay();
-      virtual raft::kstatus run() override;
+      raft::kstatus run() override;
+      void activateInPortAsRemote(const std::string tag, int portNumber)
+      {
+        debug_print("not allow remote port activation.");
+      }
     };
 
   }   // namespace kernels
