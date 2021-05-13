@@ -42,12 +42,10 @@
 #endif
 
 #include <chrono>
-#define getExeTime(a,b) ( (double)(std::chrono::duration_cast<std::chrono::microseconds>(a-b).count()) / 1000 )
-#define getTimeStampOf(a) ( (double)std::chrono::duration_cast<std::chrono::microseconds>(a.time_since_epoch()).count() / 1000 )
 #define getNow() std::chrono::high_resolution_clock::now()
-#define getTimeStampNow() ( (double)std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() / 1000 )
-#define getTimeStampNowUint() (unsigned int)( (double)std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() / 1000 )
-#define convertTimeStampDouble2Uint(a) (uint32_t)(a)
+#define getTsNow() ( (double)std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() / 1000 )
+#define getTsUs() (std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count())
+#define getTsMs() ( ((double)getTsUs()) / 1000)
 
 #endif
 
