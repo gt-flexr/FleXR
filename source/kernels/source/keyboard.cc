@@ -1,5 +1,7 @@
 #include <kernels/source/keyboard.h>
 #include <utils/getch.h>
+#include <utils/msg_sending_functions.h>
+#include <types/types.h>
 
 namespace mxre
 {
@@ -8,22 +10,23 @@ namespace mxre
     Keyboard::Keyboard(): MXREKernel()
     {
       seq = 0;
-      output.addPort<types::Message<char>>("out_key");
+      portManager.registerOutPortTag("out_key",
+                                     utils::sendLocalBasicCopy<KeyboardMsgType>,
+                                     utils::sendRemotePrimitive<KeyboardMsgType>,
+                                     types::freePrimitiveMsg<KeyboardMsgType>);
     }
 
-
-    Keyboard::~Keyboard() {}
-
-
     raft::kstatus Keyboard::run() {
-      types::Message<char> &key = output["out_key"].template allocate<types::Message<char>>();
+      KeyboardMsgType *outKey = portManager.getOutputPlaceholder<KeyboardMsgType>("out_key");
 
-      key.data = mxre::utils::getch();
-      strcpy(key.tag, "keystroke");
-      key.seq  = seq++;
-      key.ts   = getTimeStampNow();
+      strcpy(outKey->tag, "keystroke");
+      outKey->seq  = seq++;
+      outKey->ts   = getTsNow();
+      outKey->data = mxre::utils::getch();
 
-      sendPrimitiveCopy<types::Message<char>>("out_key", key);
+      portManager.sendOutput<KeyboardMsgType>("out_key", outKey);
+
+      if(logger.isSet()) logger.getInstance()->info("{}th keystroke {} occurs\t {}", seq-1, outKey->data, outKey->ts);
 
       return raft::proceed;
     }

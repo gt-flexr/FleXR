@@ -1,4 +1,5 @@
 #include <kernels/source/rtp_frame_receiver.h>
+#include <utils/msg_sending_functions.h>
 #include <libavcodec/avcodec.h>
 #include <opencv2/imgproc.hpp>
 #include <unistd.h>
@@ -13,7 +14,7 @@ namespace mxre
       width(width), height(height), decoderName(decoderName),
       MXREKernel()
     {
-      addOutputPort<types::Message<types::Frame>>("out_frame");
+      portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, 0, 0);
 
       // Decoder
       av_register_all();
@@ -43,10 +44,6 @@ namespace mxre
       av_image_fill_arrays(decodingFrame->data, decodingFrame->linesize, decodingFrameBuffer, AV_PIX_FMT_YUV420P,
                            width, height, 1);
       yuvFrame = cv::Mat::zeros(height*1.5, width, CV_8UC1);
-
-#ifdef __PROFILE__
-      if(logger == NULL) initLoggerST("rtp_frame_receiver", "logs/" + std::to_string(pid) + "/rtp_frame_receiver.log");
-#endif
     }
 
 
@@ -60,9 +57,9 @@ namespace mxre
     /* Run() */
     raft::kstatus RTPFrameReceiver::run()
     {
-      types::Message<types::Frame> &outFrame = output["out_frame"].allocate<types::Message<types::Frame>>();
+      FrameReceiverMsgType *outFrame = portManager.getOutputPlaceholder<FrameReceiverMsgType>("out_frame");
 
-      outFrame.data = mxre::types::Frame(height, width, CV_8UC3, -1, -1);
+      outFrame->data = types::Frame(height, width, CV_8UC3);
       AVPacket decodingPacket;
       int ret = 0;
 
@@ -70,13 +67,10 @@ namespace mxre
       uint32_t recvDataSize = 0;
 
       if(rtpReceiver.receiveDynamicWithTrackingInfo(&recvDataBuffer, recvDataSize,
-                                                    outFrame.tag, outFrame.seq, outFrame.ts))
+                                                    outFrame->tag, outFrame->seq, outFrame->ts))
       {
-#ifdef __PROFILE__
-        startTimeStamp = getTimeStampNow();
-#endif
-
-        debug_print("recvDataInfo: Index(%d) TS(%f) Size(%d) %p", outFrame.seq, outFrame.ts,
+        double st = getTsNow();
+        debug_print("recvDataInfo: Index(%d) TS(%f) Size(%d) %p", outFrame->seq, outFrame->ts,
                                                                   recvDataSize, recvDataBuffer);
 
         av_packet_from_data(&decodingPacket, recvDataBuffer, recvDataSize);
@@ -87,20 +81,16 @@ namespace mxre
             av_image_copy_to_buffer(yuvFrame.data, yuvFrame.total(), decodingFrame->data, decodingFrame->linesize,
                                     static_cast<AVPixelFormat>(decodingFrame->format),
                                     decodingFrame->width, decodingFrame->height, 1);
-            if(decoderName == "h264") cv::cvtColor(yuvFrame, outFrame.data.useAsCVMat(), cv::COLOR_YUV420p2RGB);
-            else if(decoderName == "h264_cuvid") cv::cvtColor(yuvFrame, outFrame.data.useAsCVMat(),
-                                                              cv::COLOR_YUV2BGR_NV12);
+            if(decoderName == "h264")
+              cv::cvtColor(yuvFrame, outFrame->data.useAsCVMat(), cv::COLOR_YUV420p2RGB);
+            else if(decoderName == "h264_cuvid")
+              cv::cvtColor(yuvFrame, outFrame->data.useAsCVMat(), cv::COLOR_YUV2BGR_NV12);
 
-            sendFrames("out_frame", outFrame);
+            portManager.sendOutput("out_frame", outFrame);
 
-#ifdef __PROFILE__
-            endTimeStamp = getTimeStampNow();
-            logger->info("st/et/decodingTime/recvSize\t{}\t {}\t {}\t {}",
-                startTimeStamp,
-                endTimeStamp,
-                endTimeStamp-startTimeStamp,
-                recvDataSize);
-#endif
+            double et = getTsNow();
+            if(logger.isSet()) logger.getInstance()->info("st/et/decodingTime/recvSize\t{}\t {}\t {}\t {}",
+                                                          st, et, et-st, recvDataSize);
           }
         }
 

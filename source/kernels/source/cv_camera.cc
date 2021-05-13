@@ -1,85 +1,39 @@
 #include <kernels/source/cv_camera.h>
+#include <utils/msg_sending_functions.h>
 #include <unistd.h>
 
 namespace mxre
 {
   namespace kernels
   {
-    /* Constructor */
-    CVCamera::CVCamera(std::string id, int dev_idx, int width, int height) : MXREKernel(id),
-        intrinsic(3, 3, CV_64FC1),
-        distCoeffs(4, 1, CV_64FC1, {0, 0, 0, 0}), width(width), height(height)
+    CVCamera::CVCamera(std::string id, int dev_idx, int width, int height, int targetFps):
+      MXREKernel(id), frameReader(dev_idx, width, height), freqManager(targetFps)
     {
-      cam.open(dev_idx, cv::CAP_ANY);
-      cam.set(cv::CAP_PROP_FRAME_WIDTH, width);
-      cam.set(cv::CAP_PROP_FRAME_HEIGHT, height);
-      if (!cam.isOpened())
-        std::cerr << "ERROR: unable to open camera" << std::endl;
-
-      frameIndex = 0;
-
-      // set default camera intrinsic
-      this->intrinsic.at<double>(0, 0) = width;
-      this->intrinsic.at<double>(0, 1) = 0;
-      this->intrinsic.at<double>(0, 2) = width/2;
-
-      this->intrinsic.at<double>(1, 0) = 0;
-      this->intrinsic.at<double>(1, 1) = width;
-      this->intrinsic.at<double>(1, 2) = height/2;
-
-      this->intrinsic.at<double>(2, 0) = 0;
-      this->intrinsic.at<double>(2, 1) = 0;
-      this->intrinsic.at<double>(2, 2) = 1;
-
-      addOutputPort<types::Message<types::Frame>>("out_frame");
-
-#ifdef __PROFILE__
-      if(logger == NULL) initLoggerST("cv_camera", "logs/" + std::to_string(pid) + "/cv_camera.log");
-#endif
+      seq = 0;
+      portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, 0, 0);
     }
 
+    CVCamera::~CVCamera()
+    { }
 
-    /* Destructor */
-    CVCamera::~CVCamera() {
-      if (cam.isOpened()) cam.release();
-    }
-
-
-
-    /* Kernel Run */
     raft::kstatus CVCamera::run()
     {
-#ifdef __PROFILE__
-      startTimeStamp = getTimeStampNow();
-#endif
-      sleepForMS((periodMS-periodAdj >= 0) ? periodMS-periodAdj : 0); // control read frequency
-      periodStart = getTimeStampNowUint();
+      double st = getTsNow();
 
-      types::Message<types::Frame> outFrame = output["out_frame"].allocate<types::Message<types::Frame>>();
+      CVCameraMsgType *outFrame = portManager.getOutputPlaceholder<CVCameraMsgType>("out_frame");
 
-      outFrame.data = types::Frame(height, width, CV_8UC3, 0, 0);
-      cv::Mat outFrameAsCVMat = outFrame.data.useAsCVMat();
-      cam.read(outFrameAsCVMat);
+      outFrame->data = frameReader.readFrame();
+      strcpy(outFrame->tag, "cvcam_frame");
+      outFrame->seq = seq++;
+      outFrame->ts  = getTsNow();
 
-      strcpy(outFrame.tag, "cvcam_frame");
-      outFrame.seq  = frameIndex++;
-      outFrame.ts   = getTimeStampNow();
+      portManager.sendOutput<CVCameraMsgType>("out_frame", outFrame);
 
-      periodEnd = getTimeStampNowUint();
-      periodAdj = periodEnd - periodStart;
+      freqManager.adjust();
 
-      if(outFrameAsCVMat.empty()) {
-        std::cerr << "ERROR: blank frame grabbed" << std::endl;
-        return raft::proceed;
-      }
+      double et = getTsNow();
+      if(logger.isSet()) logger.getInstance()->info("{} frame\t start\t{}\t end\t{}\t exe\t{}", seq-1, st, et, et-st);
 
-      sendFrames("out_frame", outFrame);
-
-#ifdef __PROFILE__
-      endTimeStamp = getTimeStampNow();
-      logger->info("{}th frame\t start\t{}\t end\t{}\t exe\t{}", frameIndex-1, startTimeStamp, endTimeStamp,
-                    endTimeStamp-startTimeStamp);
-#endif
       return raft::proceed;
     }
 
