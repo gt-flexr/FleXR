@@ -4,7 +4,7 @@
 #include <yaml-cpp//yaml.h>
 
 using namespace std;
-
+using namespace mxre::kernels;
 
 int main()
 {
@@ -33,16 +33,31 @@ int main()
   std::vector<mxre::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
 
   raft::map pipeline;
-  mxre::kernels::BagCamera bagCam("bag_frame", bagFile, bagTopic);
-  bagCam.setFramesToCache(400, 400);
-  bagCam.setFPS(bagFPS);
-  bagCam.duplicateOutPort<mxre::types::Message<mxre::types::Frame>>("out_frame", "out_frame2");
 
-  mxre::kernels::Keyboard keyboard;
-  mxre::kernels::CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
-  mxre::kernels::MarkerCtxExtractor markerCtxExtractor(width, height);
-  mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), width, height);
-  mxre::kernels::NonDisplay nonDisplay;
+  BagCamera bagCam("bag_frame", bagFile, bagTopic, bagFPS);
+  bagCam.setFramesToCache(400, 400);
+  bagCam.activateOutPortAsLocal<BagCameraMsgType>("out_frame");
+  bagCam.duplicateOutPortAsLocal<BagCameraMsgType>("out_frame", "out_frame2");
+
+  Keyboard keyboard;
+  keyboard.activateOutPortAsLocal<KeyboardMsgType>("out_key");
+
+  CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
+  cudaORBDetector.activateInPortAsLocal<CudaORBDetectorInFrameType>("in_frame");
+  cudaORBDetector.activateOutPortAsLocal<CudaORBDetectorOutMarkerType>("out_detected_markers");
+
+  MarkerCtxExtractor markerCtxExtractor(width, height);
+  markerCtxExtractor.activateInPortAsLocal<CtxExtractorInMarkerType>("in_detected_markers");
+  markerCtxExtractor.activateOutPortAsLocal<CtxExtractorOutCtxType>("out_marker_contexts");
+
+  ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), width, height);
+  objRenderer.activateInPortAsLocal<ObjRendererInFrameType>("in_frame");
+  objRenderer.activateInPortAsLocal<ObjRendererInKeyType>("in_key");
+  objRenderer.activateInPortAsLocal<ObjRendererInCtxType>("in_marker_contexts");
+  objRenderer.activateOutPortAsLocal<ObjRendererOutFrameType>("out_frame");
+
+  NonDisplay nonDisplay;
+  nonDisplay.activateInPortAsLocal<NonDisplayMsgType>("in_frame");
 
   // cam - obj detector
   pipeline.link(&bagCam, "out_frame", &cudaORBDetector, "in_frame", 1);

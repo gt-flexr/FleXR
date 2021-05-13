@@ -1,7 +1,7 @@
 #include <mxre>
 
 using namespace std;
-using DetectedMarkerMessageType = mxre::types::Message<std::vector<mxre::cv_types::DetectedMarker>>;
+using namespace mxre::kernels;
 
 int main(int argc, char const *argv[])
 {
@@ -18,8 +18,8 @@ int main(int argc, char const *argv[])
   int width            = config["width"].as<int>();
   int height           = config["height"].as<int>();
 
-  string clientAddr    = config["client_addr"].as<string>();
-  int clientMessagePort  = config["client_message_port"].as<int>();
+  string clientAddr     = config["client_addr"].as<string>();
+  int clientMessagePort = config["client_message_port"].as<int>();
 
   int serverFramePort  = config["server_frame_port"].as<int>();
   string serverEncoder = config["server_encoder"].as<string>();
@@ -35,13 +35,16 @@ int main(int argc, char const *argv[])
   std::vector<mxre::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
 
   raft::map pipeline;
+
   mxre::kernels::RTPFrameReceiver rtpFrameReceiver(serverFramePort, serverDecoder, width, height);
+  rtpFrameReceiver.activateOutPortAsLocal<FrameReceiverMsgType>("out_frame");
+
   mxre::kernels::CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
-  mxre::kernels::MessageSender<DetectedMarkerMessageType> detectedMarkerSender(clientAddr, clientMessagePort,
-                                                                               mxre::utils::sendDetectedMarkers);
+  cudaORBDetector.activateInPortAsLocal<CudaORBDetectorInFrameType>("in_frame");
+  cudaORBDetector.activateOutPortAsRemote<CudaORBDetectorOutMarkerType>("out_detected_markers",
+                                                                        clientAddr, clientMessagePort);
 
   pipeline += rtpFrameReceiver["out_frame"] >> cudaORBDetector["in_frame"];
-  pipeline += cudaORBDetector["out_detected_markers"] >> detectedMarkerSender["in_data"];
   pipeline.exe();
 
   return 0;

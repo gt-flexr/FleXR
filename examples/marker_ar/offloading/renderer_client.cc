@@ -1,29 +1,7 @@
 #include <mxre>
 
 using namespace std;
-using ObjectContextMessageType = mxre::types::Message<std::vector<mxre::gl_types::ObjectContext>>;
-
-class TestSink: public mxre::kernels::MXREKernel {
-  public:
-  TestSink() {
-    addInputPort<std::vector<mxre::cv_types::DetectedMarker>>("in_detected_markers");
-  }
-
-  raft::kstatus run() {
-    auto &inDetectedMarkers( input["in_detected_markers"].peek<std::vector<mxre::cv_types::DetectedMarker>>() );
-
-    cout << inDetectedMarkers.size() << endl;
-    for(int i = 0; i < inDetectedMarkers.size(); i++) {
-      printf("%d===== \n\t%f, %f ", inDetectedMarkers[i].index, inDetectedMarkers[i].locationIn2D.at(2).x, inDetectedMarkers[i].locationIn2D.at(2).y);
-      printf("\t%f, %f, %f", inDetectedMarkers[i].defaultLocationIn3D.at(3).x,
-              inDetectedMarkers[i].defaultLocationIn3D.at(3).y,
-              inDetectedMarkers[i].defaultLocationIn3D.at(3).z);
-    }
-
-    recyclePort("in_detected_markers");
-    return raft::proceed;
-  };
-};
+using namespace mxre::kernels;
 
 int main(int argc, char const *argv[])
 {
@@ -51,9 +29,9 @@ int main(int argc, char const *argv[])
   string clientEncoder = config["client_encoder"].as<string>();
   string clientDecoder = config["client_decoder"].as<string>();
 
-  string serverAddr   = config["server_addr"].as<string>();
-  int serverFramePort  = config["server_frame_port"].as<int>();
-  int serverMessagePort = config["server_message_port"].as<int>();
+  string serverAddr      = config["server_addr"].as<string>();
+  int serverFramePort    = config["server_frame_port"].as<int>();
+  int serverMessagePort  = config["server_message_port"].as<int>();
   int serverMessagePort2 = config["server_message_port2"].as<int>();
 
   if(markerPath.empty() || clientEncoder.empty() || clientDecoder.empty() || serverAddr.empty()) {
@@ -68,35 +46,43 @@ int main(int argc, char const *argv[])
 
   // Create mxre components
   raft::map pipeline;
-  mxre::kernels::BagCamera bagCam("bag_frame", bagFile, bagTopic);
+
+  mxre::kernels::BagCamera bagCam("bag_frame", bagFile, bagTopic, bagFPS);
   bagCam.setFramesToCache(400, 400);
-  bagCam.setFPS(bagFPS);
-  bagCam.duplicateOutPort<mxre::types::Message<mxre::types::Frame>>("out_frame", "out_frame2");
+  bagCam.activateOutPortAsLocal<BagCameraMsgType>("out_frame");
+  bagCam.duplicateOutPortAsLocal<BagCameraMsgType>("out_frame", "out_frame2");
+
   mxre::kernels::ORBDetector orbDetector(orbMarkerTracker.getRegisteredObjects());
+  orbDetector.activateInPortAsLocal<ORBDetectorInFrameType>("in_frame");
+  orbDetector.activateOutPortAsLocal<ORBDetectorOutMarkerType>("out_detected_markers");
   mxre::kernels::MarkerCtxExtractor markerCtxExtractor(width, height);
+  markerCtxExtractor.activateInPortAsLocal<CtxExtractorInMarkerType>("in_detected_markers");
+  markerCtxExtractor.activateOutPortAsRemote<CtxExtractorOutCtxType>("out_marker_contexts",
+                                                                     serverAddr, serverMessagePort2);
   mxre::kernels::Keyboard keyboard;
+  keyboard.activateOutPortAsRemote<KeyboardMsgType>("out_key", serverAddr, serverMessagePort);
 
   mxre::kernels::RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder,
                                                width, height, width*height*4, bagFPS);
-  mxre::kernels::MessageSender<mxre::types::Message<char>> keySender(serverAddr, serverMessagePort, mxre::utils::sendPrimitive);
-  mxre::kernels::MessageSender<ObjectContextMessageType> objectCtxSender(serverAddr, serverMessagePort2,
-                                                                         mxre::utils::sendPrimitiveVector);
+  rtpFrameSender.activateInPortAsLocal<FrameSenderMsgType>("in_frame");
 
   raft::map recvPipe;
   mxre::kernels::RTPFrameReceiver rtpFrameReceiver(clientFramePort, clientDecoder, width, height);
+  rtpFrameReceiver.activateOutPortAsLocal<FrameReceiverMsgType>("out_frame");
   mxre::kernels::NonDisplay nonDisplay;
+  nonDisplay.activateInPortAsLocal<NonDisplayMsgType>("in_frame");
 
-  pipeline += bagCam["out_frame"] >> rtpFrameSender["in_frame"];
-  pipeline.link(&bagCam, "out_frame2", &orbDetector, "in_frame", 1);
+  pipeline += bagCam["out_frame2"] >> rtpFrameSender["in_frame"];
+  pipeline.link(&bagCam, "out_frame", &orbDetector, "in_frame", 1);
   pipeline += orbDetector["out_detected_markers"] >> markerCtxExtractor["in_detected_markers"];
-  pipeline += markerCtxExtractor["out_marker_contexts"] >> objectCtxSender["in_data"];
-  pipeline.link(&keyboard, "out_key", &keySender, "in_data", 1);
   std::thread sendThread(mxre::kernels::runPipeline, &pipeline);
+  std::thread keyThread(mxre::kernels::runSingleKernel, &keyboard);
 
   recvPipe += rtpFrameReceiver["out_frame"] >> nonDisplay["in_frame"];
   std::thread recvThread(mxre::kernels::runPipeline, &recvPipe);
 
   sendThread.join();
+  keyThread.join();
   recvThread.join();
 
   return 0;

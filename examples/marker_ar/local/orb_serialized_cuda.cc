@@ -112,16 +112,16 @@ int main(int argc, char const *argv[])
      */
 
 #ifdef __PROFILE__
-    e2eStart = getTimeStampNow();
+    e2eStart = getTsNow();
     blockStart = e2eStart;
 #endif
 
     // Camera Frequency
     mxre::types::Frame frame = bagFrameReader.getNextFrame();
-    frameTimestamp = getTimeStampNow();
+    frameTimestamp = getTsNow();
 
 #ifdef LATENCY_BREAKDOWN
-    blockEnd = getTimeStampNow();
+    blockEnd = getTsNow();
     logger->info("\tDisk Read Time\t{}", blockEnd - blockStart);
     blockStart = blockEnd;
 #endif
@@ -142,7 +142,7 @@ int main(int argc, char const *argv[])
     detector->convert(cuKp, frameKps);
 
 #ifdef LATENCY_BREAKDOWN
-    blockEnd = getTimeStampNow();
+    blockEnd = getTsNow();
     logger->info("\tKeypoint Extraction Time\t{}", blockEnd - blockStart);
     blockStart = blockEnd;
 #endif
@@ -166,7 +166,7 @@ int main(int argc, char const *argv[])
       matcher->knnMatchConvert(cuMatches, matches);
 
 #ifdef LATENCY_BREAKDOWN
-      blockEnd = getTimeStampNow();
+      blockEnd = getTsNow();
       logger->info("\tFinding Matching Descriptors Time\t{}", blockEnd - blockStart);
       blockStart = blockEnd;
 #endif
@@ -216,7 +216,7 @@ int main(int argc, char const *argv[])
     }
 
 #ifdef LATENCY_BREAKDOWN
-    blockEnd = getTimeStampNow();
+    blockEnd = getTsNow();
     logger->info("\tFiltering and Detection Time\t{}", blockEnd - blockStart);
     blockStart = blockEnd;
 #endif
@@ -248,9 +248,9 @@ int main(int argc, char const *argv[])
     }
 
 #ifdef LATENCY_BREAKDOWN
-    blockEnd = getTimeStampNow();
+    blockEnd = getTsNow();
     logger->info("\tReal-Virtual Mapping Time\t{}", blockEnd - blockStart);
-    blockStart = getTimeStampNow();
+    blockStart = getTsNow();
 #endif
 
     /********************************
@@ -279,28 +279,28 @@ int main(int argc, char const *argv[])
 
     worldManager.startWorlds('f', markerContexts);
 
-    mxre::types::Frame resultFrame = mxre::gl_utils::exportGLBufferToCV(width, height, frameIndex, frameTimestamp);
+    mxre::types::Frame resultFrame = mxre::gl_utils::exportGLBufferToCV(width, height);
     frameIndex++;
 
 #ifdef LATENCY_BREAKDOWN
-    blockEnd = getTimeStampNow();
+    blockEnd = getTsNow();
     logger->info("\tRendering and Overlaying Time\t{}", blockEnd - blockStart);
-    blockStart = getTimeStampNow();
+    blockStart = getTsNow();
 #endif
 
     //cv::imshow("CVDisplay", resultFrame.useAsCVMat());
     //int inKey = cv::waitKey(1) & 0xFF;
 
 #ifdef LATENCY_BREAKDOWN
-    blockEnd = getTimeStampNow();
+    blockEnd = getTsNow();
     logger->info("\tDisplaying Time\t{}", blockEnd - blockStart);
 #endif
 
 #ifdef __PROFILE__
-    e2eEnd = getTimeStampNow();
+    e2eEnd = getTsNow();
     logger->info("E2E Time\t{}\tFPS: {}", e2eEnd - e2eStart, 1000/(e2eEnd - e2eStart));
-    debug_print("clock / %dth frameTimstamp: %f / %f", resultFrame.index, e2eEnd - e2eStart,
-                e2eEnd - resultFrame.timestamp);
+    debug_print("clock / %dth frameTimestamp: %f / %f", frameIndex, e2eEnd - e2eStart,
+                e2eEnd - frameTimestamp);
 #endif
 
     resultFrame.release();

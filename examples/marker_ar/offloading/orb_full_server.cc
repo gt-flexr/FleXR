@@ -4,6 +4,7 @@
 #include <yaml-cpp/yaml.h>
 
 using namespace std;
+using namespace mxre::kernels;
 
 int main(int argc, char const *argv[])
 {
@@ -23,10 +24,10 @@ int main(int argc, char const *argv[])
   string clientAddr    = config["client_addr"].as<string>();
   int clientFramePort  = config["client_frame_port"].as<int>();
 
-  int serverFramePort  = config["server_frame_port"].as<int>();
-  int serverMessagePort    = config["server_message_port"].as<int>();
-  string serverEncoder = config["server_encoder"].as<string>();
-  string serverDecoder = config["server_decoder"].as<string>();
+  int serverFramePort   = config["server_frame_port"].as<int>();
+  int serverMessagePort = config["server_message_port"].as<int>();
+  string serverEncoder  = config["server_encoder"].as<string>();
+  string serverDecoder  = config["server_decoder"].as<string>();
 
   if(markerPath.empty() || clientAddr.empty() || serverEncoder.empty() || serverDecoder.empty()) {
     debug_print("Please put correct info on config.yaml");
@@ -39,24 +40,31 @@ int main(int argc, char const *argv[])
 
   raft::map pipeline;
 
-  mxre::kernels::RTPFrameReceiver rtpFrameReceiver(serverFramePort, serverDecoder, width, height);
-  rtpFrameReceiver.duplicateOutPort<mxre::types::Frame>("out_frame", "out_frame2");
-  mxre::kernels::MessageReceiver<char> keyReceiver(serverMessagePort, mxre::utils::recvPrimitive<char>);
+  RTPFrameReceiver rtpFrameReceiver(serverFramePort, serverDecoder, width, height);
+  rtpFrameReceiver.activateOutPortAsLocal<FrameReceiverMsgType>("out_frame");
+  rtpFrameReceiver.duplicateOutPortAsLocal<FrameReceiverMsgType>("out_frame", "out_frame2");
 
-  mxre::kernels::RTPFrameSender rtpFrameSender(clientAddr, clientFramePort, serverEncoder,
+  RTPFrameSender rtpFrameSender(clientAddr, clientFramePort, serverEncoder,
                                                width, height, width*height*4, 60);
+  rtpFrameSender.activateInPortAsLocal<FrameSenderMsgType>("in_frame");
 
-  mxre::kernels::CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
-  mxre::kernels::MarkerCtxExtractor markerCtxExtractor(width, height);
-  mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), width, height);
+  CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
+  cudaORBDetector.activateInPortAsLocal<CudaORBDetectorInFrameType>("in_frame");
+  cudaORBDetector.activateOutPortAsLocal<CudaORBDetectorOutMarkerType>("out_detected_markers");
+
+  MarkerCtxExtractor markerCtxExtractor(width, height);
+  markerCtxExtractor.activateInPortAsLocal<CtxExtractorInMarkerType>("in_detected_markers");
+  markerCtxExtractor.activateOutPortAsLocal<CtxExtractorOutCtxType>("out_marker_contexts");
+
+  ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), width, height);
+  objRenderer.activateInPortAsLocal<ObjRendererInFrameType>("in_frame");
+  objRenderer.activateInPortAsRemote<ObjRendererInKeyType>("in_key", serverMessagePort);
+  objRenderer.activateInPortAsLocal<ObjRendererInCtxType>("in_marker_contexts");
+  objRenderer.activateOutPortAsLocal<ObjRendererOutFrameType>("out_frame");
 
   pipeline.link(&rtpFrameReceiver, "out_frame", &cudaORBDetector, "in_frame", 1);
-  //pipeline += rtpFrameReceiver["out_frame"] >> cudaORBDetector["in_frame"];
-
   pipeline.link(&cudaORBDetector, "out_detected_markers", &markerCtxExtractor, "in_detected_markers", 1);
-  //pipeline += cudaORBDetector["out_detected_markers"] >> markerCtxExtractor["in_detected_markers"];
 
-  pipeline.link(&keyReceiver, "out_data", &objRenderer, "in_key", 1);
   pipeline.link(&rtpFrameReceiver, "out_frame2", &objRenderer, "in_frame", 1);
   pipeline.link(&markerCtxExtractor, "out_marker_contexts", &objRenderer, "in_marker_contexts", 1);
 
