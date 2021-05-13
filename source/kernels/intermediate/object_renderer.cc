@@ -1,4 +1,6 @@
 #include <kernels/intermediate/object_renderer.h>
+#include <utils/msg_receiving_functions.h>
+#include <utils/msg_sending_functions.h>
 #include <GL/gl.h>
 #include <GL/glew.h>
 #include <unistd.h>
@@ -8,14 +10,17 @@ namespace mxre
   namespace kernels
   {
 
-    /* Constructor */
     ObjectRenderer::ObjectRenderer(std::vector<mxre::cv_types::MarkerInfo> registeredMarkers, int width, int height) :
       MXREKernel(), width(width), height(height)
     {
-      addInputPort<types::Message<types::Frame>>("in_frame");
-      addInputPort<types::Message<std::vector<gl_types::ObjectContext>>>("in_marker_contexts");
-      addInputPort<types::Message<char>>("in_key");
-      addOutputPort<types::Message<types::Frame>>("out_frame");
+      portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
+      portManager.registerInPortTag("in_marker_contexts",
+                                    components::PortDependency::NONBLOCKING,
+                                    utils::recvRemotePrimitiveVec<ObjRendererInCtxType>);
+      portManager.registerInPortTag("in_key",
+                                    components::PortDependency::NONBLOCKING,
+                                    utils::recvRemotePrimitive<ObjRendererInKeyType>);
+      portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, 0, 0);
 
       // 0. Create pbuf as a context
       pbuf = new mxre::egl_types::pbuffer;
@@ -40,31 +45,40 @@ namespace mxre
       // 3. Unbind the pbuf context in init thread
       mxre::egl_utils::unbindPbuffer(*pbuf);
       binding = false;
-
-#ifdef __PROFILE__
-      if(logger == NULL) initLoggerST("object_renderer", "logs/" + std::to_string(pid) + "/object_renderer.log");
-#endif
     }
 
-
-    /* Destructor */
-    ObjectRenderer::~ObjectRenderer() {
+    ObjectRenderer::~ObjectRenderer()
+    {
       mxre::egl_utils::terminatePbuffer(*pbuf);
       delete [] pbuf;
     }
 
-
-    /* Kernel Logic */
-    bool ObjectRenderer::logic(types::Message<std::vector<gl_types::ObjectContext>> &inMarkerContexts,
-                               char inKey,
-                               types::Message<types::Frame> &outFrame)
+    bool ObjectRenderer::logic(ObjRendererInFrameType  *inFrame,
+                               ObjRendererInKeyType    *inKey,
+                               ObjRendererInCtxType    *inMarkerContexts,
+                               ObjRendererOutFrameType *outFrame)
     {
-      // 1. Create/update background texture & release previous CV frame
-      if(glIsTexture(backgroundTexture)) {
-        mxre::gl_utils::updateTextureFromFrame(&cachedBackgroundFrame, backgroundTexture);
+      if(inMarkerContexts == nullptr) {
+        cachedCtxCounter--;
+        if(cachedCtxCounter < 0) {
+          cachedCtxCounter = 0;
+          cachedCtx.data = std::vector<gl_types::ObjectContext>();
+          cachedCtx.ts  = -1;
+        }
       }
       else {
-        mxre::gl_utils::makeTextureFromFrame(&cachedBackgroundFrame, backgroundTexture);
+        cachedCtxCounter = 3;
+        cachedCtx = *inMarkerContexts;
+      }
+
+      char key = 0;
+      if(inKey != nullptr) key = inKey->data;
+
+      if(glIsTexture(backgroundTexture)) {
+        mxre::gl_utils::updateTextureFromFrame(&inFrame->data, backgroundTexture);
+      }
+      else {
+        mxre::gl_utils::makeTextureFromFrame(&inFrame->data, backgroundTexture);
       }
 
       // 2. Draw background frame
@@ -82,17 +96,22 @@ namespace mxre
       glEnd();
       mxre::gl_utils::endBackground();
 
-      worldManager.startWorlds(inKey, inMarkerContexts.data);
+      worldManager.startWorlds(key, cachedCtx.data);
 
-      outFrame.data = mxre::gl_utils::exportGLBufferToCV(width, height, 0, 0);
-      strcpy(outFrame.tag, inMarkerContexts.tag);
-      outFrame.seq = inMarkerContexts.seq;
-      outFrame.ts  = inMarkerContexts.ts;
+      outFrame->data = mxre::gl_utils::exportGLBufferToCV(width, height);
+      if(cachedCtxCounter == 3) {
+        strcpy(outFrame->tag, inMarkerContexts->tag);
+        outFrame->ts = inMarkerContexts->ts;
+        outFrame->seq = inMarkerContexts->seq;
+      }
+      else {
+        strcpy(outFrame->tag, inFrame->tag);
+        outFrame->seq = inFrame->seq;
+        outFrame->ts  = inFrame->ts;
+      }
       return true;
     }
 
-
-    /* Kernel Run */
     raft::kstatus ObjectRenderer::run()
     {
       if(!binding) {
@@ -100,43 +119,25 @@ namespace mxre
         binding = true;
       }
 
-      // 0.0.Get inputs from the previous kernel: ObjectDetector
-      types::Message<std::vector<gl_types::ObjectContext>> &inMarkerContexts = \
-                              input["in_marker_contexts"].peek<types::Message<std::vector<gl_types::ObjectContext>>>();
-      types::Message<types::Frame> &outFrame = output["out_frame"].allocate<types::Message<types::Frame>>();
-#ifdef __PROFILE__
-      startTimeStamp = getTimeStampNow();
-#endif
-      if (checkPort("in_frame")) {
-        types::Message<types::Frame> &inFrame = input["in_frame"].peek<types::Message<types::Frame>>();
-        cachedBackgroundFrame = inFrame.data.clone();
-        inFrame.data.release();
-        recyclePort("in_frame");
-      }
+      ObjRendererInCtxType    *inMarkerContexts = portManager.getInput<ObjRendererInCtxType>("in_marker_contexts");
+      ObjRendererInFrameType  *inFrame  = portManager.getInput<ObjRendererInFrameType>("in_frame");
+      ObjRendererInKeyType    *inKey    = portManager.getInput<ObjRendererInKeyType>("in_key");
+      ObjRendererOutFrameType *outFrame = portManager.getOutputPlaceholder<ObjRendererOutFrameType>("out_frame");
 
-      // 0.1.Get input keystroke from Keyboard
-      char key;
-      if(checkPort("in_key")) {
-        types::Message<char> inKey = input ["in_key"].peek<types::Message<char>>();
-        std::cout << "Input Key captured object_renderer: " << inKey.data << std::endl;
-        key = inKey.data;
-        recyclePort("in_key");
-      }
-      else key = 0;
+      double st = getTsNow();
 
-      // 0.2.Set output
+      logic(inFrame, inKey, inMarkerContexts, outFrame);
 
-      if(logic(inMarkerContexts, key, outFrame)) {
-        sendFrames("out_frame", outFrame);
-      }
+      portManager.sendOutput("out_frame", outFrame);
 
-      recyclePort("in_frame");
-      recyclePort("in_marker_contexts");
+      inFrame->data.release();
+      portManager.freeInput("in_frame", inFrame);
+      portManager.freeInput("in_marker_contexts", inMarkerContexts);
+      portManager.freeInput("in_key", inKey);
 
-#ifdef __PROFILE__
-      endTimeStamp = getTimeStampNow();
-      logger->info("{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
-#endif
+      double et = getTsNow();
+      if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}", st, et, et-st);
+
       return raft::proceed;
     }
 

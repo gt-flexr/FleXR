@@ -20,10 +20,13 @@ namespace mxre
 {
   namespace kernels
   {
+    using CtxExtractorInMarkerType = types::Message<std::vector<cv_types::DetectedMarker>>;
+    using CtxExtractorOutCtxType   = types::Message<std::vector<gl_types::ObjectContext>>;
 
     class MarkerCtxExtractor : public MXREKernel
     {
     private:
+      // TODO: components::ORBDetector: detect & ctx extraction
       cv::Mat camIntrinsic;
       cv::Mat camDistCoeffs;
       int width, height;
@@ -34,8 +37,7 @@ namespace mxre
       void setIntrinsic(cv::Mat inIntrinsic) {camIntrinsic = inIntrinsic.clone();}
       void setDistCoeffs(cv::Mat inDistCoeffs) {camDistCoeffs = inDistCoeffs.clone();}
       virtual raft::kstatus run();
-      bool logic(types::Message<std::vector<cv_types::DetectedMarker>> &inDetectedMarkers,
-                 types::Message<std::vector<gl_types::ObjectContext>> &outMarkerContexts);
+      bool logic(CtxExtractorInMarkerType *inDetectedMarkers, CtxExtractorOutCtxType *outMarkerContexts);
     };
 
   }   // namespace pipeline

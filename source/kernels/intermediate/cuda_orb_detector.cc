@@ -1,7 +1,11 @@
-#include <unistd.h>
 #ifdef __USE_OPENCV_CUDA__
-#include <kernels/intermediate/cuda_orb_detector.h>
+
+#include <unistd.h>
 #include <opencv2/core.hpp>
+#include <kernels/intermediate/cuda_orb_detector.h>
+#include <utils/msg_sending_functions.h>
+#include <types/types.h>
+
 
 namespace mxre
 {
@@ -10,8 +14,11 @@ namespace mxre
     CudaORBDetector::CudaORBDetector(std::vector<mxre::cv_types::MarkerInfo> registeredMarkers) :
       MXREKernel(), registeredMarkers(registeredMarkers)
     {
-      addInputPort<types::Message<types::Frame>>("in_frame");
-      addOutputPort<types::Message<std::vector<cv_types::DetectedMarker>>>("out_detected_markers");
+      portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
+      portManager.registerOutPortTag("out_detected_markers",
+                                     utils::sendLocalBasicCopy<CudaORBDetectorOutMarkerType>,
+                                     utils::sendRemoteMarkers,
+                                     types::freePrimitiveMsg<CudaORBDetectorOutMarkerType>);
 
       // Object Detection Parameters
       knnMatchRatio = 0.9f;
@@ -21,22 +28,17 @@ namespace mxre
 
       detector = cv::cuda::ORB::create();
       matcher = cv::cuda::DescriptorMatcher::createBFMatcher(cv::NORM_HAMMING);
-#ifdef __PROFILE__
-      if(logger == NULL) initLoggerST("cuda_orb_detector", "logs/" + std::to_string(pid) + "/cuda_orb_detector.log");
-#endif
     }
 
-
-    bool CudaORBDetector::logic(types::Message<types::Frame> &inFrame,
-                                types::Message<std::vector<cv_types::DetectedMarker>> &outDetectedMarkers)
+    bool CudaORBDetector::logic(CudaORBDetectorInFrameType *inFrame, CudaORBDetectorOutMarkerType *outDetectedMarkers)
     {
       std::vector<cv::KeyPoint> frameKps;
-      strcpy(outDetectedMarkers.tag, inFrame.tag);
-      outDetectedMarkers.seq = inFrame.seq;
-      outDetectedMarkers.ts  = inFrame.ts;
+      strcpy(outDetectedMarkers->tag, inFrame->tag);
+      outDetectedMarkers->seq = inFrame->seq;
+      outDetectedMarkers->ts  = inFrame->ts;
 
       // 1. prepare gary frame
-      cv::Mat grayFrame = inFrame.data.useAsCVMat();
+      cv::Mat grayFrame = inFrame->data.useAsCVMat();
       cv::cvtColor(grayFrame, grayFrame, CV_BGR2GRAY);
       cuFrame.upload(grayFrame);
 
@@ -44,7 +46,6 @@ namespace mxre
       detector->detectAndComputeAsync(cuFrame, cv::noArray(), cuKp, cuDesc, false, stream);
       stream.waitForCompletion();
       detector->convert(cuKp, frameKps);
-      inFrame.data.release(); // deallocate the frame memory
 
       // 3. multi-obj detection
       std::vector<mxre::cv_types::MarkerInfo>::iterator markerInfo;
@@ -100,7 +101,7 @@ namespace mxre
             detectedMarker.index = markerInfo->index;
             detectedMarker.defaultLocationIn3D = markerInfo->defaultLocationIn3D;
             perspectiveTransform(markerInfo->defaultLocationIn2D, detectedMarker.locationIn2D, homography);
-            outDetectedMarkers.data.push_back(detectedMarker);
+            outDetectedMarkers->data.push_back(detectedMarker);
           }
         }
       }
@@ -108,29 +109,22 @@ namespace mxre
       return true;
     }
 
-
     raft::kstatus CudaORBDetector::run() {
-      types::Message<types::Frame> &inFrame = input["in_frame"].peek<types::Message<types::Frame>>();
-      types::Message<std::vector<cv_types::DetectedMarker>> &outDetectedMarkers = \
-                output["out_detected_markers"].allocate<types::Message<std::vector<cv_types::DetectedMarker>>>();
+      CudaORBDetectorInFrameType *inFrame = portManager.getInput<CudaORBDetectorInFrameType>("in_frame");
+      CudaORBDetectorOutMarkerType *outDetectedMarkers = \
+                                portManager.getOutputPlaceholder<CudaORBDetectorOutMarkerType>("out_detected_markers");
 
-#ifdef __PROFILE__
-      startTimeStamp = getTimeStampNow();
-#endif
+      double st = getTsNow();
 
+      logic(inFrame, outDetectedMarkers);
+      portManager.sendOutput("out_detected_markers", outDetectedMarkers);
 
-      if(logic(inFrame, outDetectedMarkers)) {
-        output["out_detected_markers"].send();
-        sendPrimitiveCopy("out_detected_markers", outDetectedMarkers);
-      }
+      inFrame->data.release();
+      portManager.freeInput("in_frame", inFrame);
 
-      recyclePort("in_frame");
-      debug_print("END");
+      double et = getTsNow();
 
-#ifdef __PROFILE__
-      endTimeStamp = getTimeStampNow();
-      logger->info("{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
-#endif
+      if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}", st, et, et-st);
 
       return raft::proceed;
     }

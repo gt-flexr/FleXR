@@ -1,4 +1,6 @@
 #include <kernels/intermediate/marker_ctx_extractor.h>
+#include <utils/msg_receiving_functions.h>
+#include <utils/msg_sending_functions.h>
 #include <unistd.h>
 
 namespace mxre
@@ -6,6 +8,14 @@ namespace mxre
   namespace kernels
   {
     MarkerCtxExtractor::MarkerCtxExtractor(int width, int height) {
+      portManager.registerInPortTag("in_detected_markers",
+                                    components::PortDependency::BLOCKING,
+                                    utils::recvDetectedMarkers);
+      portManager.registerOutPortTag("out_marker_contexts",
+                                     utils::sendLocalBasicCopy<CtxExtractorOutCtxType>,
+                                     utils::sendRemotePrimitiveVec<CtxExtractorOutCtxType>,
+                                     types::freePrimitiveMsg<CtxExtractorOutCtxType>);
+
       cv::Mat tempIntrinsic(3, 3, CV_64FC1);
       cv::Mat tempDistCoeffs(4, 1, CV_64FC1, {0, 0, 0, 0});
 
@@ -23,13 +33,6 @@ namespace mxre
       this->height = height;
       camIntrinsic = tempIntrinsic.clone();
       camDistCoeffs = tempDistCoeffs.clone();
-
-      addInputPort<types::Message<std::vector<cv_types::DetectedMarker>>>("in_detected_markers");
-      addOutputPort<types::Message<std::vector<gl_types::ObjectContext>>>("out_marker_contexts");
-
-#ifdef __PROFILE__
-      if(logger == NULL) initLoggerST("marker_ctx_extractor", "logs/marker_ctx_extractor.log");
-#endif
     }
 
 
@@ -41,26 +44,26 @@ namespace mxre
       camIntrinsic = intrinsic.clone();
       camDistCoeffs = distCoeffs.clone();
 
-      addInputPort<types::Message<std::vector<cv_types::DetectedMarker>>>("in_detected_markers");
-      addOutputPort<types::Message<std::vector<gl_types::ObjectContext>>>("out_marker_contexts");
-
-#ifdef __PROFILE__
-      if(logger == NULL) initLoggerST("marker_ctx_extractor", "logs/marker_ctx_extractor.log");
-#endif
-
+      portManager.registerInPortTag("in_detected_markers",
+                                    components::PortDependency::BLOCKING,
+                                    utils::recvDetectedMarkers);
+      portManager.registerOutPortTag("out_marker_contexts",
+                                     utils::sendLocalBasicCopy<CtxExtractorOutCtxType>,
+                                     utils::sendRemotePrimitiveVec<CtxExtractorOutCtxType>,
+                                     types::freePrimitiveMsg<CtxExtractorOutCtxType>);
     }
 
 
-    bool MarkerCtxExtractor::logic(types::Message<std::vector<cv_types::DetectedMarker>> &inDetectedMarkers,
-                                   types::Message<std::vector<gl_types::ObjectContext>> &outMarkerContexts)
+    bool MarkerCtxExtractor::logic(CtxExtractorInMarkerType *inDetectedMarkers,
+                                   CtxExtractorOutCtxType   *outMarkerContexts)
     {
-      strcpy(outMarkerContexts.tag, inDetectedMarkers.tag);
-      outMarkerContexts.seq = inDetectedMarkers.seq;
-      outMarkerContexts.ts  = inDetectedMarkers.ts;
+      strcpy(outMarkerContexts->tag, "marker_ctx");
+      outMarkerContexts->seq = inDetectedMarkers->seq;
+      outMarkerContexts->ts  = inDetectedMarkers->ts;
 
       std::vector<mxre::cv_types::DetectedMarker>::iterator detectedMarker;
-      for (detectedMarker = inDetectedMarkers.data.begin();
-           detectedMarker != inDetectedMarkers.data.end();
+      for (detectedMarker = inDetectedMarkers->data.begin();
+           detectedMarker != inDetectedMarkers->data.end();
            ++detectedMarker)
       {
         cv::Mat rvec, tvec;
@@ -83,7 +86,7 @@ namespace mxre
         //markerContext.tvec.x = transY; markerContext.tvec.y = -transZ; markerContext.tvec.z = transX;
         markerContext.rvec.x = rotX;   markerContext.rvec.y = -rotY;   markerContext.rvec.z = -rotZ;
         markerContext.tvec.x = transX; markerContext.tvec.y = transY; markerContext.tvec.z = -transZ;
-        outMarkerContexts.data.push_back(markerContext);
+        outMarkerContexts->data.push_back(markerContext);
       }
       return true;
     }
@@ -91,26 +94,19 @@ namespace mxre
 
     raft::kstatus MarkerCtxExtractor::run()
     {
-      types::Message<std::vector<cv_types::DetectedMarker>> &inDetectedMarkers = \
-                            input["in_detected_markers"].peek<types::Message<std::vector<cv_types::DetectedMarker>>>();
-      types::Message<std::vector<gl_types::ObjectContext>> &outMarkerContexts = \
-          output["out_marker_contexts"].template allocate<types::Message<std::vector<gl_types::ObjectContext>>>();
-#ifdef __PROFILE__
-      startTimeStamp = getTimeStampNow();
-#endif
+      CtxExtractorInMarkerType *inDetectedMarkers = \
+                                                portManager.getInput<CtxExtractorInMarkerType>("in_detected_markers");
+      CtxExtractorOutCtxType *outMarkerContexts = \
+                                       portManager.getOutputPlaceholder<CtxExtractorOutCtxType>("out_marker_contexts");
+      double st = getTsNow();
 
-      if(logic(inDetectedMarkers, outMarkerContexts)) {
-        output["out_marker_contexts"].send();
-        sendPrimitiveCopy("out_marker_contexts", outMarkerContexts);
-      }
+      logic(inDetectedMarkers, outMarkerContexts);
+      portManager.sendOutput("out_marker_contexts", outMarkerContexts);
 
-      recyclePort("in_detected_markers");
+      portManager.freeInput("in_detected_markers", inDetectedMarkers);
 
-      debug_print("END");
-#ifdef __PROFILE__
-      endTimeStamp = getTimeStampNow();
-      logger->info("{}\t {}\t {}", startTimeStamp, endTimeStamp, endTimeStamp-startTimeStamp);
-#endif
+      double et = getTsNow();
+      if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}", st, et, et-st);
 
       return raft::proceed;
     }
