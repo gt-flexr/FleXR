@@ -23,6 +23,13 @@ namespace mxre {
       double   ts;
       T        data;
     };
+
+    template <typename T>
+    void freePrimitiveMsg(void *msg)
+    {
+      T* castedMessage = static_cast<T*>(msg);
+      delete castedMessage;
+    }
   }
 }
 #endif

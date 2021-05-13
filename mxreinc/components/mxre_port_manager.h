@@ -2,7 +2,7 @@
 #define __MXRE_COMPONENTS_MXREPORTMANAGER__
 
 #include <raftinc/port.hpp>
-#include <components/mxre_port.h>
+#include "components/mxre_port.h"
 
 namespace mxre
 {

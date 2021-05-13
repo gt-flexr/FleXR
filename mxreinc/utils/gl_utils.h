@@ -83,7 +83,7 @@ namespace mxre
     }
 
 
-    static mxre::types::Frame exportGLBufferToCV(int width, int height, uint32_t index, double timestamp)
+    static mxre::types::Frame exportGLBufferToCV(int width, int height)
     {
       glReadBuffer(GL_FRONT);
       glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -92,7 +92,7 @@ namespace mxre
       glReadPixels(0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, pixels);
       // debug_print("allocated pixel addr: %p", static_cast<void*>(pixels));
 
-      mxre::types::Frame frame(height, width, CV_8UC3, pixels, index, timestamp);
+      mxre::types::Frame frame(height, width, CV_8UC3, pixels);
 
       return frame;
     }

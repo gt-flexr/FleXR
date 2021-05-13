@@ -3,8 +3,9 @@
 
 #include <bits/stdc++.h>
 #include <raftinc/port.hpp>
-#include <components/zmq_port.h>
-#include <defs.h>
+
+#include "components/zmq_port.h"
+#include "defs.h"
 
 namespace mxre
 {
