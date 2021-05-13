@@ -1,6 +1,7 @@
 #include <mxre>
 
 using namespace std;
+using namespace mxre::kernels;
 
 int main()
 {
@@ -31,17 +32,26 @@ int main()
 
 
   raft::map sendingPipeline;
-  mxre::kernels::BagCamera bagCam(bagFile, bagTopic);
+
+  BagCamera bagCam("bag_cam", bagFile, bagTopic, fps);
   bagCam.setFramesToCache(400, 400);
-  bagCam.setFPS(fps);
-  mxre::kernels::RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder, width, height,
+  bagCam.activateOutPortAsLocal<BagCameraMsgType>("out_frame");
+
+  RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder, width, height,
                                                width*height*4, 60);
+  rtpFrameSender.activateInPortAsLocal<FrameSenderMsgType>("in_frame");
+
   sendingPipeline += bagCam["out_frame"] >> rtpFrameSender["in_frame"];
+
   std::thread sendThread(mxre::kernels::runPipeline, &sendingPipeline);
 
   raft::map receivingPipeline;
-  mxre::kernels::RTPFrameReceiver rtpFrameReceiver(clientFramePort, clientDecoder, width, height);
-  mxre::kernels::NonDisplay nonDisplay;
+  RTPFrameReceiver rtpFrameReceiver(clientFramePort, clientDecoder, width, height);
+  rtpFrameReceiver.activateOutPortAsLocal<FrameReceiverMsgType>("out_frame");
+
+  NonDisplay nonDisplay;
+  nonDisplay.activateInPortAsLocal<NonDisplayMsgType>("in_frame");
+
   receivingPipeline += rtpFrameReceiver["out_frame"] >> nonDisplay["in_frame"];
   std::thread recvThread(mxre::kernels::runPipeline, &receivingPipeline);
 

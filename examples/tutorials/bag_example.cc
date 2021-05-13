@@ -1,6 +1,7 @@
 #include <mxre>
 
 using namespace std;
+using namespace mxre::kernels;
 
 int main()
 {
@@ -21,10 +22,12 @@ int main()
   }
 
   raft::map pipeline;
-  mxre::kernels::BagCamera bagCam(bagFile, bagTopic);
-  //bagCam.setFramesToCache(400, 400);
-  bagCam.setFPS(fps);
-  mxre::kernels::CVDisplay cvDisplay;
+  BagCamera bagCam("bag_cam", bagFile, bagTopic, fps);
+  bagCam.setFramesToCache(400, 400);
+  bagCam.activateOutPortAsLocal<BagCameraMsgType>("out_frame");
+
+  CVDisplay cvDisplay;
+  cvDisplay.activateInPortAsLocal<CVDisplayMsgType>("in_frame");
 
   pipeline += bagCam["out_frame"] >> cvDisplay["in_frame"];
   pipeline.exe();

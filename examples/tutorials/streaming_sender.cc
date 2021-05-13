@@ -1,6 +1,7 @@
 #include <mxre>
 
 using namespace std;
+using namespace mxre::kernels;
 
 int main()
 {
@@ -29,11 +30,14 @@ int main()
 
 
   raft::map sendingPipeline;
-  mxre::kernels::BagCamera bagCam(bagFile, bagTopic);
+  BagCamera bagCam("bag_cam", bagFile, bagTopic, fps);
   bagCam.setFramesToCache(400, 400);
-  bagCam.setFPS(fps);
-  mxre::kernels::RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder, width, height,
-                                               width*height*4, 60);
+  bagCam.activateOutPortAsLocal<BagCameraMsgType>("out_frame");
+
+  RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder, width, height, width*height*4, 60);
+  rtpFrameSender.activateInPortAsLocal<FrameSenderMsgType>("in_frame");
+
+
   sendingPipeline += bagCam["out_frame"] >> rtpFrameSender["in_frame"];
   sendingPipeline.exe();
 

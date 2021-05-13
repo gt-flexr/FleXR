@@ -1,6 +1,7 @@
 #include <mxre>
 
 using namespace std;
+using namespace mxre::kernels;
 
 int main()
 {
@@ -18,8 +19,11 @@ int main()
   int height = config["height"].as<int>();
 
   raft::map pipeline;
-  mxre::kernels::CVCamera cvCam("cvcam", camIdx, width, height);
-  mxre::kernels::CVDisplay cvDisplay;
+  CVCamera cvCam("cvcam", camIdx, width, height);
+  cvCam.activateOutPortAsLocal<CVCameraMsgType>("out_frame");
+
+  CVDisplay cvDisplay;
+  cvDisplay.activateInPortAsLocal<NonDisplayMsgType>("in_frame");
 
   pipeline += cvCam["out_frame"] >> cvDisplay["in_frame"];
   pipeline.exe();

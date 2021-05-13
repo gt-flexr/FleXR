@@ -1,6 +1,7 @@
 #include <mxre>
 
 using namespace std;
+using namespace mxre::kernels;
 
 int main()
 {
@@ -21,10 +22,13 @@ int main()
   string serverDecoder = config["server_decoder"].as<string>();
 
   raft::map pipeline;
-  mxre::kernels::RTPFrameReceiver rtpFrameReceiver(serverFramePort, serverDecoder, width, height);
-  mxre::kernels::CVDisplay nonDisplay;
+  RTPFrameReceiver rtpFrameReceiver(serverFramePort, serverDecoder, width, height);
+  rtpFrameReceiver.activateOutPortAsLocal<FrameReceiverMsgType>("out_frame");
 
-  pipeline += rtpFrameReceiver["out_frame"] >> nonDisplay["in_frame"];
+  CVDisplay cvDisplay;
+  cvDisplay.activateInPortAsLocal<CVDisplayMsgType>("in_frame");
+
+  pipeline += rtpFrameReceiver["out_frame"] >> cvDisplay["in_frame"];
   pipeline.exe();
 }
 
