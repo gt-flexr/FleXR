@@ -9,6 +9,7 @@ namespace mxre {
   namespace types {
     typedef struct RTPTrackingInfo {
       int32_t invoice; // for sanity check
+      uint32_t dataSize;
       char tag[MXRE_MSG_TAG_SIZE];
       uint32_t seq;
       double ts;

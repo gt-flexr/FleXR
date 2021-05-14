@@ -74,6 +74,8 @@ namespace mxre
                                                                   recvDataSize, recvDataBuffer);
 
         av_packet_from_data(&decodingPacket, recvDataBuffer, recvDataSize);
+        decodingPacket.side_data_elems = 0;
+
         ret = avcodec_send_packet(decoderContext, &decodingPacket);
         while (ret >= 0) {
           ret = avcodec_receive_frame(decoderContext, decodingFrame);

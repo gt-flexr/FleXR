@@ -28,7 +28,7 @@ namespace mxre {
         *outDataBuffer = rtpFrame->payload;
         unrefFrameExceptData(rtpFrame);
 
-        //debug_print("Receiving data size %d at %p", *outDataSize, (void*)*outDataBuffer);
+        debug_print("Receiving data size %d at %p", outDataSize, (void*)*outDataBuffer);
         return true;
       }
 
@@ -50,7 +50,12 @@ namespace mxre {
           strcpy(outTag, trackingInfo.tag);
           outSeq = trackingInfo.seq;
           outTs = trackingInfo.ts;
-          if(receiveDynamic(outDataBuffer, outDataSize)) return true;
+          debug_print("Data size to receive: %d", trackingInfo.dataSize);
+          if(receiveDynamic(outDataBuffer, outDataSize)) {
+            if(trackingInfo.dataSize == outDataSize) return true;
+            delete outDataBuffer;
+            return false;
+          }
         }
       }
       return false;
