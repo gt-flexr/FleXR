@@ -52,8 +52,12 @@ namespace mxre {
           outTs = trackingInfo.ts;
           debug_print("Data size to receive: %d", trackingInfo.dataSize);
           if(receiveDynamic(outDataBuffer, outDataSize)) {
-            if(trackingInfo.dataSize == outDataSize) return true;
-            delete outDataBuffer;
+            if(trackingInfo.dataSize == outDataSize) {
+              debug_print("valid %s: seq(%d) ts(%f) size(%d)", outTag, outSeq, outTs, outDataSize);
+              return true;
+            }
+            debug_print("invalid %s: seq(%d) ts(%f) sizeToRecv(%d)/realSize(%d)", outTag, outSeq, outTs,
+                                                                                  trackingInfo.dataSize, outDataSize);
             return false;
           }
         }
