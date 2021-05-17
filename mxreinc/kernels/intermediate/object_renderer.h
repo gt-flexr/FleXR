@@ -38,9 +38,6 @@ namespace mxre
       mxre::egl_types::pbuffer *pbuf;
       mxre::ar_types::VirtualWorldManager worldManager;
 
-      ObjRendererInCtxType cachedCtx;
-      int cachedCtxCounter;
-
       GLuint backgroundTexture;
       bool binding;
       int width, height;

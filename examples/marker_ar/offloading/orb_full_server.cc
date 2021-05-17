@@ -71,13 +71,13 @@ int main(int argc, char const *argv[])
   objRenderer.activateInPortAsLocal<ObjRendererInCtxType>("in_marker_contexts");
   objRenderer.activateOutPortAsLocal<ObjRendererOutFrameType>("out_frame");
 
-  pipeline.link(&rtpFrameReceiver, "out_frame", &cudaORBDetector, "in_frame", 1);
-  pipeline.link(&cudaORBDetector, "out_detected_markers", &markerCtxExtractor, "in_detected_markers", 1);
+  pipeline += rtpFrameReceiver["out_frame"] >> cudaORBDetector["in_frame"];
+  pipeline += cudaORBDetector["out_detected_markers"] >> markerCtxExtractor["in_detected_markers"];
 
-  pipeline.link(&rtpFrameReceiver, "out_frame2", &objRenderer, "in_frame", 1);
-  pipeline.link(&markerCtxExtractor, "out_marker_contexts", &objRenderer, "in_marker_contexts", 1);
+  pipeline += markerCtxExtractor["out_marker_contexts"] >> objRenderer["in_marker_contexts"];
+  pipeline += rtpFrameReceiver["out_frame2"] >> objRenderer["in_frame"];
 
-  pipeline.link(&objRenderer, "out_frame", &rtpFrameSender, "in_frame", 1);
+  pipeline += objRenderer["out_frame"] >> rtpFrameSender["in_frame"];
   pipeline.exe();
   return 0;
 }

@@ -13,9 +13,9 @@ namespace mxre
     ObjectRenderer::ObjectRenderer(std::vector<mxre::cv_types::MarkerInfo> registeredMarkers, int width, int height) :
       MXREKernel(), width(width), height(height)
     {
-      portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
+      portManager.registerInPortTag("in_frame", components::PortDependency::NONBLOCKING, 0);
       portManager.registerInPortTag("in_marker_contexts",
-                                    components::PortDependency::NONBLOCKING,
+                                    components::PortDependency::BLOCKING,
                                     utils::recvRemotePrimitiveVec<ObjRendererInCtxType>);
       portManager.registerInPortTag("in_key",
                                     components::PortDependency::NONBLOCKING,
@@ -58,19 +58,6 @@ namespace mxre
                                ObjRendererInCtxType    *inMarkerContexts,
                                ObjRendererOutFrameType *outFrame)
     {
-      if(inMarkerContexts == nullptr) {
-        cachedCtxCounter--;
-        if(cachedCtxCounter < 0) {
-          cachedCtxCounter = 0;
-          cachedCtx.data = std::vector<gl_types::ObjectContext>();
-          cachedCtx.ts  = -1;
-        }
-      }
-      else {
-        cachedCtxCounter = 3;
-        cachedCtx = *inMarkerContexts;
-      }
-
       char key = 0;
       if(inKey != nullptr) key = inKey->data;
 
@@ -96,19 +83,12 @@ namespace mxre
       glEnd();
       mxre::gl_utils::endBackground();
 
-      worldManager.startWorlds(key, cachedCtx.data);
+      worldManager.startWorlds(key, inMarkerContexts->data);
 
       outFrame->data = mxre::gl_utils::exportGLBufferToCV(width, height);
-      if(cachedCtxCounter == 3) {
-        strcpy(outFrame->tag, inMarkerContexts->tag);
-        outFrame->ts = inMarkerContexts->ts;
-        outFrame->seq = inMarkerContexts->seq;
-      }
-      else {
-        strcpy(outFrame->tag, inFrame->tag);
-        outFrame->seq = inFrame->seq;
-        outFrame->ts  = inFrame->ts;
-      }
+      strcpy(outFrame->tag, inMarkerContexts->tag);
+      outFrame->ts = inMarkerContexts->ts;
+      outFrame->seq = inMarkerContexts->seq;
       return true;
     }
 

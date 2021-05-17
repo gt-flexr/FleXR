@@ -77,7 +77,7 @@ int main(int argc, char const *argv[])
   // Set the components
   pipeline += bagCam["out_frame"] >> rtpFrameSender["in_frame"];
 
-  pipeline.link(&bagCam, "out_frame2", &objRenderer, "in_frame", 1);
+  pipeline += bagCam["out_frame2"] >> objRenderer["in_frame"];
   pipeline.link(&keyboard, "out_key", &objRenderer, "in_key", 1);
 
   pipeline += objRenderer["out_frame"] >> nonDisplay["in_frame"];
