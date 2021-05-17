@@ -23,9 +23,13 @@ int main()
 
   raft::map pipeline;
   RTPFrameReceiver rtpFrameReceiver(serverFramePort, serverDecoder, width, height);
+  rtpFrameReceiver.setDebugMode();
+  rtpFrameReceiver.setLogger("rtp_frame_receiver_logger", "rtp_frame_receiver.log");
   rtpFrameReceiver.activateOutPortAsLocal<FrameReceiverMsgType>("out_frame");
 
   CVDisplay cvDisplay;
+  cvDisplay.setDebugMode();
+  cvDisplay.setLogger("cv_display_logger", "cv_display.log");
   cvDisplay.activateInPortAsLocal<CVDisplayMsgType>("in_frame");
 
   pipeline += rtpFrameReceiver["out_frame"] >> cvDisplay["in_frame"];

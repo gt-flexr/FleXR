@@ -30,15 +30,17 @@ int main()
   string serverAddr    = config["server_addr"].as<string>();
   int serverFramePort  = config["server_frame_port"].as<int>();
 
-
   raft::map sendingPipeline;
 
   BagCamera bagCam("bag_cam", bagFile, bagTopic, fps);
+  bagCam.setDebugMode();
+  bagCam.setLogger("bag_cam_logger", "bag_cam.log");
   bagCam.setFramesToCache(400, 400);
   bagCam.activateOutPortAsLocal<BagCameraMsgType>("out_frame");
 
-  RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder, width, height,
-                                               width*height*4, 60);
+  RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder, width, height, width*height*4, 60);
+  rtpFrameSender.setDebugMode();
+  rtpFrameSender.setLogger("rtp_frame_sender_logger", "rtp_frame_sender.log");
   rtpFrameSender.activateInPortAsLocal<FrameSenderMsgType>("in_frame");
 
   sendingPipeline += bagCam["out_frame"] >> rtpFrameSender["in_frame"];
@@ -47,9 +49,13 @@ int main()
 
   raft::map receivingPipeline;
   RTPFrameReceiver rtpFrameReceiver(clientFramePort, clientDecoder, width, height);
+  rtpFrameReceiver.setDebugMode();
+  rtpFrameReceiver.setLogger("rtp_frame_receiver_logger", "rtp_frame_receiver.log");
   rtpFrameReceiver.activateOutPortAsLocal<FrameReceiverMsgType>("out_frame");
 
   NonDisplay nonDisplay;
+  nonDisplay.setDebugMode();
+  nonDisplay.setLogger("non_display_logger", "non_display.log");
   nonDisplay.activateInPortAsLocal<NonDisplayMsgType>("in_frame");
 
   receivingPipeline += rtpFrameReceiver["out_frame"] >> nonDisplay["in_frame"];

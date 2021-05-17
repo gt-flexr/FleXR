@@ -32,11 +32,14 @@ int main()
   raft::map sendingPipeline;
   BagCamera bagCam("bag_cam", bagFile, bagTopic, fps);
   bagCam.setFramesToCache(400, 400);
+  bagCam.setDebugMode();
+  bagCam.setLogger("bag_cam_logger", "bag_cam.log");
   bagCam.activateOutPortAsLocal<BagCameraMsgType>("out_frame");
 
   RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder, width, height, width*height*4, 60);
+  rtpFrameSender.setDebugMode();
+  rtpFrameSender.setLogger("rtp_frame_sender_logger", "rtp_frame_sender.log");
   rtpFrameSender.activateInPortAsLocal<FrameSenderMsgType>("in_frame");
-
 
   sendingPipeline += bagCam["out_frame"] >> rtpFrameSender["in_frame"];
   sendingPipeline.exe();

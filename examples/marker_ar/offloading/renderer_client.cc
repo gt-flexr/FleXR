@@ -48,28 +48,43 @@ int main(int argc, char const *argv[])
   raft::map pipeline;
 
   mxre::kernels::BagCamera bagCam("bag_frame", bagFile, bagTopic, bagFPS);
+  bagCam.setDebugMode();
+  bagCam.setLogger("bag_cam_logger", "bag_cam.log");
   bagCam.setFramesToCache(400, 400);
   bagCam.activateOutPortAsLocal<BagCameraMsgType>("out_frame");
   bagCam.duplicateOutPortAsLocal<BagCameraMsgType>("out_frame", "out_frame2");
 
   mxre::kernels::ORBDetector orbDetector(orbMarkerTracker.getRegisteredObjects());
+  orbDetector.setDebugMode();
+  orbDetector.setLogger("orb_detector_logger", "orb_detector.log");
   orbDetector.activateInPortAsLocal<ORBDetectorInFrameType>("in_frame");
   orbDetector.activateOutPortAsLocal<ORBDetectorOutMarkerType>("out_detected_markers");
+
   mxre::kernels::MarkerCtxExtractor markerCtxExtractor(width, height);
+  markerCtxExtractor.setLogger("marker_ctx_extractor_logger", "marker_ctx_extractor.log");
   markerCtxExtractor.activateInPortAsLocal<CtxExtractorInMarkerType>("in_detected_markers");
   markerCtxExtractor.activateOutPortAsRemote<CtxExtractorOutCtxType>("out_marker_contexts",
                                                                      serverAddr, serverMessagePort2);
+
   mxre::kernels::Keyboard keyboard;
+  keyboard.setDebugMode();
   keyboard.activateOutPortAsRemote<KeyboardMsgType>("out_key", serverAddr, serverMessagePort);
 
   mxre::kernels::RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder,
                                                width, height, width*height*4, bagFPS);
+  rtpFrameSender.setDebugMode();
+  rtpFrameSender.setLogger("rtp_frame_sender_logger", "rtp_frame_sender.log");
   rtpFrameSender.activateInPortAsLocal<FrameSenderMsgType>("in_frame");
 
   raft::map recvPipe;
   mxre::kernels::RTPFrameReceiver rtpFrameReceiver(clientFramePort, clientDecoder, width, height);
+  rtpFrameReceiver.setDebugMode();
+  rtpFrameReceiver.setLogger("rtp_frame_receiver_logger", "rtp_frame_receiver.log");
   rtpFrameReceiver.activateOutPortAsLocal<FrameReceiverMsgType>("out_frame");
+
   mxre::kernels::NonDisplay nonDisplay;
+  nonDisplay.setDebugMode();
+  nonDisplay.setLogger("non_display_logger", "non_display.log");
   nonDisplay.activateInPortAsLocal<NonDisplayMsgType>("in_frame");
 
   pipeline += bagCam["out_frame2"] >> rtpFrameSender["in_frame"];

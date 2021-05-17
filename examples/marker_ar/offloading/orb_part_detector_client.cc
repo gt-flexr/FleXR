@@ -45,28 +45,38 @@ int main(int argc, char const *argv[])
   raft::map pipeline;
 
   BagCamera bagCam("bag_frame", bagFile, bagTopic, bagFPS);
+  bagCam.setDebugMode();
+  bagCam.setLogger("bag_cam_logger", "bag_cam.log");
   bagCam.setFramesToCache(400, 400);
   bagCam.activateOutPortAsLocal<BagCameraMsgType>("out_frame");
   bagCam.duplicateOutPortAsLocal<BagCameraMsgType>("out_frame", "out_frame2");
 
   Keyboard keyboard;
+  keyboard.setDebugMode();
   keyboard.activateOutPortAsLocal<KeyboardMsgType>("out_key");
 
   RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder,
                                                width, height, width*height*4, bagFPS);
+  rtpFrameSender.setDebugMode();
+  rtpFrameSender.setLogger("rtp_frame_sender_logger", "rtp_frame_sender.log");
   rtpFrameSender.activateInPortAsLocal<FrameSenderMsgType>("in_frame");
 
   MarkerCtxExtractor markerCtxExtractor(width, height);
+  markerCtxExtractor.setLogger("marker_ctx_extractor_logger", "marker_ctx_extractor.log");
   markerCtxExtractor.activateInPortAsRemote<CtxExtractorInMarkerType>("in_detected_markers", clientMessagePort);
   markerCtxExtractor.activateOutPortAsLocal<CtxExtractorOutCtxType>("out_marker_contexts");
 
   ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), width, height);
+  objRenderer.setDebugMode();
+  objRenderer.setLogger("obj_renderer_logger", "obj_renderer.log");
   objRenderer.activateInPortAsLocal<ObjRendererInFrameType>("in_frame");
   objRenderer.activateInPortAsLocal<ObjRendererInKeyType>("in_key");
   objRenderer.activateInPortAsLocal<ObjRendererInCtxType>("in_marker_contexts");
   objRenderer.activateOutPortAsLocal<ObjRendererOutFrameType>("out_frame");
 
   NonDisplay nonDisplay;
+  nonDisplay.setDebugMode();
+  nonDisplay.setLogger("non_display_logger", "non_display.log");
   nonDisplay.activateInPortAsLocal<NonDisplayMsgType>("in_frame");
 
   pipeline += bagCam["out_frame"] >> rtpFrameSender["in_frame"];
