@@ -170,7 +170,8 @@ namespace mxre
             (*localPort)[tag].recycle();
             break;
           case PortState::REMOTE:
-            delete [] msg;
+            // delete[] vs delete: not expect to call each element desctructor
+            delete msg;
             break;
           }
         }
