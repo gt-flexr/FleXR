@@ -125,17 +125,16 @@ namespace mxre
       ObjRendererOutFrameType *outFrame = portManager.getOutputPlaceholder<ObjRendererOutFrameType>("out_frame");
 
       double st = getTsNow();
-
       logic(inFrame, inKey, inMarkerContexts, outFrame);
-
       portManager.sendOutput("out_frame", outFrame);
+      double et = getTsNow();
 
       inFrame->data.release();
       portManager.freeInput("in_frame", inFrame);
       portManager.freeInput("in_marker_contexts", inMarkerContexts);
       portManager.freeInput("in_key", inKey);
 
-      double et = getTsNow();
+      if(debugMode) debug_print("st(%lf) et(%lf) exe(%lf)", st, et, et-st);
       if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}", st, et, et-st);
 
       return raft::proceed;

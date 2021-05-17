@@ -26,6 +26,7 @@ namespace mxre
       strcpy(outFrame->tag, "cvcam_frame");
       outFrame->seq = seq++;
       outFrame->ts  = getTsNow();
+      if(debugMode) debug_print("FrameInfo: %s:%d %lf", outFrame->tag, outFrame->seq, outFrame->ts);
 
       portManager.sendOutput<CVCameraMsgType>("out_frame", outFrame);
 

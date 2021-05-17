@@ -24,9 +24,10 @@ namespace mxre
       outKey->ts   = getTsNow();
       outKey->data = mxre::utils::getch();
 
-      portManager.sendOutput<KeyboardMsgType>("out_key", outKey);
-
+      if(debugMode) debug_print("stroke(%lf): %c", getTsNow(), outKey->data);
       if(logger.isSet()) logger.getInstance()->info("{}th keystroke {} occurs\t {}", seq-1, outKey->data, outKey->ts);
+
+      portManager.sendOutput<KeyboardMsgType>("out_key", outKey);
 
       return raft::proceed;
     }

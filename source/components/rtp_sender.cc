@@ -47,8 +47,6 @@ namespace mxre {
       trackingInfo.ts       = ts;
       trackingInfo.dataSize = inDataSize;
 
-      debug_print("Sending data size %d at %p", inDataSize, inData);
-
       if( send((uint8_t*)&trackingInfo, sizeof(types::RTPTrackingInfo)) )
         return send(inData, inDataSize);
 

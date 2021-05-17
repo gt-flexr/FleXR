@@ -50,11 +50,13 @@ namespace mxre
         std::string id;
         components::MXREPortManager portManager;
         components::Logger logger;
+        bool debugMode;
 
       public:
         MXREKernel(): portManager(&input, &output)
         {
           id = "no_id";
+          debugMode = false;
         }
 
         MXREKernel(std::string id): MXREKernel()
@@ -119,6 +121,11 @@ namespace mxre
         void setLogger(std::string loggerID, std::string logFileName)
         {
           logger.set(loggerID, logFileName);
+        }
+
+        void setDebugMode()
+        {
+          debugMode = true;
         }
     };
 

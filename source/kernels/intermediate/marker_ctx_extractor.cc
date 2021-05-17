@@ -98,14 +98,15 @@ namespace mxre
                                                 portManager.getInput<CtxExtractorInMarkerType>("in_detected_markers");
       CtxExtractorOutCtxType *outMarkerContexts = \
                                        portManager.getOutputPlaceholder<CtxExtractorOutCtxType>("out_marker_contexts");
-      double st = getTsNow();
 
+      double st = getTsNow();
       logic(inDetectedMarkers, outMarkerContexts);
       portManager.sendOutput("out_marker_contexts", outMarkerContexts);
+      double et = getTsNow();
 
       portManager.freeInput("in_detected_markers", inDetectedMarkers);
 
-      double et = getTsNow();
+      if(debugMode) debug_print("st(%lf) et(%lf) exe(%lf)", st, et, et-st);
       if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}", st, et, et-st);
 
       return raft::proceed;

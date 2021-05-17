@@ -41,7 +41,6 @@ namespace mxre {
       port->remotePort.socket.recv(zmq::buffer(&castedMsg->seq, sizeof(castedMsg->seq)), zmq::recv_flags::none);
       port->remotePort.socket.recv(zmq::buffer(&castedMsg->ts, sizeof(castedMsg->ts)), zmq::recv_flags::none);
       port->remotePort.socket.recv(zmq::buffer(&vecSize, sizeof(int)), zmq::recv_flags::none);
-      debug_print("%s %d %f %d", castedMsg->tag, castedMsg->seq, castedMsg->ts, vecSize);
 
       for(int i = 0; i < vecSize; i++) {
         mxre::cv_types::DetectedMarker detectedMarker;

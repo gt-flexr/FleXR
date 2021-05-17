@@ -115,15 +115,15 @@ namespace mxre
                                 portManager.getOutputPlaceholder<CudaORBDetectorOutMarkerType>("out_detected_markers");
 
       double st = getTsNow();
-
       logic(inFrame, outDetectedMarkers);
       portManager.sendOutput("out_detected_markers", outDetectedMarkers);
+      double et = getTsNow();
 
       inFrame->data.release();
       portManager.freeInput("in_frame", inFrame);
 
-      double et = getTsNow();
 
+      if(debugMode) debug_print("st(%lf) et(%lf) exe(%lf)", st, et, et-st);
       if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}", st, et, et-st);
 
       return raft::proceed;

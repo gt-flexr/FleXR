@@ -70,9 +70,6 @@ namespace mxre
                                                     outFrame->tag, outFrame->seq, outFrame->ts))
       {
         double st = getTsNow();
-        debug_print("recvDataInfo: Index(%d) TS(%f) Size(%d) %p", outFrame->seq, outFrame->ts,
-                                                                  recvDataSize, recvDataBuffer);
-
         av_packet_from_data(&decodingPacket, recvDataBuffer, recvDataSize);
         decodingPacket.side_data_elems = 0;
 
@@ -88,11 +85,12 @@ namespace mxre
             else if(decoderName == "h264_cuvid")
               cv::cvtColor(yuvFrame, outFrame->data.useAsCVMat(), cv::COLOR_YUV2BGR_NV12);
 
-            portManager.sendOutput("out_frame", outFrame);
-
             double et = getTsNow();
+            if(debugMode) debug_print("decodeTime(%lf), recvInfo %s:%d size(%d)", et-st, outFrame->tag, outFrame->seq, recvDataSize);
             if(logger.isSet()) logger.getInstance()->info("st/et/decodingTime/recvSize\t{}\t {}\t {}\t {}",
                                                           st, et, et-st, recvDataSize);
+
+            portManager.sendOutput("out_frame", outFrame);
           }
         }
 

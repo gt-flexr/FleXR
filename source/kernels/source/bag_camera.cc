@@ -35,6 +35,7 @@ namespace mxre
       outFrame->seq  = seq++;
       outFrame->ts   = getTsNow();
 
+      if(debugMode) debug_print("FrameInfo: %s:%d %lf", outFrame->tag, outFrame->seq, outFrame->ts);
       portManager.sendOutput<BagCameraMsgType>("out_frame", outFrame);
 
       freqManager.adjust();

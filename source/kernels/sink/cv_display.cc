@@ -22,6 +22,7 @@ namespace mxre
       int inKey = cv::waitKey(1) & 0xFF;
 
       double et = getTsNow();
+      if(debugMode) debug_print("disp(%lf), e2e info: %s(%d:%lf)", et-st, inFrame->tag, inFrame->seq, et-inFrame->ts);
       if(logger.isSet()) logger.getInstance()->info("{} frame disp_time/e2e_wo_disp/e2e_w_disp\t{}\t{}\t{}",
                                                     inFrame->seq, et - st, st - inFrame->ts, et - inFrame->ts);
 
