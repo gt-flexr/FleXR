@@ -19,7 +19,7 @@ namespace mxre
                                     utils::recvRemotePrimitiveVec<ObjRendererInCtxType>);
       portManager.registerInPortTag("in_key",
                                     components::PortDependency::NONBLOCKING,
-                                    utils::recvRemotePrimitive<ObjRendererInKeyType>);
+                                    utils::recvNonBlockRemotePrimitive<ObjRendererInKeyType>);
       portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, 0, 0);
 
       // 0. Create pbuf as a context

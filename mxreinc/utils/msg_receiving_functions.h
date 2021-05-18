@@ -30,6 +30,25 @@ namespace mxre {
       port->remotePort.socket.recv(zmq::buffer(castedMsg->data), zmq::recv_flags::none);
     }
 
+    template <typename T>
+    void recvNonBlockRemotePrimitive(components::MXREPort *port, void *msg)
+    {
+      port->remotePort.socket.recv(zmq::buffer(msg, sizeof(T)), zmq::recv_flags::dontwait);
+    }
+
+    template <typename T>
+    void recvNonBlockRemotePrimitiveVec(components::MXREPort *port, void *msg)
+    {
+      T* castedMsg = static_cast<T*>(msg);
+      int vecSize = 0;
+      port->remotePort.socket.recv(zmq::buffer(castedMsg->tag, MXRE_MSG_TAG_SIZE), zmq::recv_flags::dontwait);
+      port->remotePort.socket.recv(zmq::buffer(&castedMsg->seq, sizeof(castedMsg->seq)), zmq::recv_flags::dontwait);
+      port->remotePort.socket.recv(zmq::buffer(&castedMsg->ts, sizeof(castedMsg->ts)), zmq::recv_flags::dontwait);
+      port->remotePort.socket.recv(zmq::buffer(&vecSize, sizeof(int)), zmq::recv_flags::dontwait);
+      castedMsg->data.resize(vecSize);
+      port->remotePort.socket.recv(zmq::buffer(castedMsg->data), zmq::recv_flags::dontwait);
+    }
+
     /* recvDetectedMarkers */
     using RecvMarkerMsgType = types::Message<std::vector<cv_types::DetectedMarker>>;
     static void recvDetectedMarkers(components::MXREPort *port, void *data)
