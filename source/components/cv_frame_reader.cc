@@ -1,9 +1,9 @@
-#include <components/cv_camera.h>
+#include <components/cv_frame_reader.h>
 #include <bits/stdc++.h>
 
 namespace mxre {
   namespace components {
-    CVCamera::CVCamera (int devIdx, int width, int height):
+    CVFrameReader::CVFrameReader (int devIdx, int width, int height):
       intrinsic (3, 3, CV_64FC1),
       distCoeffs (4, 1, CV_64FC1, {0, 0, 0, 0})
     {
@@ -14,8 +14,6 @@ namespace mxre {
         std::cerr << "ERROR: unable to open camera" << std::endl;
         exit(1);
       }
-
-      frameIndex = 0;
 
       // set default camera intrinsic
       this->intrinsic.at<double>(0, 0) = width;
@@ -31,11 +29,11 @@ namespace mxre {
       this->intrinsic.at<double>(2, 2) = 1;
     }
 
-    CVCamera::~CVCamera () { if (instance.isOpened()) instance.release(); }
+    CVFrameReader::~CVFrameReader () { if (instance.isOpened()) instance.release(); }
 
-    mxre::types::Frame CVCamera::readFrame ()
+    mxre::types::Frame CVFrameReader::readFrame ()
     {
-      mxre::types::Frame temp(height, width, CV_8UC3, frameIndex, 0);
+      mxre::types::Frame temp(height, width, CV_8UC3);
 
       while (1) {
         instance.read(temp.useAsCVMat());
@@ -46,8 +44,6 @@ namespace mxre {
         else break;
       }
 
-      frameIndex++;
-      temp.timestamp = getTimeStampNow();
       return temp;
     }
   }

@@ -11,31 +11,32 @@
 #include "kernels/kernel.h"
 #include "types/clock_types.h"
 #include "types/frame.h"
-#include "utils/cv_utils.h"
+#include "components/cv_frame_reader.h"
+#include "components/frequency_manager.h"
 
 namespace mxre
 {
   namespace kernels
   {
+    using CVCameraMsgType = types::Message<types::Frame>;
 
     class CVCamera : public MXREKernel
     {
     private:
-      cv::VideoCapture cam;
-      int frameIndex;
-      cv::Mat intrinsic;
-      cv::Mat distCoeffs;
-      int width, height;
+      components::CVFrameReader frameReader;
+      components::FrequencyManager freqManager;
+      uint32_t seq;
 
     public:
-      CVCamera(std::string id="cv_camera", int dev_idx=0, int width=1280, int height=720);
+      CVCamera(std::string id="cv_camera", int dev_idx=0, int width=1280, int height=720, int tagetFps=30);
       ~CVCamera();
-      void setIntrinsic(cv::Mat inIntrinsic) {intrinsic = inIntrinsic.clone();}
-      void setDistCoeffs(cv::Mat inDistCoeffs) {distCoeffs = inDistCoeffs.clone();}
-      cv::Mat getIntrinsic() {return intrinsic;}
-      cv::Mat getDistCoeffs() {return distCoeffs;}
-      virtual raft::kstatus run() override;
-      bool logic(mxre::types::Frame *outFrame);
+      void setIntrinsic(cv::Mat inIntrinsic);
+      void setDistCoeffs(cv::Mat inDistCoeffs);
+      void activateOutPortAsRemote(const std::string tag, const std::string addr, int portNumber)
+      {
+        debug_print("not allow remote port activation.");
+      }
+      raft::kstatus run() override;
     };
 
   }   // namespace kernels

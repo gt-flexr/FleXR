@@ -20,10 +20,14 @@ namespace mxre
 {
   namespace kernels
   {
+    using ORBDetectorInFrameType   = types::Message<types::Frame>;
+    using ORBDetectorOutMarkerType = types::Message<std::vector<cv_types::DetectedMarker>>;
 
     class ORBDetector : public MXREKernel
     {
       private:
+        // TODO: components::ORBExtractor
+        // TODO: components::ORBDetector
         std::vector<mxre::cv_types::MarkerInfo> registeredMarkers;
         cv::Ptr<cv::Feature2D> detector;
         cv::Ptr<cv::DescriptorMatcher> matcher;
@@ -35,10 +39,9 @@ namespace mxre
 
       public:
         ORBDetector(std::vector<mxre::cv_types::MarkerInfo> registeredMarkers);
-        ~ORBDetector();
         raft::kstatus run() override;
-        bool logic(types::Message<types::Frame> &inFrame,
-                   types::Message<std::vector<cv_types::DetectedMarker>> &outDetectedMarkers);
+        bool logic(ORBDetectorInFrameType   *inFrame,
+                   ORBDetectorOutMarkerType *outDetectedMarkers);
     };
 
   }   // namespace pipeline

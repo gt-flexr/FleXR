@@ -25,13 +25,13 @@ namespace mxre
 {
   namespace kernels
   {
+    using FrameReceiverMsgType = types::Message<types::Frame>;
 
-    /* Class Deifinition */
     class RTPFrameReceiver : public MXREKernel
     {
       private:
-        // RTP Streaming
         components::RTPReceiver rtpReceiver;
+        // TODO: components::Decoder decoder;
 
         // Decoder
         std::string decoderName;
@@ -44,11 +44,14 @@ namespace mxre
         int decodingFrameSize;
         cv::Mat yuvFrame;
 
-
       public:
         RTPFrameReceiver(int port, std::string decoderName, int width, int height);
         ~RTPFrameReceiver();
-        virtual raft::kstatus run();
+        raft::kstatus run() override;
+      void activateOutPortAsRemote(const std::string tag, int portNumber)
+      {
+        debug_print("not allow remote port activation.");
+      }
     };
 
   }   // namespace kernels

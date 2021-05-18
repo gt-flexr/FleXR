@@ -92,11 +92,9 @@ int main(int argc, char const *argv[])
     worldManager.addObjectToWorld(i);
   }
   //mxre::egl_utils::unbindPbuffer(*pbuf);
-#ifdef __PROFILE__
   auto logger = spdlog::basic_logger_st("marker_ar_orb_serialized", "logs/marker_ar_orb_serialized.log");
   double e2eStart, e2eEnd;
   double blockStart, blockEnd;
-#endif
 
 
   /*
@@ -106,18 +104,16 @@ int main(int argc, char const *argv[])
     /*
      *  1. Load camera frames
      */
-#ifdef __PROFILE__
-    e2eStart = getTimeStampNow();
+    e2eStart = getTsNow();
     blockStart = e2eStart;
-#endif
 
     // Camera Frequency
     std::this_thread::sleep_for(std::chrono::milliseconds(1000/bagFPS-1));
     mxre::types::Frame frame = bagFrameReader.getNextFrame();
-    frameTimestamp = getTimeStampNow();
+    frameTimestamp = getTsNow();
 
 #ifdef LATENCY_BREAKDOWN
-    blockEnd = getTimeStampNow();
+    blockEnd = getTsNow();
     logger->info("\tCamera Read Time\t{}", blockEnd - blockStart);
     blockStart = blockEnd;
 #endif
@@ -136,7 +132,7 @@ int main(int argc, char const *argv[])
     detector->detectAndCompute(grayFrame, cv::noArray(), frameKps, frameDesc);
 
 #ifdef LATENCY_BREAKDOWN
-    blockEnd = getTimeStampNow();
+    blockEnd = getTsNow();
     logger->info("\tKeypoint Extraction Time\t{}", blockEnd - blockStart);
     blockStart = blockEnd;
 #endif
@@ -156,7 +152,7 @@ int main(int argc, char const *argv[])
       matcher->knnMatch(markerInfo->desc, frameDesc, matches, knnParam);
 
 #ifdef LATENCY_BREAKDOWN
-      blockEnd = getTimeStampNow();
+      blockEnd = getTsNow();
       logger->info("\tFinding Matching Descriptors Time\t{}", blockEnd - blockStart);
       blockStart = blockEnd;
 #endif
@@ -206,7 +202,7 @@ int main(int argc, char const *argv[])
     }
 
 #ifdef LATENCY_BREAKDOWN
-    blockEnd = getTimeStampNow();
+    blockEnd = getTsNow();
     logger->info("\tFiltering and Detection Time\t{}", blockEnd - blockStart);
     blockStart = blockEnd;
 #endif
@@ -238,9 +234,9 @@ int main(int argc, char const *argv[])
     }
 
 #ifdef LATENCY_BREAKDOWN
-    blockEnd = getTimeStampNow();
+    blockEnd = getTsNow();
     logger->info("\tReal-Virtual Mapping Time\t{}", blockEnd - blockStart);
-    blockStart = getTimeStampNow();
+    blockStart = getTsNow();
 #endif
 
     /********************************
@@ -270,29 +266,27 @@ int main(int argc, char const *argv[])
 
     worldManager.startWorlds('f', markerContexts);
 
-    mxre::types::Frame resultFrame = mxre::gl_utils::exportGLBufferToCV(width, height, frameIndex, frameTimestamp);
+    mxre::types::Frame resultFrame = mxre::gl_utils::exportGLBufferToCV(width, height);
     frameIndex++;
 
 #ifdef LATENCY_BREAKDOWN
-    blockEnd = getTimeStampNow();
+    blockEnd = getTsNow();
     logger->info("\tRendering and Overlaying Time\t{}", blockEnd - blockStart);
-    blockStart = getTimeStampNow();
+    blockStart = getTsNow();
 #endif
 
     //cv::imshow("CVDisplay", resultFrame.useAsCVMat());
     //int inKey = cv::waitKey(1) & 0xFF;
 
 #ifdef LATENCY_BREAKDOWN
-    blockEnd = getTimeStampNow();
+    blockEnd = getTsNow();
     logger->info("\tDisplaying Time\t{}", blockEnd - blockStart);
 #endif
 
-#ifdef __PROFILE__
-    e2eEnd = getTimeStampNow();
+    e2eEnd = getTsNow();
     logger->info("E2E Time\t{}\tFPS: {}", e2eEnd - e2eStart, 1000/(e2eEnd - e2eStart));
-    debug_print("clock / %dth frameTimstamp: %f / %f", resultFrame.index, e2eEnd - e2eStart,
-                e2eEnd - resultFrame.timestamp);
-#endif
+    debug_print("clock / %dth frameTimestamp: %f / %f", frameIndex, e2eEnd - e2eStart,
+                e2eEnd - frameTimestamp);
 
     resultFrame.release();
   }

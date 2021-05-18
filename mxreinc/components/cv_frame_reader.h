@@ -1,32 +1,32 @@
-#ifndef __MXRE_COMPONENTS_CV_CAMERA__
-#define __MXRE_COMPONENTS_CV_CAMERA__
+#ifndef __MXRE_COMPONENTS_CVFRAMEREADER__
+#define __MXRE_COMPONENTS_CVFRAMEREADER__
 
-#include <mxre>
 #include <opencv2/opencv.hpp>
 #include <opencv2/video.hpp>
 #include <opencv2/highgui.hpp>
+#include "types/frame.h"
 
 namespace mxre {
   namespace components {
-    class CVCamera {
+
+    class CVFrameReader {
     private:
       cv::VideoCapture instance;
-      uint32_t frameIndex;
       cv::Mat intrinsic;
       cv::Mat distCoeffs;
       int width, height;
 
     public:
-      CVCamera(int devIdx, int width, int height);
-      ~CVCamera();
+      CVFrameReader(int devIdx, int width, int height);
+      ~CVFrameReader();
       void setIntrinsic(cv::Mat inIntrinsic) {intrinsic = inIntrinsic.clone();}
       void setDistCoeffs(cv::Mat inDistCoeffs) {distCoeffs = inDistCoeffs.clone();}
       cv::Mat getIntrinsic() {return intrinsic;}
       cv::Mat getDistCoeffs() {return distCoeffs;}
-      uint32_t getCurrentFrameIndex() {return frameIndex;}
 
       mxre::types::Frame readFrame();
     };
+
   }
 }
 #endif

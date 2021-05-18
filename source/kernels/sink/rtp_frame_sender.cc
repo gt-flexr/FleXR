@@ -11,7 +11,7 @@ namespace mxre
       rtpSender(destAddr, destPortBase),
       encoderName(encoderName), width(width), height(height)
     {
-      addInputPort<types::Message<types::Frame>>("in_frame");
+      portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
 
       // Encoder
       av_register_all();
@@ -62,10 +62,6 @@ namespace mxre
                            static_cast<AVPixelFormat>(encodingFrame->format),
                            encodingFrame->width, encodingFrame->height, 1);
       yuvFrame = cv::Mat::zeros(height*1.5, width, CV_8UC1);
-
-#ifdef __PROFILE__
-      if(logger == NULL) initLoggerST("rtp_frame_sender", "logs/" + std::to_string(pid) + "/rtp_frame_sender.log");
-#endif
     }
 
 
@@ -83,19 +79,17 @@ namespace mxre
       AVPacket encodingPacket;
       av_init_packet(&encodingPacket);
 
-      types::Message<types::Frame> &inFrame = input["in_frame"].template peek<types::Message<types::Frame>>();
-      if(inFrame.data.rows != (size_t)height || inFrame.data.cols != (size_t)width) {
+      FrameSenderMsgType *inFrame = portManager.getInput<FrameSenderMsgType>("in_frame");
+      if(inFrame->data.rows != (size_t)height || inFrame->data.cols != (size_t)width) {
         debug_print("inMat size is not compatible.");
-        inFrame.data.release();
+        inFrame->data.release();
+        portManager.freeInput("in_frame", inFrame);
         return raft::proceed;
       }
 
-#ifdef __PROFILE__
-      double encodingTimeStamp;
-      startTimeStamp = getTimeStampNow();
-#endif
+      double st = getTsNow();
 
-      cv::cvtColor(inFrame.data.useAsCVMat(), yuvFrame, cv::COLOR_RGB2YUV_YV12);
+      cv::cvtColor(inFrame->data.useAsCVMat(), yuvFrame, cv::COLOR_RGB2YUV_YV12);
       av_image_fill_arrays(encodingFrame->data, encodingFrame->linesize, yuvFrame.data,
                            static_cast<AVPixelFormat>(encodingFrame->format),
                            encodingFrame->width, encodingFrame->height, 1);
@@ -104,28 +98,22 @@ namespace mxre
       while (ret >= 0) {
         ret = avcodec_receive_packet(encoderContext, &encodingPacket);
         if(ret == 0) {
-#ifdef __PROFILE__
-          encodingTimeStamp = getTimeStampNow();
-#endif
+          double enct = getTsNow();
           int sentSize = encodingPacket.size;
           if(rtpSender.sendWithTrackingInfo(encodingPacket.data, encodingPacket.size,
-                                            inFrame.tag, inFrame.seq, inFrame.ts)) {
-#ifdef __PROFILE__
-            endTimeStamp = getTimeStampNow();
-            logger->info("encodingTime/rtpSendingTime/KernelExeTime/Sent Size\t{}\t {}\t {}\t {}",
-                encodingTimeStamp - startTimeStamp,
-                endTimeStamp - encodingTimeStamp,
-                endTimeStamp - startTimeStamp,
-                sentSize);
-#endif
+                                            inFrame->tag, inFrame->seq, inFrame->ts)) {
+            double et = getTsNow();
+            if(debugMode) debug_print("encodeTime(%lf), sentSize(%d)", et-st, sentSize);
+            if(logger.isSet()) logger.getInstance()->info("encodingTime/rtpSendingTime/KernelExeTime/Sent Size\t{}\t {}\t {}\t {}",
+                enct-st, et-enct, et-st, sentSize);
 
           }
         }
         av_packet_unref(&encodingPacket);
       }
 
-      inFrame.data.release();
-      recyclePort("in_frame");
+      inFrame->data.release();
+      portManager.freeInput("in_frame", inFrame);
       return raft::proceed;
     }
 

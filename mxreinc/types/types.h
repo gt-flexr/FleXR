@@ -9,6 +9,7 @@ namespace mxre {
   namespace types {
     typedef struct RTPTrackingInfo {
       int32_t invoice; // for sanity check
+      uint32_t dataSize;
       char tag[MXRE_MSG_TAG_SIZE];
       uint32_t seq;
       double ts;
@@ -18,11 +19,18 @@ namespace mxre {
     class Message
     {
       public:
-      char tag[MXRE_MSG_TAG_SIZE];
+      char     tag[MXRE_MSG_TAG_SIZE];
       uint32_t seq;
-      double ts;
-      T data;
+      double   ts;
+      T        data;
     };
+
+    template <typename T>
+    void freePrimitiveMsg(void *msg)
+    {
+      T* castedMessage = static_cast<T*>(msg);
+      delete castedMessage;
+    }
   }
 }
 #endif

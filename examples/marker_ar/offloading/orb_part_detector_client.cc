@@ -2,30 +2,7 @@
 #include <raftinc/rafttypes.hpp>
 
 using namespace std;
-
-class TestSink: public mxre::kernels::MXREKernel {
-  public:
-  TestSink() {
-    addInputPort<std::vector<mxre::cv_types::DetectedMarker>>("in_detected_markers");
-  }
-
-  raft::kstatus run() {
-    auto &inDetectedMarkers( input["in_detected_markers"].peek<std::vector<mxre::cv_types::DetectedMarker>>() );
-
-    cout << inDetectedMarkers.size() << endl;
-    for(int i = 0; i < inDetectedMarkers.size(); i++) {
-      printf("%d===== \n\t%f, %f ", inDetectedMarkers[i].index, inDetectedMarkers[i].locationIn2D.at(2).x, inDetectedMarkers[i].locationIn2D.at(2).y);
-      printf("\t%f, %f, %f", inDetectedMarkers[i].defaultLocationIn3D.at(3).x,
-              inDetectedMarkers[i].defaultLocationIn3D.at(3).y,
-              inDetectedMarkers[i].defaultLocationIn3D.at(3).z);
-    }
-
-    recyclePort("in_detected_markers");
-    return raft::proceed;
-  };
-};
-
-using DetectedMarkerMessageType = mxre::types::Message<std::vector<mxre::cv_types::DetectedMarker>>;
+using namespace mxre::kernels;
 
 int main(int argc, char const *argv[])
 {
@@ -50,10 +27,10 @@ int main(int argc, char const *argv[])
   }
 
   int clientMessagePort  = config["client_message_port"].as<int>();
-  string clientEncoder = config["client_encoder"].as<string>();
-  string clientDecoder = config["client_decoder"].as<string>();
+  string clientEncoder   = config["client_encoder"].as<string>();
+  string clientDecoder   = config["client_decoder"].as<string>();
 
-  string serverAddr   = config["server_addr"].as<string>();
+  string serverAddr    = config["server_addr"].as<string>();
   int serverFramePort  = config["server_frame_port"].as<int>();
 
   if(markerPath.empty() || clientEncoder.empty() || clientDecoder.empty() || serverAddr.empty()) {
@@ -65,26 +42,44 @@ int main(int argc, char const *argv[])
   mxre::cv_utils::setMarkerFromImages(markerPath + "/", 0, 1, orbMarkerTracker);
   std::vector<mxre::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
 
-
-  // Create mxre components
   raft::map pipeline;
-  mxre::kernels::BagCamera bagCam("bag_camera", bagFile, bagTopic);
+
+  BagCamera bagCam("bag_frame", bagFile, bagTopic, bagFPS);
+  bagCam.setDebugMode();
+  bagCam.setLogger("bag_cam_logger", "bag_cam.log");
   bagCam.setFramesToCache(400, 400);
-  bagCam.setFPS(bagFPS);
-  bagCam.duplicateOutPort<mxre::types::Message<mxre::types::Frame>>("out_frame", "out_frame2");
+  bagCam.activateOutPortAsLocal<BagCameraMsgType>("out_frame");
+  bagCam.duplicateOutPortAsLocal<BagCameraMsgType>("out_frame", "out_frame2");
 
-  mxre::kernels::Keyboard keyboard;
-  mxre::kernels::RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder,
+  Keyboard keyboard;
+  keyboard.setDebugMode();
+  keyboard.activateOutPortAsLocal<KeyboardMsgType>("out_key");
+
+  RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder,
                                                width, height, width*height*4, bagFPS);
-  mxre::kernels::MessageReceiver<DetectedMarkerMessageType> detectedMarkerReceiver(clientMessagePort,
-                                                                                   mxre::utils::recvDetectedMarkers);
+  rtpFrameSender.setDebugMode();
+  rtpFrameSender.setLogger("rtp_frame_sender_logger", "rtp_frame_sender.log");
+  rtpFrameSender.activateInPortAsLocal<FrameSenderMsgType>("in_frame");
 
-  mxre::kernels::MarkerCtxExtractor markerCtxExtractor(width, height);
-  mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), width, height);
-  mxre::kernels::NonDisplay nonDisplay;
+  MarkerCtxExtractor markerCtxExtractor(width, height);
+  markerCtxExtractor.setLogger("marker_ctx_extractor_logger", "marker_ctx_extractor.log");
+  markerCtxExtractor.activateInPortAsRemote<CtxExtractorInMarkerType>("in_detected_markers", clientMessagePort);
+  markerCtxExtractor.activateOutPortAsLocal<CtxExtractorOutCtxType>("out_marker_contexts");
+
+  ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), width, height);
+  objRenderer.setDebugMode();
+  objRenderer.setLogger("obj_renderer_logger", "obj_renderer.log");
+  objRenderer.activateInPortAsLocal<ObjRendererInFrameType>("in_frame");
+  objRenderer.activateInPortAsLocal<ObjRendererInKeyType>("in_key");
+  objRenderer.activateInPortAsLocal<ObjRendererInCtxType>("in_marker_contexts");
+  objRenderer.activateOutPortAsLocal<ObjRendererOutFrameType>("out_frame");
+
+  NonDisplay nonDisplay;
+  nonDisplay.setDebugMode();
+  nonDisplay.setLogger("non_display_logger", "non_display.log");
+  nonDisplay.activateInPortAsLocal<NonDisplayMsgType>("in_frame");
 
   pipeline += bagCam["out_frame"] >> rtpFrameSender["in_frame"];
-  pipeline += detectedMarkerReceiver["out_data"] >> markerCtxExtractor["in_detected_markers"];
 
   pipeline += bagCam["out_frame2"] >> objRenderer["in_frame"];
   pipeline += markerCtxExtractor["out_marker_contexts"] >> objRenderer["in_marker_contexts"];

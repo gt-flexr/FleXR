@@ -13,10 +13,10 @@ namespace mxre {
     Logger::Logger(std::string loggerID, std::string logFileName)
     {
       pid = getpid();
-      setLogger(loggerID, logFileName);
+      set(loggerID, logFileName);
     }
 
-    void Logger::setLogger(std::string loggerID, std::string logFileName)
+    void Logger::set(std::string loggerID, std::string logFileName)
     {
       instance = spdlog::basic_logger_st(loggerID, "mxre_logs/" + std::to_string(pid) + "/" + logFileName);
     }

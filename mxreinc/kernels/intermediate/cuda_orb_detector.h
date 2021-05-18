@@ -21,10 +21,15 @@ namespace mxre
 {
   namespace kernels
   {
+    using CudaORBDetectorInFrameType = types::Message<types::Frame>;
+    using CudaORBDetectorOutMarkerType = types::Message<std::vector<cv_types::DetectedMarker>>;
 
     class CudaORBDetector : public MXREKernel
     {
       private:
+        // TODO: components::CudaORBExtractor
+        // TODO: components::ORBDetector
+
         std::vector<mxre::cv_types::MarkerInfo> registeredMarkers;
         cv::Ptr<cv::cuda::ORB> detector;
         cv::Ptr<cv::cuda::DescriptorMatcher> matcher;
@@ -39,10 +44,10 @@ namespace mxre
         int minInlierThresh;
 
       public:
-        CudaORBDetector(std::vector<mxre::cv_types::MarkerInfo> registeredObjs);
+        CudaORBDetector(std::vector<mxre::cv_types::MarkerInfo> registeredMarkers);
         raft::kstatus run() override;
-        bool logic(types::Message<types::Frame> &inFrame,
-                   types::Message<std::vector<cv_types::DetectedMarker>> &outDetectedMarkers);
+        bool logic(CudaORBDetectorInFrameType   *inFrame,
+                   CudaORBDetectorOutMarkerType *outDetectedMarkers);
     };
 
   }   // namespace kernels

@@ -24,13 +24,13 @@ namespace mxre
 {
   namespace kernels
   {
+    using FrameSenderMsgType = types::Message<types::Frame>;
 
-    /* Class Deifinition */
     class RTPFrameSender : public MXREKernel
     {
       private:
-        // RTP Streaming
         components::RTPSender rtpSender;
+        // TODO: components::Encoder encoder;
 
         // Encoder
         std::string encoderName;
@@ -46,7 +46,11 @@ namespace mxre
         RTPFrameSender(std::string destAddr, int destPortBase, std::string encoderName, int width, int height,
                        int bitrate, int fps=60);
         ~RTPFrameSender();
-        virtual raft::kstatus run();
+        raft::kstatus run() override;
+      void activateInPortAsRemote(const std::string tag, int portNumber)
+      {
+        debug_print("not allow remote port activation.");
+      }
     };
 
   } // namespace kernels

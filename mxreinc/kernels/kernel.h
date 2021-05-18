@@ -17,19 +17,22 @@
 #include "types/types.h"
 #include "types/frame.h"
 
+// Common Components
+#include "components/mxre_port_manager.h"
+#include "components/logger.h"
+
 namespace mxre
 {
   namespace kernels
   {
-    // To run multiple pipelines
-    // std::thread T1(runPipeline, &pipeline);
-    // T1.join();
+    // Thread function for running multiple pipelines
+    //   std::thread T1(runPipeline, &pipeline);
+    //   T1.join();
     static void runPipeline(raft::map *pipeline) {
       pipeline->exe();
     }
 
-    // the current raftlib does not support single kernel run. When a single kernel is offloaded, there is no way to
-    // run it.
+    // Thread function for running a single kernel without pipelining
     //   std::thread T1(runSigleKernel, &kernel);
     //   T1.join();
     static void runSingleKernel (raft::kernel *kernel)
@@ -40,37 +43,20 @@ namespace mxre
       }
     }
 
+
     class MXREKernel : public raft::kernel
     {
       protected:
         std::string id;
-        unsigned int periodMS;
-        unsigned int periodStart, periodEnd, periodAdj;
-        std::multimap<std::string, std::string> oPortMap;
-        template<typename T> void addInputPort(std::string id) { input.addPort<T>(id); }
-        template<typename T> void addOutputPort(std::string id) { output.addPort<T>(id); }
-        void sleepForMS(int period) {
-          if(period > 0) std::this_thread::sleep_for(std::chrono::milliseconds(period));
-        }
-
-
-#ifdef __PROFILE__
-        mxre::types::TimeVal start, end;
-        double startTimeStamp, endTimeStamp;
-        std::shared_ptr<spdlog::logger> logger;
-        int pid;
-#endif
+        components::MXREPortManager portManager;
+        components::Logger logger;
+        bool debugMode;
 
       public:
-        /* Constructor */
-        MXREKernel()
+        MXREKernel(): portManager(&input, &output)
         {
-          periodMS = 0;
-          periodStart = 0;
-          periodEnd = 0;
-          periodAdj = 0;
           id = "no_id";
-          pid = getpid();
+          debugMode = false;
         }
 
         MXREKernel(std::string id): MXREKernel()
@@ -78,83 +64,69 @@ namespace mxre
           this->id = id;
         }
 
+        ~MXREKernel()
+        {};
 
-        /* Destructor */
-        ~MXREKernel(){ };
+        virtual raft::kstatus run() { return raft::stop; }
 
-
-        /* setSleepPeriodMS() */
-        void setSleepPeriodMS(int period) { periodMS = period; }
-
-
-        /* setFPS() */
-        void setFPS(unsigned int fps) { setSleepPeriodMS((int)(1000/fps)); }
-
-
-        /* run(): set in/out ports and call logic() */
-        virtual raft::kstatus run(){ return raft::proceed; }
-
-
-        /* logic(): run kernel logic */
-        bool logic(){ return true; }
-
-
-        /* recyclePort(): recycle input port */
-        void recyclePort(std::string id) { input[id].recycle(); }
-
-
-        /* checkPort(): check the input port for non-blocking input port */
-        bool checkPort(std::string id) {
-          auto &port(input[id]);
-          if(port.size() > 0) return true;
-          return false;
+        /*
+         * Interfaces for Kernel Deployers
+         *   Port Activation
+         *   - activateInPortAsLocal
+         *   - activateInPortAsRemote
+         *   - activateOutPortAsLocal
+         *   - activateOutPortAsRemote
+         *   - duplicateOutPortAsLocal
+         *   - duplicateOutPortAsRemote
+         *   Logger Setting
+         *   - setLogger
+         */
+        template <typename T>
+        void activateInPortAsLocal(const std::string tag)
+        {
+          portManager.activateInPortAsLocal<T>(tag);
         }
 
-
-        /* duplicateOutPort<T>(origin, newOut): duplicate output port for propagating multi downstream kernels */
-        template<typename T>
-        void duplicateOutPort(std::string origin, std::string newOut) {
-          oPortMap.insert(std::make_pair<std::string, std::string>(origin.c_str(), newOut.c_str()));
-          output.addPort<T>(newOut);
+        template <typename T>
+        void activateInPortAsRemote(const std::string tag, int portNumber)
+        {
+          portManager.activateInPortAsRemote<T>(tag, portNumber);
         }
 
-
-        /* sendPrimitiveCopy<T>(id, data): propagate the primitive-type data into duplicated output ports */
-        template<typename T>
-        void sendPrimitiveCopy(std::string id, T& data) {
-          auto portRange = oPortMap.equal_range(id);
-          for(auto i = portRange.first; i != portRange.second; ++i) {
-            T &outData = output[i->second].allocate<T>();
-            outData = data;
-            output[i->second].send();
-          }
+        template <typename T>
+        void activateOutPortAsLocal(const std::string tag)
+        {
+          portManager.activateOutPortAsLocal<T>(tag);
         }
 
-
-        /* sendFrames: propagate the primitive-type data into duplicated output ports */
-        void sendFrames(std::string id, types::Message<types::Frame> &frame) {
-          auto portRange = oPortMap.equal_range(id);
-          for(auto i = portRange.first; i != portRange.second; ++i) {
-            types::Message<types::Frame> &copiedFrame = output[i->second].allocate<types::Message<types::Frame>>();
-            strcpy(copiedFrame.tag, frame.tag);
-            copiedFrame.seq = frame.seq;
-            copiedFrame.ts = frame.ts;
-            copiedFrame.data = frame.data.clone();
-            output[i->second].send();
-          }
-          output[id].send();
+        template <typename T>
+        void activateOutPortAsRemote(const std::string tag, const std::string addr, int portNumber)
+        {
+          portManager.activateOutPortAsRemote<T>(tag, addr, portNumber);
         }
 
-#ifdef __PROFILE__
-        void initLoggerST(std::string loggerName, std::string fileName) {
-          logger = spdlog::basic_logger_st(loggerName, fileName);
+        template <typename T>
+        void duplicateOutPortAsLocal(const std::string originTag, const std::string newTag)
+        {
+          portManager.duplicateOutPortAsLocal<T>(originTag, newTag);
         }
 
-        void initLoggerMT(std::string loggerName, std::string fileName) {
-          logger = spdlog::basic_logger_mt(loggerName, fileName);
+        template <typename T>
+        void duplicateOutPortAsRemote(const std::string originTag, const std::string newTag,
+                                      const std::string addr, int portNumber)
+        {
+          portManager.duplicateOutPortAsRemote<T>(originTag, newTag, addr, portNumber);
         }
-#endif
 
+        void setLogger(std::string loggerID, std::string logFileName)
+        {
+          logger.set(loggerID, logFileName);
+        }
+
+        void setDebugMode()
+        {
+          debugMode = true;
+        }
     };
 
   }   // namespace kernels

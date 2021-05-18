@@ -11,6 +11,7 @@ namespace mxre
 {
   namespace kernels
   {
+    using KeyboardMsgType=types::Message<char>;
 
     class Keyboard : public MXREKernel
     {
@@ -19,7 +20,6 @@ namespace mxre
 
     public:
       Keyboard();
-      ~Keyboard();
       virtual raft::kstatus run();
     };
 

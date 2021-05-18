@@ -8,24 +8,21 @@ namespace mxre
   {
     NonDisplay::NonDisplay()
     {
-      addInputPort<types::Message<types::Frame>>("in_frame");
-#ifdef __PROFILE__
-      if(logger == NULL) initLoggerST("non_display", "logs/" + std::to_string(pid) + "/non_display.log");
-#endif
+      portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
     }
 
 
     raft::kstatus NonDisplay::run()
     {
-      types::Message<types::Frame> frame = input["in_frame"].peek<types::Message<types::Frame>>();
+      NonDisplayMsgType *inFrame = portManager.getInput<NonDisplayMsgType>("in_frame");
 
-#ifdef __PROFILE__
-      endTimeStamp = getTimeStampNow();
-      logger->info("{}th frame\t E2E latency\t{}", frame.seq, endTimeStamp - frame.ts);
-#endif
+      double et = getTsNow();
 
-      frame.data.release();
-      recyclePort("in_frame");
+      if(debugMode) debug_print("e2e info: %s(%d:%lf)", inFrame->tag, inFrame->seq, et-inFrame->ts);
+      if(logger.isSet()) logger.getInstance()->info("{}frame\t E2E latency\t{}", inFrame->seq, et - inFrame->ts);
+
+      inFrame->data.release();
+      portManager.freeInput("in_frame", inFrame);
       return raft::proceed;
     }
   } // namespace kernels

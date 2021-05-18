@@ -33,7 +33,7 @@ namespace mxre {
         sensor_msgs::Image::ConstPtr image = curMsg->instantiate<sensor_msgs::Image>();
         if(image == NULL) debug_print("failed to read bag with frame %dth", i);
         else {
-          mxre::types::Frame frame(image->height, image->width, CV_8UC3, -1, -1);
+          mxre::types::Frame frame(image->height, image->width, CV_8UC3);
           if(frame.dataSize == image->data.size()) {
             memcpy(frame.data, image->data.data(), image->data.size());
             cachedFrames.push_back(frame);
@@ -91,7 +91,7 @@ namespace mxre {
     mxre::types::Frame ROSBagFrameReader::getNextFrameFromBag()
     {
       sensor_msgs::Image::ConstPtr image = curMsg->instantiate<sensor_msgs::Image>();
-      mxre::types::Frame frame(image->height, image->width, CV_8UC3, -1, -1);
+      mxre::types::Frame frame(image->height, image->width, CV_8UC3);
       if(frame.dataSize == image->data.size()) {
         memcpy(frame.data, image->data.data(), image->data.size());
         curMsg++;
@@ -107,7 +107,7 @@ namespace mxre {
 
     mxre::types::Frame ROSBagFrameReader::getNextFrameFromCachedFrames()
     {
-      mxre::types::Frame retFrame(cachedFrames[frameIndex].useAsCVMat(), -1, -1);
+      mxre::types::Frame retFrame(cachedFrames[frameIndex].useAsCVMat());
       frameIndex = (frameIndex + 1) % cachedFrames.size();
       return retFrame;
     }

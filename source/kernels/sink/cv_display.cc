@@ -1,3 +1,4 @@
+#include "kernels/kernel.h"
 #include <kernels/sink/cv_display.h>
 #include <string>
 #include <unistd.h>
@@ -6,41 +7,27 @@ namespace mxre
 {
   namespace kernels
   {
-    CVDisplay::CVDisplay()
+    CVDisplay::CVDisplay(): MXREKernel()
     {
-      addInputPort<types::Message<types::Frame>>("in_frame");
-#ifdef __PROFILE__
-      if(logger == NULL) initLoggerST("cv_display", "logs/" + std::to_string(pid) + "/cv_display.log");
-#endif
+      portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
     }
-
-
-    bool CVDisplay::logic(mxre::types::Frame *inFrame) {
-      return true;
-    }
-
 
     raft::kstatus CVDisplay::run()
     {
-      types::Message<types::Frame> frame = input["in_frame"].peek<types::Message<types::Frame>>();
+      CVDisplayMsgType *inFrame = portManager.getInput<CVDisplayMsgType>("in_frame");
 
-#ifdef __PROFILE__
-      startTimeStamp = getTimeStampNow();
-#endif
-      cv::imshow("CVDisplay", frame.data.useAsCVMat());
+      double st = getTsNow();
+
+      cv::imshow("CVDisplay", inFrame->data.useAsCVMat());
       int inKey = cv::waitKey(1) & 0xFF;
 
-      frame.data.release();
+      double et = getTsNow();
+      if(debugMode) debug_print("disp(%lf), e2e info: %s(%d:%lf)", et-st, inFrame->tag, inFrame->seq, et-inFrame->ts);
+      if(logger.isSet()) logger.getInstance()->info("{} frame disp_time/e2e_wo_disp/e2e_w_disp\t{}\t{}\t{}",
+                                                    inFrame->seq, et - st, st - inFrame->ts, et - inFrame->ts);
 
-#ifdef __PROFILE__
-      endTimeStamp = getTimeStampNow();
-      logger->info("{}th frame disp_time/e2e_wo_disp/e2e_w_disp\t{}\t{}\t{}",
-          frame.seq,
-          endTimeStamp - startTimeStamp,
-          startTimeStamp - frame.ts,
-          endTimeStamp - frame.ts);
-#endif
-      recyclePort("in_frame");
+      inFrame->data.release();
+      portManager.freeInput("in_frame", inFrame);
 
       return raft::proceed;
     }
