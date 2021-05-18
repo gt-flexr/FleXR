@@ -21,7 +21,7 @@ namespace mxre {
     void recvRemotePrimitiveVec(components::MXREPort *port, void *msg)
     {
       T* castedMsg = static_cast<T*>(msg);
-      int vecSize;
+      int vecSize = 0;
       port->remotePort.socket.recv(zmq::buffer(castedMsg->tag, MXRE_MSG_TAG_SIZE), zmq::recv_flags::none);
       port->remotePort.socket.recv(zmq::buffer(&castedMsg->seq, sizeof(castedMsg->seq)), zmq::recv_flags::none);
       port->remotePort.socket.recv(zmq::buffer(&castedMsg->ts, sizeof(castedMsg->ts)), zmq::recv_flags::none);

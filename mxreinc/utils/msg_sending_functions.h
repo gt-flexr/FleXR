@@ -51,12 +51,10 @@ namespace mxre {
       zmq::message_t sizeMsg(&vecSize, sizeof(int));
       zmq::message_t sendMsg(castedMsg->data);
 
-      port->remotePort.socket.send(sendMsg, zmq::send_flags::none);
-
       port->remotePort.socket.send(zmq::message_t(castedMsg->tag, MXRE_MSG_TAG_SIZE), zmq::send_flags::sndmore);
       port->remotePort.socket.send(zmq::message_t(&castedMsg->seq, sizeof(castedMsg->seq)), zmq::send_flags::sndmore);
       port->remotePort.socket.send(zmq::message_t(&castedMsg->ts, sizeof(castedMsg->ts)), zmq::send_flags::sndmore);
-      port->remotePort.socket.send(zmq::message_t(&vecSize, sizeof(int)), zmq::send_flags::sndmore);
+      port->remotePort.socket.send(sizeMsg, zmq::send_flags::sndmore);
       port->remotePort.socket.send(sendMsg, zmq::send_flags::none);
     }
 
