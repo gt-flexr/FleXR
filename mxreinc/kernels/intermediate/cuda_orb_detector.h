@@ -4,6 +4,7 @@
 
 #include <bits/stdc++.h>
 #include <opencv2/core/cvstd.hpp>
+#include <opencv2/cudafeatures2d.hpp>
 #include <raft>
 
 #include <opencv2/opencv.hpp>
@@ -42,6 +43,7 @@ namespace mxre
         int knnParam;
         double ransacThresh;
         int minInlierThresh;
+        int numKps;
 
       public:
         CudaORBDetector(std::vector<mxre::cv_types::MarkerInfo> registeredMarkers);

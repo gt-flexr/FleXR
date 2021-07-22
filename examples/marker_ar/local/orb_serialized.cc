@@ -128,7 +128,7 @@ int main(int argc, char const *argv[])
 
     // 2.1. Get frame keypoints and descriptors
     cv::Mat grayFrame = frame.useAsCVMat().clone();
-    cv::cvtColor(grayFrame, grayFrame, CV_BGR2GRAY);
+    cv::cvtColor(grayFrame, grayFrame, cv::COLOR_BGR2GRAY);
     detector->detectAndCompute(grayFrame, cv::noArray(), frameKps, frameDesc);
 
 #ifdef LATENCY_BREAKDOWN

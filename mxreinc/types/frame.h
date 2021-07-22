@@ -1,7 +1,7 @@
 #ifndef __MXRE_FRAME__
 #define __MXRE_FRAME__
 
-#include <cv.hpp>
+#include <opencv2/opencv.hpp>
 #include <bits/stdc++.h>
 #include "defs.h"
 extern "C" {
