@@ -3,6 +3,7 @@
 
 #include <bits/stdc++.h>
 #include <defs.h>
+#include <types/frame.h>
 
 // TODO: integrate all the types into this file
 namespace mxre {
@@ -15,6 +16,7 @@ namespace mxre {
       double ts;
     } RTPTrackingInfo;
 
+
     template <class T>
     class Message
     {
@@ -25,11 +27,29 @@ namespace mxre {
       T        data;
     };
 
+
     template <typename T>
     void freePrimitiveMsg(void *msg)
     {
       T* castedMessage = static_cast<T*>(msg);
       delete castedMessage;
+    }
+
+
+    static void freeFrameMsg(void *msg)
+    {
+      Message<Frame> *castedFrame = static_cast<Message<Frame>*>(msg);
+      castedFrame->data.release();
+      delete castedFrame;
+    }
+
+
+    static void allocFrameWithBuffer(void *msg, int size)
+    {
+      Message<Frame> *castedFrame = static_cast<Message<Frame>*>(msg);
+      castedFrame = new Message<Frame>();
+      castedFrame->data.data     = new unsigned char[size];
+      castedFrame->data.dataSize = size;
     }
   }
 }

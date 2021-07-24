@@ -43,6 +43,15 @@ namespace mxre {
       T* castedMessage = static_cast<T*>(msg);
     }
 
+
+    static void sendRemoteFrame(components::MXREPort *port, void *msg)
+    {
+      types::Message<types::Frame> *castedFrame = static_cast<types::Message<types::Frame>*>(msg);
+      zmq::message_t frameData(static_cast<void*>(castedFrame->data.data), castedFrame->data.dataSize);
+      port->remotePort.socket.send(frameData, zmq::send_flags::none);
+    }
+
+
     template <typename T>
     void sendRemotePrimitiveVec(components::MXREPort *port, void *msg)
     {

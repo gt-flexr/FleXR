@@ -6,6 +6,7 @@
 #include "defs.h"
 #include "types/cv/types.h"
 #include "types/types.h"
+#include "types/frame.h"
 #include "components/mxre_port.h"
 
 namespace mxre {
@@ -16,6 +17,14 @@ namespace mxre {
     {
       port->remotePort.socket.recv(zmq::buffer(msg, sizeof(T)));
     }
+
+
+    static void recvRemoteFrame(components::MXREPort *port, void *msg)
+    {
+      types::Message<types::Frame> *castedFrame = static_cast<types::Message<types::Frame>*>(msg);
+      port->remotePort.socket.recv(zmq::buffer(castedFrame->data.data, castedFrame->data.dataSize));
+    }
+
 
     template <typename T>
     void recvRemotePrimitiveVec(components::MXREPort *port, void *msg)
