@@ -34,15 +34,18 @@ namespace mxre
          *   - registerInPortTag
          *   - registerOutPortTag
          *   - getInput
+         *   - getInputWithSize
          *   - getOutputPlaceholder
          *   - freeInput
          */
         void registerInPortTag(std::string tag, PortDependency pd,
-                               std::function<void (MXREPort*, void*)> recvRemoteFunc)
+                               std::function<void (MXREPort*, void*)> recvRemoteFunc,
+                               std::function<void (void*, int)> allocRemoteMsgFunc = 0)
         {
-          inPortMap[tag]             = new MXREPort(inLocalPorts, tag);
-          inPortMap[tag]->dependency = pd;
-          inPortMap[tag]->recvRemote = recvRemoteFunc;
+          inPortMap[tag]                 = new MXREPort(inLocalPorts, tag);
+          inPortMap[tag]->dependency     = pd;
+          inPortMap[tag]->recvRemote     = recvRemoteFunc;
+          inPortMap[tag]->allocRemoteMsg = allocRemoteMsgFunc;
         }
 
         void registerOutPortTag(std::string tag,
@@ -56,11 +59,20 @@ namespace mxre
           outPortMap[tag]->freeRemoteMsg = freeRemoteMsgFunc;
         }
 
+
         template <typename T>
         T* getInput(const std::string tag)
         {
           return inPortMap[tag]->getInput<T>();
         }
+
+
+        template <typename T>
+        T* getInputWithSize(const std::string tag, int size)
+        {
+          return inPortMap[tag]->getInputWithSize<T>(size);
+        }
+
 
         template <typename T>
         T* getOutputPlaceholder(const std::string tag)
