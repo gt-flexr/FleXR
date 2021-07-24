@@ -78,6 +78,7 @@
 #include "./mxreinc/kernels/intermediate/marker_ctx_extractor.h"
 #include "./mxreinc/kernels/intermediate/object_renderer.h"
 #include "./mxreinc/kernels/intermediate/orb_detector.h"
+#include "./mxreinc/kernels/intermediate/frame_converter.h"
 
 #endif
 
