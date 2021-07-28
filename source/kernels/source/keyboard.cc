@@ -7,7 +7,7 @@ namespace mxre
 {
   namespace kernels
   {
-    Keyboard::Keyboard(): MXREKernel()
+    Keyboard::Keyboard(int frequency): MXREKernel(), freqManager(frequency)
     {
       seq = 0;
       portManager.registerOutPortTag("out_key",
@@ -28,6 +28,7 @@ namespace mxre
       if(logger.isSet()) logger.getInstance()->info("{}th keystroke {} occurs\t {}", seq-1, outKey->data, outKey->ts);
 
       portManager.sendOutput<KeyboardMsgType>("out_key", outKey);
+      freqManager.adjust();
 
       return raft::proceed;
     }

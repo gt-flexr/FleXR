@@ -6,6 +6,7 @@
 #include "defs.h"
 #include "types/types.h"
 #include "kernels/kernel.h"
+#include "components/frequency_manager.h"
 
 namespace mxre
 {
@@ -17,9 +18,10 @@ namespace mxre
     {
     private:
       uint32_t seq;
+      components::FrequencyManager freqManager;
 
     public:
-      Keyboard();
+      Keyboard(int frequency=20);
       virtual raft::kstatus run();
     };
 
