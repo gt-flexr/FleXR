@@ -1,7 +1,10 @@
 #ifndef __MXRE_DEFS__
 #define __MXRE_DEFS__
 
+#define PI (3.141592)
+
 #define MAX_OBJS 5
+#define MAX_MARKERS 10
 
 // GL scale factor
 #define SCALE_FACTOR 10

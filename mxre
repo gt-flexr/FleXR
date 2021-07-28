@@ -79,6 +79,8 @@
 #include "./mxreinc/kernels/intermediate/object_renderer.h"
 #include "./mxreinc/kernels/intermediate/orb_detector.h"
 #include "./mxreinc/kernels/intermediate/frame_converter.h"
+#include "./mxreinc/kernels/intermediate/aruco_detector.h"
+#include "./mxreinc/kernels/intermediate/aruco_cam_locator.h"
 
 #endif
 

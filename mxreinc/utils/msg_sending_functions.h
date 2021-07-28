@@ -23,6 +23,7 @@ namespace mxre {
       port->sendOutput(copiedMessage);
     }
 
+
     static void sendLocalFrameCopy(components::MXREPort *port, void *frame)
     {
       types::Message<types::Frame> *castedFrame = static_cast<types::Message<types::Frame>*>(frame);
@@ -34,6 +35,7 @@ namespace mxre {
       copiedFrame->data = castedFrame->data.clone();
       port->sendOutput(copiedFrame);
     }
+
 
     template <typename T>
     void sendRemotePrimitive(components::MXREPort *port, void *msg)
@@ -66,6 +68,17 @@ namespace mxre {
       port->remotePort.socket.send(sizeMsg, zmq::send_flags::sndmore);
       port->remotePort.socket.send(sendMsg, zmq::send_flags::none);
     }
+
+
+    template <typename T>
+    void sendRemotePrimitiveVecData(components::MXREPort *port, void *msg)
+    {
+      T* castedMsg = static_cast<T*>(msg);
+      int vecSize = castedMsg->data.size() * sizeof(castedMsg->data[0]);
+      zmq::message_t sendMsg(castedMsg->data.data(), vecSize);
+      port->remotePort.socket.send(sendMsg, zmq::send_flags::none);
+    }
+
 
     /* sendDetectedMarkers */
     using SendMarkerMsgType = types::Message<std::vector<cv_types::DetectedMarker>>;

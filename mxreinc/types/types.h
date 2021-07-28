@@ -28,6 +28,14 @@ namespace mxre {
     };
 
 
+    class ObjectPose
+    {
+      public:
+      float rx, ry, rz;
+      float tx, ty, tz;
+    };
+
+
     template <typename T>
     void freePrimitiveMsg(void *msg)
     {
