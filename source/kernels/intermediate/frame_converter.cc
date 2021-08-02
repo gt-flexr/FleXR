@@ -12,6 +12,20 @@ namespace mxre
       this->width = width; this->height = height;
       this->conv = conv;
 
+      switch(conv) {
+      case Conversion::RGB2RGBA:
+        inFormat = cv::Mat(height, width, CV_8UC3);
+        break;
+      case Conversion::RGBA2RGB:
+      case Conversion::BGRA2RGB:
+        inFormat = cv::Mat(height, width, CV_8UC4);
+        break;
+      default:
+        debug_print("Conversion type is not specified");
+        break;
+      }
+      inFrameSize = inFormat.elemSize() * inFormat.total();
+
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, utils::recvRemoteFrame,
                                     types::allocFrameWithBuffer);
       portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, utils::sendRemoteFrame,
@@ -21,21 +35,10 @@ namespace mxre
 
     raft::kstatus FrameConverter::run()
     {
-      int inFrameSize, elemSize;
-      switch(conv) {
-      case Conversion::RGB2RGBA:
-        elemSize = 3;
-        inFrameSize = width*height*elemSize;
-        break;
-      default:
-        break;
-      }
-
       Message<Frame> *inFrame  = portManager.getInputWithSize<Message<Frame>>("in_frame", inFrameSize);
-      inFrame->data.cols = width;
-      inFrame->data.rows = height;
-      inFrame->data.elemSize = elemSize;
-      inFrame->data.totalElem = width*height;
+      inFrame->data.setFrameAttribFromCVMat(inFormat);
+      inFrame->dataSize = inFrame->data.dataSize;
+      if(conv == Conversion::RGBA2RGB) debug_print("received Data Size: %d/%d", inFrame->dataSize, inFrameSize);
 
       Message<Frame> *outFrame = portManager.getOutputPlaceholder<Message<Frame>>("out_frame");
       outFrame->ts = inFrame->ts;
@@ -45,12 +48,16 @@ namespace mxre
       cv::Mat temp;
       switch(conv) {
       case Conversion::RGB2RGBA:
-        cv::cvtColor(inFrame->data.useAsCVMat(), temp, cv::COLOR_RGB2RGBA);
-        outFrame->data = types::Frame(temp);
-        break;
+        cv::cvtColor(inFrame->data.useAsCVMat(), temp, cv::COLOR_RGB2RGBA); break;
+      case Conversion::RGBA2RGB:
+        cv::cvtColor(inFrame->data.useAsCVMat(), temp, cv::COLOR_RGBA2RGB); break;
+      case Conversion::BGRA2RGB:
+        cv::cvtColor(inFrame->data.useAsCVMat(), temp, cv::COLOR_BGRA2RGB); break;
       default:
         break;
       }
+      outFrame->data = types::Frame(temp);
+      outFrame->dataSize = outFrame->data.dataSize;
 
       inFrame->data.release();
       portManager.sendOutput("out_frame", outFrame);

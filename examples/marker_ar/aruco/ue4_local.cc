@@ -11,7 +11,7 @@ int main()
 {
   /* Get home directory for finding config */
   string mxre_home = getenv("MXRE_HOME");
-  string config_yaml = mxre_home + "/examples/marker_ar/ue4/config.yaml";
+  string config_yaml = mxre_home + "/examples/marker_ar/aruco/config.yaml";
   if(mxre_home.empty()) {
     cout << "Set MXRE_HOME as a environment variable" << endl;
     return 0;
@@ -35,7 +35,7 @@ int main()
   int appMarkerPort     = config["app_marker_port"].as<int>();
   int flexrFramePort = config["flexr_frame_port"].as<int>();
 
-  raft::map pipeline;
+  raft::map sendingPipeline, receivingPipeline;
 
   BagCamera bagCam("bag_frame", bagFile, bagTopic, bagFPS);
   bagCam.setDebugMode();
@@ -52,28 +52,32 @@ int main()
   keyboard.setDebugMode();
   keyboard.activateOutPortAsRemote<Message<char>>("out_key", "127.0.0.1", appKeyPort);
 
-  //ArUcoDetector arucoDetector(cv::aruco::DICT_6X6_250, width, height);
-  //arucoDetector.activateInPortAsLocal<Message<Frame>>("in_frame");
-  //arucoDetector.activateOutPortAsRemote<OutMarkerPoses>("out_marker_poses", "127.0.0.1", appMarkerPort);
-
   ArUcoCamLocator arucoCamLocator(cv::aruco::DICT_6X6_250, width, height);
   arucoCamLocator.activateInPortAsLocal<Message<Frame>>("in_frame");
   arucoCamLocator.activateOutPortAsRemote<OutCamPose>("out_cam_pose", "127.0.0.1", appMarkerPort);
 
 
+  FrameConverter rgbConverter("recv_frame_converter", width, height, FrameConverter::Conversion::RGBA2RGB);
+  rgbConverter.activateInPortAsRemote<Message<Frame>>("in_frame", flexrFramePort);
+  rgbConverter.activateOutPortAsLocal<Message<Frame>>("out_frame");
 
-  /*
-  NonDisplay nonDisplay;
-  nonDisplay.setDebugMode();
-  nonDisplay.setLogger("non_display_logger", "non_display.log");
-  nonDisplay.activateInPortAsLocal<NonDisplayMsgType>("in_frame");
-  */
+  CVDisplay display;
+  //display.setDebugMode();
+  //display.setLogger("display_logger", "display.log");
+  display.activateInPortAsLocal<NonDisplayMsgType>("in_frame");
 
-  pipeline.link(&bagCam, "out_frame", &rgbaConverter, "in_frame", 1);
-  pipeline.link(&bagCam, "out_frame2", &arucoCamLocator, "in_frame", 1);
+  sendingPipeline.link(&bagCam, "out_frame", &rgbaConverter, "in_frame", 1);
+  sendingPipeline.link(&bagCam, "out_frame2", &arucoCamLocator, "in_frame", 1);
+
+  receivingPipeline.link(&rgbConverter, "out_frame", &display, "in_frame", 1);
+
+
+
+  std::thread sendThread(mxre::kernels::runPipeline, &sendingPipeline);
   std::thread keyThread(mxre::kernels::runSingleKernel, &keyboard);
-  pipeline.exe();
+  std::thread recvThread(mxre::kernels::runPipeline, &receivingPipeline);
 
+  sendThread.join();
   keyThread.join();
   return 0;
 }

@@ -21,7 +21,7 @@ namespace mxre
       components::FrequencyManager freqManager;
 
     public:
-      Keyboard(int frequency=20);
+      Keyboard(int frequency=60);
       virtual raft::kstatus run();
     };
 

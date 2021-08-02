@@ -1,5 +1,5 @@
-#ifndef __MXRE_COMPONENTS_MXREPORTMANAGER__
-#define __MXRE_COMPONENTS_MXREPORTMANAGER__
+#ifndef __FLEXR_COMPONENTS_PORTMANAGER__
+#define __FLEXR_COMPONENTS_PORTMANAGER__
 
 #include <raftinc/port.hpp>
 #include "components/mxre_port.h"
@@ -40,7 +40,7 @@ namespace mxre
          */
         void registerInPortTag(std::string tag, PortDependency pd,
                                std::function<void (MXREPort*, void*)> recvRemoteFunc,
-                               std::function<void (void*, int)> allocRemoteMsgFunc = 0)
+                               std::function<void (void**, int)> allocRemoteMsgFunc = 0)
         {
           inPortMap[tag]                 = new MXREPort(inLocalPorts, tag);
           inPortMap[tag]->dependency     = pd;

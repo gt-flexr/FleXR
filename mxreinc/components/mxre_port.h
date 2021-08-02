@@ -43,7 +43,7 @@ namespace mxre
         std::function<void (MXREPort*, void*)> sendRemote;
         std::function<void (void*)>            freeRemoteMsg;
         std::function<void (MXREPort*, void*)> recvRemote;
-        std::function<void (void*, int)>       allocRemoteMsg;
+        std::function<void (void**, int)>      allocRemoteMsg;
 
         MXREPort(Port* localPort, std::string tag): localPort(localPort), tag(tag), activated(false)
         { }
@@ -133,7 +133,7 @@ namespace mxre
             input = getInput<T>();
             break;
           case PortState::REMOTE:
-            if(allocRemoteMsg) allocRemoteMsg(input, size);
+            if(allocRemoteMsg) allocRemoteMsg((void**)&input, size);
             else input = new T;
             recvRemote(this, input);
             break;

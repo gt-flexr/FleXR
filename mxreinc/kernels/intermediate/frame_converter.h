@@ -23,12 +23,16 @@ namespace mxre
     class FrameConverter : public MXREKernel
     {
       public:
-        enum Conversion { RGB2RGBA };
+        enum Conversion { RGB2RGBA,
+                          RGBA2RGB,
+                          BGRA2RGB };
         FrameConverter(std::string id, int width, int height, Conversion conv);
         raft::kstatus run() override;
 
       private:
         int width, height;
+        cv::Mat inFormat;
+        int inFrameSize;
         Conversion conv;
     };
 

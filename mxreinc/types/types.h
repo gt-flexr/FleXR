@@ -24,6 +24,7 @@ namespace mxre {
       char     tag[MXRE_MSG_TAG_SIZE];
       uint32_t seq;
       double   ts;
+      uint32_t dataSize;
       T        data;
     };
 
@@ -52,12 +53,12 @@ namespace mxre {
     }
 
 
-    static void allocFrameWithBuffer(void *msg, int size)
+    static void allocFrameWithBuffer(void **msg, int size)
     {
-      Message<Frame> *castedFrame = static_cast<Message<Frame>*>(msg);
-      castedFrame = new Message<Frame>();
+      Message<Frame> *castedFrame = new Message<Frame>();
       castedFrame->data.data     = new unsigned char[size];
       castedFrame->data.dataSize = size;
+      *msg = castedFrame;
     }
   }
 }
