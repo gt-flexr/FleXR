@@ -7,8 +7,9 @@ namespace mxre
 {
   namespace kernels
   {
-    CVDisplay::CVDisplay(): MXREKernel()
+    CVDisplay::CVDisplay(int width, int height, FrameType frameType): MXREKernel()
     {
+      this->width = width, this->height = height;
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
     }
 
@@ -18,8 +19,10 @@ namespace mxre
 
       double st = getTsNow();
 
-      cv::imshow("CVDisplay", inFrame->data.useAsCVMat());
-      int inKey = cv::waitKey(1) & 0xFF;
+      debug_print("displaying frame size: %d / %d", inFrame->dataSize, inFrame->data.dataSize);
+
+      //cv::imshow("CVDisplay", inFrame->data.useAsCVMat());
+      //int inKey = cv::waitKey(1) & 0xFF;
 
       double et = getTsNow();
       if(debugMode) debug_print("disp(%lf), e2e info: %s(%d:%lf)", et-st, inFrame->tag, inFrame->seq, et-inFrame->ts);

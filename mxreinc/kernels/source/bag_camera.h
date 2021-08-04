@@ -22,7 +22,7 @@ namespace mxre
     private:
       uint32_t seq;
       components::ROSBagFrameReader bagReader;
-      components::FrequencyManager freqManager; 
+      components::FrequencyManager freqManager;
 
     public:
       BagCamera(std::string tag="", std::string bagPath="", std::string bagTopic="", int targetFps=30);

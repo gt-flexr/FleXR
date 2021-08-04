@@ -26,6 +26,8 @@ namespace mxre
       ransacThresh = 3.0f;
       minInlierThresh = 20;
 
+      numKps = 0;
+
       detector = cv::cuda::ORB::create();
       matcher = cv::cuda::DescriptorMatcher::createBFMatcher(cv::NORM_HAMMING);
     }
@@ -39,13 +41,14 @@ namespace mxre
 
       // 1. prepare gary frame
       cv::Mat grayFrame = inFrame->data.useAsCVMat();
-      cv::cvtColor(grayFrame, grayFrame, CV_BGR2GRAY);
+      cv::cvtColor(grayFrame, grayFrame, cv::COLOR_RGB2GRAY);
       cuFrame.upload(grayFrame);
 
       // 2. run CUDA ORB & convert the GPU result into CPU; cpu kps & gpu desc are ready
       detector->detectAndComputeAsync(cuFrame, cv::noArray(), cuKp, cuDesc, false, stream);
       stream.waitForCompletion();
       detector->convert(cuKp, frameKps);
+      numKps = frameKps.size();
 
       // 3. multi-obj detection
       std::vector<mxre::cv_types::MarkerInfo>::iterator markerInfo;
@@ -124,7 +127,8 @@ namespace mxre
 
 
       if(debugMode) debug_print("st(%lf) et(%lf) exe(%lf)", st, et, et-st);
-      if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}", st, et, et-st);
+      if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}\t {}", st, et, et-st, numKps);
+      numKps = 0;
 
       return raft::proceed;
     }

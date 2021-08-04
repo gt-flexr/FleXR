@@ -1,5 +1,5 @@
-#ifndef __MXRE_CV_DISPLAY__
-#define __MXRE_CV_DISPLAY__
+#ifndef __FLEXR_CV_DISPLAY__
+#define __FLEXR_CV_DISPLAY__
 
 #include <bits/stdc++.h>
 #include <raft>
@@ -10,6 +10,7 @@
 #include "defs.h"
 #include "types/clock_types.h"
 #include "types/frame.h"
+#include "utils/msg_receiving_functions.h"
 
 namespace mxre
 {
@@ -20,12 +21,14 @@ namespace mxre
     class CVDisplay : public MXREKernel
     {
     public:
-      CVDisplay();
+      enum FrameType { RGB, RGBA };
+      CVDisplay(int width=1920, int height=1080, FrameType frameType=FrameType::RGB);
       raft::kstatus run() override;
-      void activateInPortAsRemote(const std::string tag, int portNumber)
-      {
-        debug_print("not allow remote port activation.");
-      }
+
+    private:
+      int width, height;
+      FrameType frameType;
+      cv::Mat inFormat;
     };
 
   }   // namespace kernels

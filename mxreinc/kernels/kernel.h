@@ -4,7 +4,7 @@
 #include <bits/stdc++.h>
 #include <iostream>
 #include <raft>
-#include <cv.hpp>
+#include <opencv2/opencv.hpp>
 #include <chrono>
 #include <thread>
 #include <raftinc/rafttypes.hpp>

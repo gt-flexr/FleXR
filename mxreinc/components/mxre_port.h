@@ -43,6 +43,7 @@ namespace mxre
         std::function<void (MXREPort*, void*)> sendRemote;
         std::function<void (void*)>            freeRemoteMsg;
         std::function<void (MXREPort*, void*)> recvRemote;
+        std::function<void (void**, int)>      allocRemoteMsg;
 
         MXREPort(Port* localPort, std::string tag): localPort(localPort), tag(tag), activated(false)
         { }
@@ -85,6 +86,7 @@ namespace mxre
           activated = true;
         }
 
+
         template <typename T>
         T* getInput()
         {
@@ -113,9 +115,32 @@ namespace mxre
             recvRemote(this, input);
             break;
           }
-
           return input;
         }
+
+
+        template <typename T>
+        T* getInputWithSize(int size)
+        {
+          if(!activated) {
+            debug_print("Cannot getInput with inactivated port %s", tag.c_str());
+            return nullptr;
+          }
+
+          T* input = nullptr;
+          switch(state) {
+          case PortState::LOCAL:
+            input = getInput<T>();
+            break;
+          case PortState::REMOTE:
+            if(allocRemoteMsg) allocRemoteMsg((void**)&input, size);
+            else input = new T;
+            recvRemote(this, input);
+            break;
+          }
+          return input;
+        }
+
 
         template <typename T>
         T* getOutputPlaceholder()
@@ -151,6 +176,7 @@ namespace mxre
             break;
           case PortState::REMOTE:
             sendRemote(this, msg);
+            //if(freeRemoteMsg) freeRemoteMsg(msg);
             break;
           }
         }

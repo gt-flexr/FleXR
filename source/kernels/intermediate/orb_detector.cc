@@ -1,3 +1,4 @@
+#include "opencv2/imgproc.hpp"
 #include <kernels/intermediate/orb_detector.h>
 #include <utils/msg_sending_functions.h>
 #include <unistd.h>
@@ -36,7 +37,7 @@ namespace mxre
 
       // 0. prepare gary frame
       cv::Mat grayFrame = inFrame->data.useAsCVMat();
-      cv::cvtColor(grayFrame, grayFrame, CV_BGR2GRAY);
+      //cv::cvtColor(grayFrame, grayFrame, cv::COLOR_BGR2GRAY);
 
       // 1. figure out frame keypoints and descriptors to detect objects in the frame
       detector->detectAndCompute(grayFrame, cv::noArray(), frameKps, frameDesc);

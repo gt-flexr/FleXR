@@ -11,6 +11,7 @@ list(APPEND EXAMPLE_SRCS
   marker_ar/offloading/orb_part_perception_client.cc
   marker_ar/offloading/renderer_client.cc
   marker_ar/offloading/renderer_server.cc
+  marker_ar/aruco/ue4_local.cc
 )
 
 
