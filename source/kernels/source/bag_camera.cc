@@ -4,12 +4,12 @@
 #include <opencv2/imgcodecs.hpp>
 #include <unistd.h>
 
-namespace mxre
+namespace flexr
 {
   namespace kernels
   {
     BagCamera::BagCamera(std::string tag, std::string bagPath, std::string bagTopic, int targetFps):
-      MXREKernel(tag), freqManager(targetFps)
+      FleXRKernel(tag), freqManager(targetFps)
     {
       if(!bagReader.openBag(bagPath, bagTopic)) exit(1);
       seq = 0;
@@ -46,5 +46,5 @@ namespace mxre
       return raft::proceed;
     }
   } // namespace kernels
-} // namespace mxre
+} // namespace flexr
 

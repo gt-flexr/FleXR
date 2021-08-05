@@ -2,7 +2,7 @@
 #include <components/rosbag_frame_reader.h>
 #include <bits/stdc++.h>
 
-namespace mxre {
+namespace flexr {
   namespace components {
     ROSBagFrameReader::ROSBagFrameReader(): ROSBagReader()
     {
@@ -33,14 +33,14 @@ namespace mxre {
         sensor_msgs::Image::ConstPtr image = curMsg->instantiate<sensor_msgs::Image>();
         if(image == NULL) debug_print("failed to read bag with frame %dth", i);
         else {
-          mxre::types::Frame frame(image->height, image->width, CV_8UC3);
+          flexr::types::Frame frame(image->height, image->width, CV_8UC3);
           if(frame.dataSize == image->data.size()) {
             memcpy(frame.data, image->data.data(), image->data.size());
             cachedFrames.push_back(frame);
             curMsg++;
           }
           else {
-            debug_print("allocated memory for mxre::type:Frame is not equal to the read data");
+            debug_print("allocated memory for flexr::type:Frame is not equal to the read data");
             exit(1);
           }
         }
@@ -80,7 +80,7 @@ namespace mxre {
     {
       debug_print("Num of Cached Frames: %ld" , cachedFrames.size());
       int i = 0;
-      for(std::vector<mxre::types::Frame>::iterator iter = cachedFrames.begin(); iter != cachedFrames.end(); iter++) {
+      for(std::vector<flexr::types::Frame>::iterator iter = cachedFrames.begin(); iter != cachedFrames.end(); iter++) {
         debug_print("\t%d Width(%ld) Height(%ld) Size(%ld) ElemSize(%ld) TotalElem(%ld)", i, iter->cols, iter->rows,
                     iter->dataSize, iter->elemSize, iter->totalElem);
         i++;
@@ -88,16 +88,16 @@ namespace mxre {
     }
 
 
-    mxre::types::Frame ROSBagFrameReader::getNextFrameFromBag()
+    flexr::types::Frame ROSBagFrameReader::getNextFrameFromBag()
     {
       sensor_msgs::Image::ConstPtr image = curMsg->instantiate<sensor_msgs::Image>();
-      mxre::types::Frame frame(image->height, image->width, CV_8UC3);
+      flexr::types::Frame frame(image->height, image->width, CV_8UC3);
       if(frame.dataSize == image->data.size()) {
         memcpy(frame.data, image->data.data(), image->data.size());
         curMsg++;
       }
       else {
-        debug_print("allocated memory for mxre::type:Frame is not equal to the read data");
+        debug_print("allocated memory for flexr::type:Frame is not equal to the read data");
         exit(1);
       }
 
@@ -105,15 +105,15 @@ namespace mxre {
     }
 
 
-    mxre::types::Frame ROSBagFrameReader::getNextFrameFromCachedFrames()
+    flexr::types::Frame ROSBagFrameReader::getNextFrameFromCachedFrames()
     {
-      mxre::types::Frame retFrame(cachedFrames[frameIndex].useAsCVMat());
+      flexr::types::Frame retFrame(cachedFrames[frameIndex].useAsCVMat());
       frameIndex = (frameIndex + 1) % cachedFrames.size();
       return retFrame;
     }
 
 
-    mxre::types::Frame ROSBagFrameReader::getNextFrame()
+    flexr::types::Frame ROSBagFrameReader::getNextFrame()
     {
       if(isCached()) return getNextFrameFromCachedFrames();
       else return getNextFrameFromBag();

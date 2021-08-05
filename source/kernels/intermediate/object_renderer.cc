@@ -5,13 +5,13 @@
 #include <GL/glew.h>
 #include <unistd.h>
 
-namespace mxre
+namespace flexr
 {
   namespace kernels
   {
 
-    ObjectRenderer::ObjectRenderer(std::vector<mxre::cv_types::MarkerInfo> registeredMarkers, int width, int height) :
-      MXREKernel(), width(width), height(height)
+    ObjectRenderer::ObjectRenderer(std::vector<flexr::cv_types::MarkerInfo> registeredMarkers, int width, int height) :
+      FleXRKernel(), width(width), height(height)
     {
       portManager.registerInPortTag("in_frame", components::PortDependency::NONBLOCKING, 0);
       portManager.registerInPortTag("in_marker_contexts",
@@ -23,18 +23,18 @@ namespace mxre
       portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, 0, 0);
 
       // 0. Create pbuf as a context
-      pbuf = new mxre::egl_types::pbuffer;
-      mxre::egl_utils::initPbuffer(*pbuf, width, height);
+      pbuf = new flexr::egl_types::pbuffer;
+      flexr::egl_utils::initPbuffer(*pbuf, width, height);
 
       // 1. Init pbuf as context and GL with the context
-      mxre::egl_utils::bindPbuffer(*pbuf);
-      mxre::gl_utils::initGL(width, height);
+      flexr::egl_utils::bindPbuffer(*pbuf);
+      flexr::gl_utils::initGL(width, height);
 
       // 2. Set AR Worlds via WorldManager
       // 2.1. Init shader
       worldManager.initShader();
       // 2.2. Add new worlds
-      std::vector<mxre::cv_types::MarkerInfo>::iterator markerInfo;
+      std::vector<flexr::cv_types::MarkerInfo>::iterator markerInfo;
       for(markerInfo = registeredMarkers.begin(); markerInfo != registeredMarkers.end(); ++markerInfo) {
         worldManager.addWorld(markerInfo->index);
       }
@@ -43,13 +43,13 @@ namespace mxre
         worldManager.addObjectToWorld(i);
 
       // 3. Unbind the pbuf context in init thread
-      mxre::egl_utils::unbindPbuffer(*pbuf);
+      flexr::egl_utils::unbindPbuffer(*pbuf);
       binding = false;
     }
 
     ObjectRenderer::~ObjectRenderer()
     {
-      mxre::egl_utils::terminatePbuffer(*pbuf);
+      flexr::egl_utils::terminatePbuffer(*pbuf);
       delete [] pbuf;
     }
 
@@ -62,17 +62,17 @@ namespace mxre
       if(inKey != nullptr) key = inKey->data;
 
       if(glIsTexture(backgroundTexture)) {
-        mxre::gl_utils::updateTextureFromFrame(&inFrame->data, backgroundTexture);
+        flexr::gl_utils::updateTextureFromFrame(&inFrame->data, backgroundTexture);
       }
       else {
-        mxre::gl_utils::makeTextureFromFrame(&inFrame->data, backgroundTexture);
+        flexr::gl_utils::makeTextureFromFrame(&inFrame->data, backgroundTexture);
       }
 
       // 2. Draw background frame
       glClearColor(1.0, 1.0, 1.0, 1.0);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-      mxre::gl_utils::startBackground(width, height);
+      flexr::gl_utils::startBackground(width, height);
       glBindTexture(GL_TEXTURE_2D, backgroundTexture);
       glBegin(GL_QUADS);
       glColor3f(1, 1, 1);
@@ -81,11 +81,11 @@ namespace mxre
         glTexCoord2i(1,1); glVertex3f(width, height, -1);
         glTexCoord2i(0,1); glVertex3f(0,     height, -1);
       glEnd();
-      mxre::gl_utils::endBackground();
+      flexr::gl_utils::endBackground();
 
       worldManager.startWorlds(key, inMarkerContexts->data);
 
-      outFrame->data = mxre::gl_utils::exportGLBufferToCV(width, height);
+      outFrame->data = flexr::gl_utils::exportGLBufferToCV(width, height);
       strcpy(outFrame->tag, inMarkerContexts->tag);
       outFrame->ts = inMarkerContexts->ts;
       outFrame->seq = inMarkerContexts->seq;
@@ -95,7 +95,7 @@ namespace mxre
     raft::kstatus ObjectRenderer::run()
     {
       if(!binding) {
-        mxre::egl_utils::bindPbuffer(*pbuf);
+        flexr::egl_utils::bindPbuffer(*pbuf);
         binding = true;
       }
 
@@ -121,5 +121,5 @@ namespace mxre
     }
 
   }   // namespace kernels
-} // namespace mxre
+} // namespace flexr
 

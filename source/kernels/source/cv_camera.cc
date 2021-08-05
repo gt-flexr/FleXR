@@ -2,12 +2,12 @@
 #include <utils/msg_sending_functions.h>
 #include <unistd.h>
 
-namespace mxre
+namespace flexr
 {
   namespace kernels
   {
     CVCamera::CVCamera(std::string id, int dev_idx, int width, int height, int targetFps):
-      MXREKernel(id), frameReader(dev_idx, width, height), freqManager(targetFps)
+      FleXRKernel(id), frameReader(dev_idx, width, height), freqManager(targetFps)
     {
       seq = 0;
       portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, 0, 0);
@@ -39,5 +39,5 @@ namespace mxre
     }
 
   } // namespace device
-} // namespace mxre
+} // namespace flexr
 

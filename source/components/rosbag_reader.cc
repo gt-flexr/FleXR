@@ -1,7 +1,7 @@
 #include <components/rosbag_reader.h>
 #include <bits/stdc++.h>
 
-namespace mxre {
+namespace flexr {
   namespace components {
     ROSBagReader::ROSBagReader()
     {

@@ -6,8 +6,8 @@ macro(use_libzmq)
     message("\t LIBZMQ_LDFLAGS: ${LIBZMQ_LDFLAGS}")
 
     include_directories(${LIBZMQ_INCLUDE_DIRS})
-    list(APPEND MXRE_CXX_FLAGS ${LIBZMQ_CFLAGS_OTHER})
-    list(APPEND MXRE_LINKER_FLAGS ${LIBZMQ_LDFLAGS})
+    list(APPEND FLEXR_CXX_FLAGS ${LIBZMQ_CFLAGS_OTHER})
+    list(APPEND FLEXR_LINKER_FLAGS ${LIBZMQ_LDFLAGS})
   endif(LIBZMQ_FOUND)
 endmacro()
 

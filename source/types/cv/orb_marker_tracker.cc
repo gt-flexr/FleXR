@@ -1,6 +1,6 @@
 #include <types/cv/orb_marker_tracker.h>
 
-namespace mxre
+namespace flexr
 {
   namespace cv_types
   {
@@ -61,5 +61,5 @@ namespace mxre
     }
 
   } // namespace cv_types
-} // namespace mxre
+} // namespace flexr
 

@@ -1,7 +1,7 @@
 #include <components/rtp_sender.h>
 #include <bits/stdc++.h>
 
-namespace mxre {
+namespace flexr {
   namespace components {
     RTPSender::~RTPSender() {
       rtpSession->destroy_stream(rtpFragmentingStream);
@@ -19,7 +19,7 @@ namespace mxre {
 
 
     bool RTPSender::send(uint8_t *inData, uint32_t inDataSize) {
-      if(inDataSize > MXRE_RTP_PAYLOAD_UNIT_SIZE) {
+      if(inDataSize > FLEXR_RTP_PAYLOAD_UNIT_SIZE) {
         if (rtpFragmentingStream->push_frame(inData, inDataSize, RTP_SLICE) != RTP_OK) {
           debug_print("RTP push_frame failed..");
           return false;
@@ -40,7 +40,7 @@ namespace mxre {
                                          char *tag, uint32_t seq, double ts)
     {
       types::RTPTrackingInfo trackingInfo;
-      trackingInfo.invoice = MXRE_RTP_TRACKING_INVOICE;
+      trackingInfo.invoice = FLEXR_RTP_TRACKING_INVOICE;
 
       strcpy(trackingInfo.tag, tag);
       trackingInfo.seq      = seq;
@@ -54,3 +54,4 @@ namespace mxre {
     }
   }
 }
+

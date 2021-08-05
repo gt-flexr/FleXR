@@ -7,12 +7,12 @@
 #include <types/types.h>
 
 
-namespace mxre
+namespace flexr
 {
   namespace kernels
   {
-    CudaORBDetector::CudaORBDetector(std::vector<mxre::cv_types::MarkerInfo> registeredMarkers) :
-      MXREKernel(), registeredMarkers(registeredMarkers)
+    CudaORBDetector::CudaORBDetector(std::vector<flexr::cv_types::MarkerInfo> registeredMarkers) :
+      FleXRKernel(), registeredMarkers(registeredMarkers)
     {
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
       portManager.registerOutPortTag("out_detected_markers",
@@ -51,7 +51,7 @@ namespace mxre
       numKps = frameKps.size();
 
       // 3. multi-obj detection
-      std::vector<mxre::cv_types::MarkerInfo>::iterator markerInfo;
+      std::vector<flexr::cv_types::MarkerInfo>::iterator markerInfo;
       for(markerInfo = registeredMarkers.begin(); markerInfo!=registeredMarkers.end(); ++markerInfo){
         cv::cuda::GpuMat cuObjDesc;
         std::vector<std::vector<cv::DMatch>> matches;
@@ -79,8 +79,8 @@ namespace mxre
 
         // 4. Find the homography with matched kps (at least 4kps for planar obj)
         if(objMatch.size() > 4) {
-          homography = findHomography(mxre::cv_utils::convertKpsToPts(objMatch),
-                                      mxre::cv_utils::convertKpsToPts(frameMatch),
+          homography = findHomography(flexr::cv_utils::convertKpsToPts(objMatch),
+                                      flexr::cv_utils::convertKpsToPts(frameMatch),
                                       cv::RANSAC, ransacThresh, inlierMask);
         }
 
@@ -134,7 +134,7 @@ namespace mxre
     }
 
   } // namespace ctx_understanding
-} // namespace mxre
+} // namespace flexr
 
 #endif
 

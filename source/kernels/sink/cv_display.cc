@@ -3,11 +3,12 @@
 #include <string>
 #include <unistd.h>
 
-namespace mxre
+namespace flexr
 {
   namespace kernels
   {
-    CVDisplay::CVDisplay(int width, int height, FrameType frameType): MXREKernel()
+
+    CVDisplay::CVDisplay(int width, int height, FrameType frameType): FleXRKernel()
     {
       this->width = width, this->height = height;
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
@@ -34,6 +35,7 @@ namespace mxre
 
       return raft::proceed;
     }
+
   } // namespace kernels
-} // namespace mxre
+} // namespace flexr
 

@@ -1,12 +1,13 @@
 #include <kernels/intermediate/aruco_cam_locator.h>
 #include <utils/msg_sending_functions.h>
 
-namespace mxre
+namespace flexr
 {
   namespace kernels
   {
+
     /* Constructor */
-    ArUcoCamLocator::ArUcoCamLocator(cv::aruco::PREDEFINED_DICTIONARY_NAME dictName, int width, int height): MXREKernel()
+    ArUcoCamLocator::ArUcoCamLocator(cv::aruco::PREDEFINED_DICTIONARY_NAME dictName, int width, int height): FleXRKernel()
     {
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
       portManager.registerOutPortTag("out_cam_pose",
@@ -76,6 +77,7 @@ namespace mxre
       if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}", st, et, et-st);
       return raft::proceed;
     }
+
   } // namespace kernels
-} // namespace mxre
+} // namespace flexr
 

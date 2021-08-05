@@ -4,7 +4,7 @@
 #include <opencv2/imgproc.hpp>
 #include <unistd.h>
 
-namespace mxre
+namespace flexr
 {
   namespace kernels
   {
@@ -12,7 +12,7 @@ namespace mxre
     RTPFrameReceiver::RTPFrameReceiver(int port, std::string decoderName, int width, int height):
       rtpReceiver("127.0.0.1", port),
       width(width), height(height), decoderName(decoderName),
-      MXREKernel()
+      FleXRKernel()
     {
       portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, 0, 0);
 
@@ -100,5 +100,5 @@ namespace mxre
       return raft::proceed;
     }
   } // namespace kernels
-} // namespace mxre
+} // namespace flexr
 

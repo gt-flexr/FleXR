@@ -1,15 +1,15 @@
-#include <mxre>
+#include <flexr>
 
 using namespace std;
-using namespace mxre::kernels;
+using namespace flexr::kernels;
 
 int main()
 {
-  string mxreHome = getenv("MXRE_HOME");
-  if(mxreHome.empty()) {
-    debug_print("Set MXRE_HOME as a environment variable"); return -1;
+  string flexrHome = getenv("FLEXR_HOME");
+  if(flexrHome.empty()) {
+    debug_print("Set FLEXR_HOME as a environment variable"); return -1;
   }
-  string configYaml = mxreHome + "/examples/tutorials/config.yaml";
+  string configYaml = flexrHome + "/examples/tutorials/config.yaml";
   debug_print("configurations from %s", configYaml.c_str());
 
   YAML::Node config = YAML::LoadFile(configYaml);

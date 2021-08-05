@@ -1,16 +1,16 @@
-set(MXRE_THIRD_PARTIES "")
-set( MXRE_INSTALL_INC ${CMAKE_INSTALL_PREFIX}/include/mxreinc )
+set(FLEXR_THIRD_PARTIES "")
+set( FLEXR_INSTALL_INC ${CMAKE_INSTALL_PREFIX}/include/flexrinc )
 
 add_library(STB_IMAGE "stb/stb_image.cpp")
-set(MXRE_THIRD_PARTIES ${MXRE_THIRD_PARTIES} STB_IMAGE)
-message(STATUS "[MXRE_THIRD_PARTIES]")
-message("\t${MXRE_THIRD_PARTIES}")
+set(FLEXR_THIRD_PARTIES ${FLEXR_THIRD_PARTIES} STB_IMAGE)
+message(STATUS "[FLEXR_THIRD_PARTIES]")
+message("\t${FLEXR_THIRD_PARTIES}")
 
-install( FILES stb/stb_image.h DESTINATION ${MXRE_INC_TARGET}/stb )
+install( FILES stb/stb_image.h DESTINATION ${FLEXR_INC_TARGET}/stb )
 
 # vertex, fragment, geometric shaders
-file(GLOB_RECURSE MXRE_SHADERS *.vs *.fs *.gs)
-foreach(MXRE_SHADER ${MXRE_SHADERS})
-  file(COPY ${MXRE_SHADER} DESTINATION ${CMAKE_SOURCE_DIR}/build/examples)
-endforeach(MXRE_SHADER)
+file(GLOB_RECURSE FLEXR_SHADERS *.vs *.fs *.gs)
+foreach(FLEXR_SHADER ${FLEXR_SHADERS})
+  file(COPY ${FLEXR_SHADER} DESTINATION ${CMAKE_SOURCE_DIR}/build/examples)
+endforeach(FLEXR_SHADER)
 

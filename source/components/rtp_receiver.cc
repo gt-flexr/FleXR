@@ -1,7 +1,7 @@
 #include <components/rtp_receiver.h>
 #include <bits/stdc++.h>
 
-namespace mxre {
+namespace flexr {
   namespace components
   {
     RTPReceiver::~RTPReceiver()
@@ -44,7 +44,7 @@ namespace mxre {
       //     - invoice of tracking info
       //   - if tracking info is fine, receive data
       if(receiveStatic(sizeof(types::RTPTrackingInfo), &trackingInfo)) {
-        if(trackingInfo.invoice == MXRE_RTP_TRACKING_INVOICE) {
+        if(trackingInfo.invoice == FLEXR_RTP_TRACKING_INVOICE) {
           strcpy(outTag, trackingInfo.tag);
           outSeq = trackingInfo.seq;
           outTs = trackingInfo.ts;
@@ -91,7 +91,7 @@ namespace mxre {
       //     - invoice of tracking info
       //   - if tracking info is fine, receive data
       if(receiveStatic(sizeof(types::RTPTrackingInfo), &trackingInfo)) {
-        if(trackingInfo.invoice == MXRE_RTP_TRACKING_INVOICE) {
+        if(trackingInfo.invoice == FLEXR_RTP_TRACKING_INVOICE) {
           strcpy(outTag, trackingInfo.tag);
           outSeq = trackingInfo.seq;
           outTs = trackingInfo.ts;

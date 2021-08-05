@@ -6,8 +6,8 @@ macro(use_opencv)
     message("\t OPENCV_LDFLAGS: ${OPENCV_LDFLAGS}")
 
     include_directories(${OPENCV_INCLUDE_DIRS})
-    list(APPEND MXRE_CXX_FLAGS ${OPENCV_CFLAGS_OTHER})
-    list(APPEND MXRE_LINKER_FLAGS ${OPENCV_LDFLAGS})
+    list(APPEND FLEXR_CXX_FLAGS ${OPENCV_CFLAGS_OTHER})
+    list(APPEND FLEXR_LINKER_FLAGS ${OPENCV_LDFLAGS})
 
     if(${USE_OPENCV_CUDA})
       add_definitions(-D__USE_OPENCV_CUDA__)

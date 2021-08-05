@@ -1,7 +1,7 @@
 #include "components/frequency_manager.h"
 #include "defs.h"
 
-namespace mxre
+namespace flexr
 {
   namespace components
   {

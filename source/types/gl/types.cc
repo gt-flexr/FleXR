@@ -23,7 +23,7 @@
 #include <types/gl/types.h>
 #include <iostream>
 
-namespace mxre
+namespace flexr
 {
   namespace gl_types
   {
@@ -805,5 +805,5 @@ Matrix4& Matrix4::skew(float angle, const Vector3& axis)
       return Vector3(pitch, yaw, roll);
     }
   } // namespace gl
-} // namespace mxre
+} // namespace flexr
 

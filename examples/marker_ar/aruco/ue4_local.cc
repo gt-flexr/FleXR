@@ -1,19 +1,19 @@
 #include <raft>
-#include <mxre>
+#include <flexr>
 #include <bits/stdc++.h>
 #include <yaml-cpp//yaml.h>
 
 using namespace std;
-using namespace mxre::kernels;
-using namespace mxre::types;
+using namespace flexr::kernels;
+using namespace flexr::types;
 
 int main()
 {
   /* Get home directory for finding config */
-  string mxre_home = getenv("MXRE_HOME");
-  string config_yaml = mxre_home + "/examples/marker_ar/aruco/config.yaml";
-  if(mxre_home.empty()) {
-    cout << "Set MXRE_HOME as a environment variable" << endl;
+  string flexr_home = getenv("FLEXR_HOME");
+  string config_yaml = flexr_home + "/examples/marker_ar/aruco/config.yaml";
+  if(flexr_home.empty()) {
+    cout << "Set FLEXR_HOME as a environment variable" << endl;
     return 0;
   }
   else cout << config_yaml << endl;
@@ -73,9 +73,9 @@ int main()
 
 
 
-  std::thread sendThread(mxre::kernels::runPipeline, &sendingPipeline);
-  std::thread keyThread(mxre::kernels::runSingleKernel, &keyboard);
-  std::thread recvThread(mxre::kernels::runPipeline, &receivingPipeline);
+  std::thread sendThread(flexr::kernels::runPipeline, &sendingPipeline);
+  std::thread keyThread(flexr::kernels::runSingleKernel, &keyboard);
+  std::thread recvThread(flexr::kernels::runPipeline, &receivingPipeline);
 
   sendThread.join();
   keyThread.join();

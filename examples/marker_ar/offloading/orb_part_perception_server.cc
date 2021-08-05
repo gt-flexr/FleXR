@@ -1,14 +1,14 @@
-#include <mxre>
+#include <flexr>
 
 using namespace std;
-using namespace mxre::kernels;
+using namespace flexr::kernels;
 
 int main(int argc, char const *argv[])
 {
-  string mxre_home = getenv("MXRE_HOME");
-  string config_yaml = mxre_home + "/examples/marker_ar/config.yaml";
-  if(mxre_home.empty()) {
-    cout << "Set MXRE_HOME as a environment variable" << endl;
+  string flexr_home = getenv("FLEXR_HOME");
+  string config_yaml = flexr_home + "/examples/marker_ar/config.yaml";
+  if(flexr_home.empty()) {
+    cout << "Set FLEXR_HOME as a environment variable" << endl;
     return 0;
   }
   else cout << config_yaml << endl;
@@ -30,24 +30,24 @@ int main(int argc, char const *argv[])
     return -1;
   }
 
-  mxre::cv_types::ORBMarkerTracker orbMarkerTracker;
-  mxre::cv_utils::setMarkerFromImages(markerPath + "/", 0, 1, orbMarkerTracker);
-  std::vector<mxre::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
+  flexr::cv_types::ORBMarkerTracker orbMarkerTracker;
+  flexr::cv_utils::setMarkerFromImages(markerPath + "/", 0, 1, orbMarkerTracker);
+  std::vector<flexr::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
 
   raft::map pipeline;
 
-  mxre::kernels::RTPFrameReceiver rtpFrameReceiver(serverFramePort, serverDecoder, width, height);
+  flexr::kernels::RTPFrameReceiver rtpFrameReceiver(serverFramePort, serverDecoder, width, height);
   rtpFrameReceiver.setDebugMode();
   rtpFrameReceiver.setLogger("rtp_frame_receiver_logger", "rtp_frame_receiver.log");
   rtpFrameReceiver.activateOutPortAsLocal<FrameReceiverMsgType>("out_frame");
 
-  mxre::kernels::CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
+  flexr::kernels::CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
   cudaORBDetector.setDebugMode();
   cudaORBDetector.setLogger("cuda_orb_detector_logger", "cuda_orb_detector.log");
   cudaORBDetector.activateInPortAsLocal<CudaORBDetectorInFrameType>("in_frame");
   cudaORBDetector.activateOutPortAsLocal<CudaORBDetectorOutMarkerType>("out_detected_markers");
 
-  mxre::kernels::MarkerCtxExtractor markerCtxExtractor(width, height);
+  flexr::kernels::MarkerCtxExtractor markerCtxExtractor(width, height);
   markerCtxExtractor.setLogger("marker_ctx_extractor_logger", "marker_ctx_extractor.log");
   markerCtxExtractor.activateInPortAsLocal<CtxExtractorInMarkerType>("in_detected_markers");
   markerCtxExtractor.activateOutPortAsRemote<CtxExtractorOutCtxType>("out_marker_contexts",

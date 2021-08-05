@@ -1,7 +1,7 @@
 #include <kernels/sink/rtp_frame_sender.h>
 #include <unistd.h>
 
-namespace mxre
+namespace flexr
 {
   namespace kernels
   {
@@ -118,5 +118,5 @@ namespace mxre
     }
 
   } // namespace kernels
-} // namespace mxre
+} // namespace flexr
 

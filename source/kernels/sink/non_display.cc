@@ -2,10 +2,11 @@
 #include <string>
 #include <unistd.h>
 
-namespace mxre
+namespace flexr
 {
   namespace kernels
   {
+
     NonDisplay::NonDisplay()
     {
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
@@ -24,7 +25,8 @@ namespace mxre
       inFrame->data.release();
       portManager.freeInput("in_frame", inFrame);
       return raft::proceed;
+
     }
   } // namespace kernels
-} // namespace mxre
+} // namespace flexr
 

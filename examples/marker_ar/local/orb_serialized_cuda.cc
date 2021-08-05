@@ -1,4 +1,4 @@
-#include <mxre>
+#include <flexr>
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/basic_file_sink.h>
 
@@ -8,11 +8,11 @@ using namespace std;
 
 int main(int argc, char const *argv[])
 {
-  string mxre_home = getenv("MXRE_HOME");
-  string config_yaml = mxre_home + "/examples/marker_ar/config.yaml";
+  string flexr_home = getenv("FLEXR_HOME");
+  string config_yaml = flexr_home + "/examples/marker_ar/config.yaml";
 
-  if(mxre_home.empty()) {
-    cout << "Set MXRE_HOME as a environment variable" << endl;
+  if(flexr_home.empty()) {
+    cout << "Set FLEXR_HOME as a environment variable" << endl;
     return 0;
   }
   else cout << config_yaml << endl;
@@ -33,15 +33,15 @@ int main(int argc, char const *argv[])
   /*
    *  Load a marker from an image
    */
-  mxre::cv_types::ORBMarkerTracker orbMarkerTracker;
-  mxre::cv_utils::setMarkerFromImages(markerPath + "/", 0, 1, orbMarkerTracker);
-  std::vector<mxre::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
+  flexr::cv_types::ORBMarkerTracker orbMarkerTracker;
+  flexr::cv_utils::setMarkerFromImages(markerPath + "/", 0, 1, orbMarkerTracker);
+  std::vector<flexr::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
 
 
   /*
    *  Cache frames from a bag file
    */
-  mxre::components::ROSBagFrameReader bagFrameReader(bagFile, bagTopic);
+  flexr::components::ROSBagFrameReader bagFrameReader(bagFile, bagTopic);
   bagFrameReader.cacheFrames(400, 400);
 
 
@@ -69,21 +69,21 @@ int main(int argc, char const *argv[])
   /*
    *  Set rendering contexts
    */
-  mxre::egl_types::pbuffer *pbuf;
-  mxre::ar_types::VirtualWorldManager worldManager;
+  flexr::egl_types::pbuffer *pbuf;
+  flexr::ar_types::VirtualWorldManager worldManager;
   GLuint backgroundTexture;
 
-  pbuf = new mxre::egl_types::pbuffer;
-  mxre::egl_utils::initPbuffer(*pbuf, width, height);
+  pbuf = new flexr::egl_types::pbuffer;
+  flexr::egl_utils::initPbuffer(*pbuf, width, height);
 
-  mxre::egl_utils::bindPbuffer(*pbuf);
-  mxre::gl_utils::initGL(width, height);
+  flexr::egl_utils::bindPbuffer(*pbuf);
+  flexr::gl_utils::initGL(width, height);
   worldManager.initShader();
 
   /*
    *  Set a virtual world to each marker
    */
-  std::vector<mxre::cv_types::MarkerInfo>::iterator markerInfo;
+  std::vector<flexr::cv_types::MarkerInfo>::iterator markerInfo;
   for (markerInfo = registeredMarkers.begin(); markerInfo != registeredMarkers.end(); ++markerInfo) {
     worldManager.addWorld(markerInfo->index);
   }
@@ -91,7 +91,7 @@ int main(int argc, char const *argv[])
   for(int i = 0; i < worldManager.numOfWorlds; i++) {
     worldManager.addObjectToWorld(i);
   }
-  //mxre::egl_utils::unbindPbuffer(*pbuf);
+  //flexr::egl_utils::unbindPbuffer(*pbuf);
 #ifdef __PROFILE__
   auto logger = spdlog::basic_logger_st("marker_ar_orb_serialized_cuda", "logs/marker_ar_orb_serialized_cuda.log");
   double e2eStart, e2eEnd;
@@ -117,7 +117,7 @@ int main(int argc, char const *argv[])
 #endif
 
     // Camera Frequency
-    mxre::types::Frame frame = bagFrameReader.getNextFrame();
+    flexr::types::Frame frame = bagFrameReader.getNextFrame();
     frameTimestamp = getTsNow();
 
 #ifdef LATENCY_BREAKDOWN
@@ -130,8 +130,8 @@ int main(int argc, char const *argv[])
      *  2. Detect registered markers on the loaded frame
      */
     std::vector<cv::KeyPoint> frameKps;
-    std::vector<mxre::cv_types::DetectedMarker> detectedMarkers;
-    std::vector<mxre::gl_types::ObjectContext> markerContexts;
+    std::vector<flexr::cv_types::DetectedMarker> detectedMarkers;
+    std::vector<flexr::gl_types::ObjectContext> markerContexts;
 
     // 2.1. Get frame keypoints and descriptors
     cv::Mat grayFrame = frame.useAsCVMat().clone();
@@ -148,7 +148,7 @@ int main(int argc, char const *argv[])
 #endif
 
     // multiple object detection
-    std::vector<mxre::cv_types::MarkerInfo>::iterator markerInfo;
+    std::vector<flexr::cv_types::MarkerInfo>::iterator markerInfo;
     for (markerInfo = registeredMarkers.begin(); markerInfo != registeredMarkers.end(); ++markerInfo)
     {
       cv::cuda::GpuMat cuObjDesc;
@@ -184,8 +184,8 @@ int main(int argc, char const *argv[])
       // 2.4. find the homography with the paired keypoints
       if (objMatch.size() >= 4)
       {
-        homography = findHomography(mxre::cv_utils::convertKpsToPts(objMatch),
-                                    mxre::cv_utils::convertKpsToPts(frameMatch),
+        homography = findHomography(flexr::cv_utils::convertKpsToPts(objMatch),
+                                    flexr::cv_utils::convertKpsToPts(frameMatch),
                                     cv::RANSAC, ransacThresh, inlierMask);
       }
 
@@ -206,7 +206,7 @@ int main(int argc, char const *argv[])
         // 2.6. if the number of inliers is bigger than threshold, detect!
         if (objInlier.size() >= minInlierThresh)
         {
-          mxre::cv_types::DetectedMarker detectedMarker;
+          flexr::cv_types::DetectedMarker detectedMarker;
           detectedMarker.index = markerInfo->index;
           detectedMarker.defaultLocationIn3D = markerInfo->defaultLocationIn3D;
           perspectiveTransform(markerInfo->defaultLocationIn2D, detectedMarker.locationIn2D, homography);
@@ -224,7 +224,7 @@ int main(int argc, char const *argv[])
     /********************************
                 Extract Contexts
     *********************************/
-    std::vector<mxre::cv_types::DetectedMarker>::iterator detectedMarker;
+    std::vector<flexr::cv_types::DetectedMarker>::iterator detectedMarker;
     for (detectedMarker = detectedMarkers.begin(); detectedMarker != detectedMarkers.end(); ++detectedMarker)
     {
       cv::Mat rvec, tvec;
@@ -232,7 +232,7 @@ int main(int argc, char const *argv[])
       cv::solvePnPRansac(detectedMarker->defaultLocationIn3D, detectedMarker->locationIn2D,
           camIntrinsic, camDistCoeffs, rvec, tvec);
 
-      mxre::gl_types::ObjectContext markerContext;
+      flexr::gl_types::ObjectContext markerContext;
       markerContext.index = detectedMarker->index;
       float transX = (tvec.at<double>(0, 0) * 2) / width;
       float transY = (tvec.at<double>(0, 1) * 2) / height;
@@ -257,16 +257,16 @@ int main(int argc, char const *argv[])
                 Overlay Objects
     *********************************/
     if(glIsTexture(backgroundTexture))
-      mxre::gl_utils::updateTextureFromFrame(&frame, backgroundTexture);
+      flexr::gl_utils::updateTextureFromFrame(&frame, backgroundTexture);
     else
-      mxre::gl_utils::makeTextureFromFrame(&frame, backgroundTexture);
+      flexr::gl_utils::makeTextureFromFrame(&frame, backgroundTexture);
     frame.release();
 
     // 2. Draw background frame
     glClearColor(1.0, 1.0, 1.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    mxre::gl_utils::startBackground(width, height);
+    flexr::gl_utils::startBackground(width, height);
     glBindTexture(GL_TEXTURE_2D, backgroundTexture);
     glBegin(GL_QUADS);
     glColor3f(1, 1, 1);
@@ -275,11 +275,11 @@ int main(int argc, char const *argv[])
     glTexCoord2i(1,1); glVertex3f(width, height, -1);
     glTexCoord2i(0,1); glVertex3f(0,     height, -1);
     glEnd();
-    mxre::gl_utils::endBackground();
+    flexr::gl_utils::endBackground();
 
     worldManager.startWorlds('f', markerContexts);
 
-    mxre::types::Frame resultFrame = mxre::gl_utils::exportGLBufferToCV(width, height);
+    flexr::types::Frame resultFrame = flexr::gl_utils::exportGLBufferToCV(width, height);
     frameIndex++;
 
 #ifdef LATENCY_BREAKDOWN

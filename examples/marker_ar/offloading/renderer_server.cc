@@ -1,14 +1,14 @@
-#include <mxre>
+#include <flexr>
 
 using namespace std;
-using namespace mxre::kernels;
+using namespace flexr::kernels;
 
 int main(int argc, char const *argv[])
 {
-  string mxre_home = getenv("MXRE_HOME");
-  string config_yaml = mxre_home + "/examples/marker_ar/config.yaml";
-  if(mxre_home.empty()) {
-    cout << "Set MXRE_HOME as a environment variable" << endl;
+  string flexr_home = getenv("FLEXR_HOME");
+  string config_yaml = flexr_home + "/examples/marker_ar/config.yaml";
+  if(flexr_home.empty()) {
+    cout << "Set FLEXR_HOME as a environment variable" << endl;
     return 0;
   }
   else cout << config_yaml << endl;
@@ -32,13 +32,13 @@ int main(int argc, char const *argv[])
     return -1;
   }
 
-  mxre::cv_types::ORBMarkerTracker orbMarkerTracker;
-  mxre::cv_utils::setMarkerFromImages(markerPath + "/", 0, 1, orbMarkerTracker);
-  std::vector<mxre::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
+  flexr::cv_types::ORBMarkerTracker orbMarkerTracker;
+  flexr::cv_utils::setMarkerFromImages(markerPath + "/", 0, 1, orbMarkerTracker);
+  std::vector<flexr::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
 
   raft::map pipeline;
 
-  mxre::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), width, height);
+  flexr::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), width, height);
   objRenderer.setDebugMode();
   objRenderer.setLogger("obj_renderer_logger", "obj_renderer.log");
   objRenderer.activateInPortAsRemote<ObjRendererInKeyType>("in_key", serverMessagePort);
@@ -46,12 +46,12 @@ int main(int argc, char const *argv[])
   objRenderer.activateInPortAsLocal<ObjRendererInFrameType>("in_frame");
   objRenderer.activateOutPortAsLocal<ObjRendererOutFrameType>("out_frame");
 
-  mxre::kernels::RTPFrameReceiver rtpFrameReceiver(serverFramePort, serverDecoder, width, height);
+  flexr::kernels::RTPFrameReceiver rtpFrameReceiver(serverFramePort, serverDecoder, width, height);
   rtpFrameReceiver.setDebugMode();
   rtpFrameReceiver.setLogger("rtp_frame_receiver_logger", "rtp_frame_receiver.log");
   rtpFrameReceiver.activateOutPortAsLocal<FrameReceiverMsgType>("out_frame");
 
-  mxre::kernels::RTPFrameSender rtpFrameSender(clientAddr, clientFramePort, serverEncoder, width, height, width*height*4, 60);
+  flexr::kernels::RTPFrameSender rtpFrameSender(clientAddr, clientFramePort, serverEncoder, width, height, width*height*4, 60);
   rtpFrameSender.setDebugMode();
   rtpFrameSender.setLogger("rtp_frame_sender_logger", "rtp_frame_sender.log");
   rtpFrameSender.activateInPortAsLocal<FrameSenderMsgType>("in_frame");

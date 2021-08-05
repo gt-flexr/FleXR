@@ -6,8 +6,8 @@ macro(use_rosbag)
     message("\t ROSBAG_LDFLAGS: ${ROSBAG_LDFLAGS}")
 
     include_directories(${ROSBAG_INCLUDE_DIRS})
-    list(APPEND MXRE_CXX_FLAGS ${ROSBAG_CFLAGS_OTHER})
-    list(APPEND MXRE_LINKER_FLAGS ${ROSBAG_LDFLAGS})
+    list(APPEND FLEXR_CXX_FLAGS ${ROSBAG_CFLAGS_OTHER})
+    list(APPEND FLEXR_LINKER_FLAGS ${ROSBAG_LDFLAGS})
   endif(ROSBAG_FOUND)
 endmacro()
 

@@ -3,11 +3,12 @@
 #include <utils/msg_sending_functions.h>
 #include <unistd.h>
 
-namespace mxre
+namespace flexr
 {
   namespace kernels
   {
-    FrameConverter::FrameConverter(std::string id, int width, int height, Conversion conv): MXREKernel(id)
+
+    FrameConverter::FrameConverter(std::string id, int width, int height, Conversion conv): FleXRKernel(id)
     {
       this->width = width; this->height = height;
       this->conv = conv;
@@ -64,6 +65,7 @@ namespace mxre
       portManager.freeInput("in_frame", inFrame);
       return raft::proceed;
     }
+
   } // namespace kernels
-} // namespace mxre
+} // namespace flexr
 

@@ -1,19 +1,19 @@
 #include <cstdlib>
 #include <raft>
-#include <mxre>
+#include <flexr>
 #include <bits/stdc++.h>
 #include <yaml-cpp/yaml.h>
 #include <string>
 
 using namespace std;
-using namespace mxre::kernels;
+using namespace flexr::kernels;
 
 int main()
 {
-  string mxre_home = getenv("MXRE_HOME");
-  string config_yaml = mxre_home + "/examples/marker_ar/config.yaml";
-  if(mxre_home.empty()) {
-    cout << "Set MXRE_HOME as a environment variable" << endl;
+  string flexr_home = getenv("FLEXR_HOME");
+  string config_yaml = flexr_home + "/examples/marker_ar/config.yaml";
+  if(flexr_home.empty()) {
+    cout << "Set FLEXR_HOME as a environment variable" << endl;
     return 0;
   }
   else cout << config_yaml << endl;
@@ -30,9 +30,9 @@ int main()
     return -1;
   }
 
-  mxre::cv_types::ORBMarkerTracker orbMarkerTracker;
-  mxre::cv_utils::setMarkerFromImages(markerPath + "/", 0, 1, orbMarkerTracker);
-  std::vector<mxre::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
+  flexr::cv_types::ORBMarkerTracker orbMarkerTracker;
+  flexr::cv_utils::setMarkerFromImages(markerPath + "/", 0, 1, orbMarkerTracker);
+  std::vector<flexr::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
 
   raft::map pipeline;
 
