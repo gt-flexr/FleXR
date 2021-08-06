@@ -1,32 +1,33 @@
 #ifndef __FLEXR_DEFS__
 #define __FLEXR_DEFS__
 
+/// Mathematical constant PI
 #define PI (3.141592)
 
+/// Max rendering objects for flexr::kernels::ObjectRenderer
 #define MAX_OBJS 5
-#define MAX_MARKERS 10
-
-// GL scale factor
+/// Rendering scale factor for depth calibration of flexr::kernels::ObjectRenderer
 #define SCALE_FACTOR 10
 
-// Index for attributes of cvMat
-#define FLEXR_DTYPE_PRIMITIVE 0
-#define FLEXR_DTYPE_FRAME 1
+/// Max detecting marakers for flexr::kernels::ORBDetector
+#define MAX_MARKERS 10
 
-// RTP payload size for uvgRTP
+/// RTP payload size for uvgRTP
 #define FLEXR_RTP_PAYLOAD_UNIT_SIZE 1443
+/// Message invoice for tracking RTP messages
 #define FLEXR_RTP_TRACKING_INVOICE (-777777)
 
-// For Message
+/// Tag size of FleXR messages
 #define FLEXR_MSG_TAG_SIZE 32
 
-// color-print reference: http://web.theurbanpenguin.com/adding-color-to-your-output-from-c/
+/// Debug print function
 #define debug_print(...) do { \
                               fprintf(stderr, "\033[1;31m[DEBUG] \033[0;32m[FUNC] %s \033[0m", __PRETTY_FUNCTION__); \
                               fprintf(stderr, __VA_ARGS__); \
                               fprintf(stderr, "\n"); \
                             } while (0)
 
+/// Profiling print function
 #ifdef __PROFILE__
 #define profile_print(...) do { \
                             fprintf(stderr, "\033[1;34m[PROFILE] \033[0;32m[FUNC] %s \033[0m", __PRETTY_FUNCTION__); \
@@ -36,10 +37,18 @@
 #endif
 
 #include <chrono>
+
+/// Macro function getting high resolution clock
 #define getNow() std::chrono::high_resolution_clock::now()
-#define getTsNow() ( (double)std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() / 1000 )
+
+/// Macro function getting the timestamp of high resolution clock in microsecond
 #define getTsUs() (std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count())
+
+/// Macro function getting the timestamp of high resolution clock in millisecond
 #define getTsMs() ( ((double)getTsUs()) / 1000)
+
+/// Macro function getting the timestamp of high resolution clock in millisecond
+#define getTsNow() getTsMs()
 
 #endif
 

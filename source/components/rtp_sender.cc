@@ -10,11 +10,11 @@ namespace flexr {
     }
 
 
-    RTPSender::RTPSender(std::string dest, int even_port)
+    RTPSender::RTPSender(std::string addr, int evenPort)
     {
-      rtpSession = rtpContext.create_session(dest);
-      rtpFragmentingStream = rtpSession->create_stream(-1, even_port, RTP_FORMAT_GENERIC, RCE_FRAGMENT_GENERIC);
-      rtpTinyStream = rtpSession->create_stream(-1, even_port, RTP_FORMAT_GENERIC, 0);
+      rtpSession = rtpContext.create_session(addr);
+      rtpFragmentingStream = rtpSession->create_stream(-1, evenPort, RTP_FORMAT_GENERIC, RCE_FRAGMENT_GENERIC);
+      rtpTinyStream = rtpSession->create_stream(-1, evenPort, RTP_FORMAT_GENERIC, 0);
     }
 
 

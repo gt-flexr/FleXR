@@ -11,26 +11,39 @@ namespace flexr
 {
   namespace components
   {
+
     enum PortDependency {
       BLOCKING,
       NONBLOCKING
     };
+
 
     enum PortState {
       LOCAL,
       REMOTE
     };
 
+
+    /**
+     * @brief Component for remote and local communications of kernels
+     */
     class FleXRPort
     {
       protected:
         bool activated;
-        bool checkPort()
+
+
+        /**
+         * @brief Check the existence of an activated local port
+         * @return True if there is
+         */
+        bool checkLocalPort()
         {
           auto &port((*localPort)[tag]);
           if(port.size() > 0) return true;
           else return false;
         }
+
 
       public:
         std::string tag;
@@ -45,11 +58,31 @@ namespace flexr
         std::function<void (FleXRPort*, void*)> recvRemote;
         std::function<void (void**, int)>      allocRemoteMsg;
 
+
+        /**
+         * @brief Check the existence of an activated local port
+         * @param localPort
+         *  Local port array of Raftlib kernel
+         * @param tag
+         *  Tag of this port
+         */
         FleXRPort(Port* localPort, std::string tag): localPort(localPort), tag(tag), activated(false)
         { }
 
+
+        /**
+         * @brief Check the activation of the port
+         * @return True if the port is activated
+         */
         bool isActivated() { return activated; }
 
+
+        /**
+         * @brief Activate and instantiate a local port with the given tag
+         * @details Local activation interface is used for both input and output ports
+         * @param Tag
+         *  Port tag to activate as local
+         */
         template <typename T>
         void activateAsLocal(const std::string tag)
         {
@@ -62,6 +95,12 @@ namespace flexr
           activated = true;
         }
 
+
+        /**
+         * @brief Activate an input port as remote and bind to a port
+         * @param portNumber
+         *  Port number to bind (listen)
+         */
         template <typename T>
         void activateAsRemoteInput(int portNumber)
         {
@@ -74,6 +113,14 @@ namespace flexr
           activated = true;
         }
 
+
+        /**
+         * @brief Activate an output port as remote and connect to remote node
+         * @param addr
+         *  IP address to connect
+         * @param portNumber
+         *  Port number to connect
+         */
         template <typename T>
         void activateAsRemoteOutput(const std::string addr, int portNumber)
         {
@@ -87,6 +134,10 @@ namespace flexr
         }
 
 
+        /**
+         * @brief Get input message
+         * @return Pointer to the input message
+         */
         template <typename T>
         T* getInput()
         {
@@ -103,7 +154,7 @@ namespace flexr
               input = &temp;
             }
             else if(dependency == PortDependency::NONBLOCKING) {
-              if(checkPort()) {
+              if(checkLocalPort()) {
                 T &temp = (*localPort)[tag].peek<T>();
                 input = &temp;
               }
@@ -119,6 +170,12 @@ namespace flexr
         }
 
 
+        /**
+         * @brief Get input message with the given data size
+         * @param size
+         *  Size of the input message to get
+         * @return Pointer to the input message
+         */
         template <typename T>
         T* getInputWithSize(int size)
         {
@@ -142,6 +199,10 @@ namespace flexr
         }
 
 
+        /**
+         * @brief Get the placeholder of an output message
+         * @return Pointer to the output message
+         */
         template <typename T>
         T* getOutputPlaceholder()
         {
@@ -162,6 +223,12 @@ namespace flexr
           return outputPlaceholder;
         }
 
+
+        /**
+         * @brief Send the output message of the placeholder
+         * @param msg
+         *  Pointer to the output message to send
+         */
         template <typename T>
         void sendOutput(T* msg)
         {
@@ -181,6 +248,12 @@ namespace flexr
           }
         }
 
+
+        /**
+         * @brief Free the memory of an input message
+         * @param msg
+         *  Pointer to the input message to free
+         */
         template <typename T>
         void freeInput(T* msg)
         {

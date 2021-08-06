@@ -10,6 +10,9 @@ namespace flexr
   namespace components
   {
 
+    /**
+     * @brief Component to log events of a kernel
+     */
     class Logger
     {
       private:
@@ -17,11 +20,42 @@ namespace flexr
         int pid;
       public:
         Logger();
-        Logger(std::string loggerID, std::string logFileName);
-        void set(std::string loggerID, std::string logFileName);
-        bool isSet();
-        std::shared_ptr<spdlog::logger> getInstance();
         ~Logger();
+
+
+        /**
+         * @brief Initialize logger with ID and logger file name
+         * @param loggerID
+         *  Logger identifier
+         * @param logFileName
+         *  File name of the saved log
+         */
+        Logger(std::string loggerID, std::string logFileName);
+
+
+        /**
+         * @brief Set logger
+         * @param loggerID
+         *  Logger identifier
+         * @param logFileName
+         *  File name of the saved log
+         */
+        void set(std::string loggerID, std::string logFileName);
+
+
+        /**
+         * @brief Check the loger is set
+         * @return Boolean whether a logger is set or not
+         */
+        bool isSet();
+
+
+        // Function
+        /**
+         * @brief Return the logger instance to log
+         * @return Logger instance if it is set
+         */
+        std::shared_ptr<spdlog::logger> getInstance();
     };
 
   }

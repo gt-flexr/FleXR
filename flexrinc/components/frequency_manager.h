@@ -8,6 +8,9 @@ namespace flexr
   namespace components
   {
 
+    /**
+     * @brief Component to manage the frequency of kernel executions
+     */
     class FrequencyManager
     {
       private:

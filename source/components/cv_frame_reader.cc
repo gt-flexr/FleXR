@@ -29,7 +29,9 @@ namespace flexr {
       this->intrinsic.at<double>(2, 2) = 1;
     }
 
+
     CVFrameReader::~CVFrameReader () { if (instance.isOpened()) instance.release(); }
+
 
     flexr::types::Frame CVFrameReader::readFrame ()
     {

@@ -10,10 +10,10 @@ namespace flexr {
       rtpContext.destroy_session(rtpSession);
     }
 
-    RTPReceiver::RTPReceiver(std::string ip, int even_port)
+    RTPReceiver::RTPReceiver(std::string addr, int even_port)
     {
-      debug_print("Receive RTP stream from %s:%d", ip.c_str(), even_port);
-      rtpSession = rtpContext.create_session(ip);
+      debug_print("Receive RTP stream from %s:%d", addr.c_str(), even_port);
+      rtpSession = rtpContext.create_session(addr);
       rtpStream = rtpSession->create_stream(even_port, -1, RTP_FORMAT_GENERIC, RCE_FRAGMENT_GENERIC);
     }
 
