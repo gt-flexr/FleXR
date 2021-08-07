@@ -20,14 +20,22 @@ namespace flexr
 {
   namespace kernels
   {
+
     using ORBDetectorInFrameType   = types::Message<types::Frame>;
     using ORBDetectorOutMarkerType = types::Message<std::vector<cv_types::DetectedMarker>>;
 
+
+    /**
+     * @brief Kernel to detect an registered marker with local feature matching and ORB algorithm
+     *
+     * Port Tag             | Type
+     * ---------------------| ----------------------------
+     * in_frame             | @ref flexr::types::Message<@ref flexr::types::Frame>
+     * out_detected_markers | @ref flexr::types::Message<std::vector<@ref flexr::cv_types::DetectedMarker>>
+     */
     class ORBDetector : public FleXRKernel
     {
       private:
-        // TODO: components::ORBExtractor
-        // TODO: components::ORBDetector
         std::vector<flexr::cv_types::MarkerInfo> registeredMarkers;
         cv::Ptr<cv::Feature2D> detector;
         cv::Ptr<cv::DescriptorMatcher> matcher;
@@ -37,9 +45,17 @@ namespace flexr
         double ransacThresh;
         int minInlierThresh;
 
+
       public:
+        /**
+         * @brief Initialize kernel with registered marker info
+         * @param registeredMarkers
+         *  Registered marker lists
+         */
         ORBDetector(std::vector<flexr::cv_types::MarkerInfo> registeredMarkers);
+
         raft::kstatus run() override;
+
         bool logic(ORBDetectorInFrameType   *inFrame,
                    ORBDetectorOutMarkerType *outDetectedMarkers);
     };

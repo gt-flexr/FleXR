@@ -17,6 +17,14 @@ namespace flexr
   {
     using BagCameraMsgType = types::Message<types::Frame>;
 
+
+    /**
+     * @brief Kernel to get camera frames from a bag file
+     *
+     * Port Tag       | Type
+     * ---------------| ----------------------------
+     * out_frame      | @ref flexr::types::Message< @ref flexr::types::Frame>
+     */
     class BagCamera: public FleXRKernel
     {
     private:
@@ -25,13 +33,35 @@ namespace flexr
       components::FrequencyManager freqManager;
 
     public:
-      BagCamera(std::string tag="", std::string bagPath="", std::string bagTopic="", int targetFps=30);
-      void setFramesToCache(int numFrames, int startFrameIndex);
       ~BagCamera();
-      void activateOutPortAsRemote(const std::string tag, const std::string addr, int portNumber)
-      {
-        debug_print("not allow remote port activation.");
-      }
+
+
+      /**
+       * @brief Initialize bag camera kernel
+       * @param id
+       *  Kernel ID
+       * @param bagPath
+       *  Bag file path to read
+       * @param bagTopic
+       *  Bag topic to subscribe
+       * @param targetFps
+       *  Target frequency to feed frames
+       * @see flexr::components::ROSBagFrameReader
+       */
+      BagCamera(std::string id="", std::string bagPath="", std::string bagTopic="", int targetFps=30);
+
+
+      /**
+       * @brief Set frame caching
+       * @param numFrames
+       *  Number of frames to cache
+       * @param startFrameIndex
+       *  Number of frames to skip from the start
+       * @see flexr::components::ROSBagFrameReader
+       */
+      void setFramesToCache(int numFrames, int startFrameIndex);
+
+
       virtual raft::kstatus run();
     };
 

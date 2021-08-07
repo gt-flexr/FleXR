@@ -25,12 +25,18 @@ namespace flexr
     using CudaORBDetectorInFrameType = types::Message<types::Frame>;
     using CudaORBDetectorOutMarkerType = types::Message<std::vector<cv_types::DetectedMarker>>;
 
+
+    /**
+     * @brief GPU-accelerated kernel to detect an registered marker with local feature matching and ORB algorithm
+     *
+     * Port Tag             | Type
+     * ---------------------| ----------------------------
+     * in_frame             | @ref flexr::types::Message<@ref flexr::types::Frame>
+     * out_detected_markers | @ref flexr::types::Message<std::vector<@ref flexr::cv_types::DetectedMarker>>
+     */
     class CudaORBDetector : public FleXRKernel
     {
       private:
-        // TODO: components::CudaORBExtractor
-        // TODO: components::ORBDetector
-
         std::vector<flexr::cv_types::MarkerInfo> registeredMarkers;
         cv::Ptr<cv::cuda::ORB> detector;
         cv::Ptr<cv::cuda::DescriptorMatcher> matcher;
@@ -45,9 +51,19 @@ namespace flexr
         int minInlierThresh;
         int numKps;
 
+
       public:
+        /**
+         * @brief Initialize kernel with registered marker info
+         * @param registeredMarkers
+         *  Registered marker lists
+         */
         CudaORBDetector(std::vector<flexr::cv_types::MarkerInfo> registeredMarkers);
+
+
         raft::kstatus run() override;
+
+
         bool logic(CudaORBDetectorInFrameType   *inFrame,
                    CudaORBDetectorOutMarkerType *outDetectedMarkers);
     };

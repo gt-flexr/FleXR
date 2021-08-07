@@ -6,9 +6,9 @@ namespace flexr
   namespace kernels
   {
     /* Constructor() */
-    RTPFrameSender::RTPFrameSender(std::string destAddr, int destPortBase, std::string encoderName,
+    RTPFrameSender::RTPFrameSender(std::string addr, int port, std::string encoderName,
                                    int width, int height, int bitrate, int fps):
-      rtpSender(destAddr, destPortBase),
+      rtpSender(addr, port),
       encoderName(encoderName), width(width), height(height)
     {
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);

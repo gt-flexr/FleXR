@@ -8,8 +8,8 @@ namespace flexr
 {
   namespace kernels
   {
-    BagCamera::BagCamera(std::string tag, std::string bagPath, std::string bagTopic, int targetFps):
-      FleXRKernel(tag), freqManager(targetFps)
+    BagCamera::BagCamera(std::string id, std::string bagPath, std::string bagTopic, int targetFps):
+      FleXRKernel(id), freqManager(targetFps)
     {
       if(!bagReader.openBag(bagPath, bagTopic)) exit(1);
       seq = 0;

@@ -20,6 +20,14 @@ namespace flexr
   {
     using CVCameraMsgType = types::Message<types::Frame>;
 
+
+    /**
+     * @brief Kernel to get camera frames from a camera device
+     *
+     * Port Tag       | Type
+     * ---------------| ----------------------------
+     * out_frame      | @ref flexr::types::Message< @ref flexr::types::Frame>
+     */
     class CVCamera : public FleXRKernel
     {
     private:
@@ -27,15 +35,44 @@ namespace flexr
       components::FrequencyManager freqManager;
       uint32_t seq;
 
+
     public:
-      CVCamera(std::string id="cv_camera", int dev_idx=0, int width=1280, int height=720, int tagetFps=30);
+      /**
+       * @brief Initialize camera kernel
+       * @param id
+       *  Kernel ID
+       * @param devIdx
+       *  Device index
+       * @param width
+       *  Frame width
+       * @param height
+       *  Frame height
+       * @param targetFps
+       *  Target frequency to feed frames
+       * @see flexr::components::CVFrameReader
+       */
+      CVCamera(std::string id="cv_camera", int devIdx=0, int width=1280, int height=720, int tagetFps=30);
+
+
       ~CVCamera();
+
+
+      /**
+       * @brief Set camera intrinsic matrix
+       * @param inIntrinsic
+       *  3x3 camera intrinsic matrix to set
+       */
       void setIntrinsic(cv::Mat inIntrinsic);
+
+
+      /**
+       * @brief Set camera distortion coefficients
+       * @param inDistCoeffs
+       *  4x1 distortion coefficient matrix to set
+       */
       void setDistCoeffs(cv::Mat inDistCoeffs);
-      void activateOutPortAsRemote(const std::string tag, const std::string addr, int portNumber)
-      {
-        debug_print("not allow remote port activation.");
-      }
+
+
       raft::kstatus run() override;
     };
 

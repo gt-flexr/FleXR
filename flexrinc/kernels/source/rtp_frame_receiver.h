@@ -27,13 +27,19 @@ namespace flexr
   {
     using FrameReceiverMsgType = types::Message<types::Frame>;
 
+
+    /**
+     * @brief Kernel to receive RTP frame stream
+     *
+     * Port Tag       | Type
+     * ---------------| ----------------------------
+     * out_frame      | @ref flexr::types::Message< @ref flexr::types::Frame>
+     */
     class RTPFrameReceiver : public FleXRKernel
     {
       private:
         components::RTPReceiver rtpReceiver;
-        // TODO: components::Decoder decoder;
 
-        // Decoder
         std::string decoderName;
         int width, height;
 
@@ -44,14 +50,27 @@ namespace flexr
         int decodingFrameSize;
         cv::Mat yuvFrame;
 
+
       public:
+        /**
+         * @brief Initialize RTP frame receiver
+         * @param port
+         *  Port number to receive the stream
+         * @param decoderName
+         *  Decoder name to decode received frames
+         * @param width
+         *  Frame width
+         * @param height
+         *  Frame height
+         * @see flexr::components::RTPReceiver
+         */
         RTPFrameReceiver(int port, std::string decoderName, int width, int height);
+
+
         ~RTPFrameReceiver();
+
+
         raft::kstatus run() override;
-      void activateOutPortAsRemote(const std::string tag, int portNumber)
-      {
-        debug_print("not allow remote port activation.");
-      }
     };
 
   }   // namespace kernels

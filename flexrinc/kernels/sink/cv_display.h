@@ -16,14 +16,37 @@ namespace flexr
 {
   namespace kernels
   {
+
     using CVDisplayMsgType = types::Message<types::Frame>;
 
+
+    /**
+     * @brief Kernel to display frames
+     *
+     * Port Tag       | Type
+     * ---------------| ----------------------------
+     * in_frame       | @ref flexr::types::Message<@ref flexr::types::Frame>
+     */
     class CVDisplay : public FleXRKernel
     {
     public:
       enum FrameType { RGB, RGBA };
+
+
+      /**
+       * @brief Initialize display kernel
+       * @param width
+       *  Frame width
+       * @param height
+       *  Frame height
+       * @param frameType
+       *  Frame type
+       */
       CVDisplay(int width=1920, int height=1080, FrameType frameType=FrameType::RGB);
+
+
       raft::kstatus run() override;
+
 
     private:
       int width, height;

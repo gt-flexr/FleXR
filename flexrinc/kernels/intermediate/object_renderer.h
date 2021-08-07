@@ -26,15 +26,26 @@ namespace flexr
 {
   namespace kernels
   {
+
     using ObjRendererInCtxType    = types::Message<std::vector<gl_types::ObjectContext>>;
     using ObjRendererInFrameType  = types::Message<types::Frame>;
     using ObjRendererInKeyType    = types::Message<char>;
     using ObjRendererOutFrameType = types::Message<types::Frame>;
 
+
+    /**
+     * @brief Kernel to render virtual objects on the detected markers
+     *
+     * Port Tag             | Type
+     * ---------------------| ----------------------------
+     * in_frame             | @ref flexr::types::Message<@ref flexr::types::Frame>
+     * in_marker_contexts   | @ref flexr::types::Message<std::vector<@ref flexr::gl_types::ObjectContext>>
+     * in_key               | @ref flexr::types::Message<char>
+     * out_frame            | @ref flexr::types::Message<@ref flexr::types::Frame>
+    */
     class ObjectRenderer : public FleXRKernel
     {
     private:
-      // TODO: components::EGLRenderer
       flexr::egl_types::pbuffer *pbuf;
       flexr::ar_types::VirtualWorldManager worldManager;
 
@@ -43,9 +54,20 @@ namespace flexr
       int width, height;
 
     public:
+      /**
+       * @brief Initialize kernel with registered marker info
+       * @param registeredMarkers
+       *  Registered marker lists
+       */
       ObjectRenderer(std::vector<flexr::cv_types::MarkerInfo> registeredMarkers, int width, int height);
+
+
       ~ObjectRenderer();
+
+
       virtual raft::kstatus run();
+
+
       bool logic(ObjRendererInFrameType  *inFrame,
                  ObjRendererInKeyType    * inKey,
                  ObjRendererInCtxType    *inMarkerContexts,

@@ -6,8 +6,8 @@ namespace flexr
 {
   namespace kernels
   {
-    CVCamera::CVCamera(std::string id, int dev_idx, int width, int height, int targetFps):
-      FleXRKernel(id), frameReader(dev_idx, width, height), freqManager(targetFps)
+    CVCamera::CVCamera(std::string id, int devIdx, int width, int height, int targetFps):
+      FleXRKernel(id), frameReader(devIdx, width, height), freqManager(targetFps)
     {
       seq = 0;
       portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, 0, 0);

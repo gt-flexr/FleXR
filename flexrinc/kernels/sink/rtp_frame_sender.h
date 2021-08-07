@@ -24,15 +24,22 @@ namespace flexr
 {
   namespace kernels
   {
+
     using FrameSenderMsgType = types::Message<types::Frame>;
 
+
+    /**
+     * @brief Kernel to send RTP frame stream
+     *
+     * Port Tag       | Type
+     * ---------------| ----------------------------
+     * in_frame       | @ref flexr::types::Message<@ref flexr::types::Frame>
+     */
     class RTPFrameSender : public FleXRKernel
     {
       private:
         components::RTPSender rtpSender;
-        // TODO: components::Encoder encoder;
 
-        // Encoder
         std::string encoderName;
         int width, height;
 
@@ -43,14 +50,36 @@ namespace flexr
         cv::Mat yuvFrame;
 
       public:
-        RTPFrameSender(std::string destAddr, int destPortBase, std::string encoderName, int width, int height,
+        /**
+         * @brief Initialize RTP frame sender
+         * @param adder
+         *  IP address of remote node to send the stream
+         * @param port
+         *  Port number of remote node to send the stream
+         * @param encoderName
+         *  Encoder name to encode sending frames
+         * @param width
+         *  Frame width
+         * @param height
+         *  Frame height
+         * @param fps
+         *  Target FPS of encoding w.r.t. bitrates
+         * @see flexr::components::RTPSender
+         */
+        RTPFrameSender(std::string addr, int port, std::string encoderName, int width, int height,
                        int bitrate, int fps=60);
+
+
         ~RTPFrameSender();
+
+
         raft::kstatus run() override;
-      void activateInPortAsRemote(const std::string tag, int portNumber)
-      {
-        debug_print("not allow remote port activation.");
-      }
+
+
+        void activateInPortAsRemote(const std::string tag, int portNumber)
+        {
+          debug_print("not allow remote port activation.");
+        }
     };
 
   } // namespace kernels

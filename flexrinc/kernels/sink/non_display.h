@@ -17,15 +17,19 @@ namespace flexr
   {
     using NonDisplayMsgType = types::Message<types::Frame>;
 
+
+    /**
+     * @brief Kernel to sink frames
+     *
+     * Port Tag       | Type
+     * ---------------| ----------------------------
+     * in_frame       | @ref flexr::types::Message<@ref flexr::types::Frame>
+     */
     class NonDisplay : public FleXRKernel
     {
     public:
       NonDisplay();
       raft::kstatus run() override;
-      void activateInPortAsRemote(const std::string tag, int portNumber)
-      {
-        debug_print("not allow remote port activation.");
-      }
     };
 
   }   // namespace kernels
