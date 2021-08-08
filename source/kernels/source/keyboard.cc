@@ -7,14 +7,17 @@ namespace flexr
 {
   namespace kernels
   {
-    Keyboard::Keyboard(int frequency): FleXRKernel(), freqManager(frequency)
+
+    Keyboard::Keyboard(int frequency): FleXRKernel()
     {
       seq = 0;
       portManager.registerOutPortTag("out_key",
                                      utils::sendLocalBasicCopy<KeyboardMsgType>,
                                      utils::sendRemotePrimitive<KeyboardMsgType>,
                                      types::freePrimitiveMsg<KeyboardMsgType>);
+      freqManager.setFrequency(frequency);
     }
+
 
     raft::kstatus Keyboard::run() {
       KeyboardMsgType *outKey = portManager.getOutputPlaceholder<KeyboardMsgType>("out_key");
@@ -24,7 +27,7 @@ namespace flexr
       outKey->ts   = getTsNow();
       outKey->data = flexr::utils::getch();
 
-      if(debugMode) debug_print("stroke(%lf): %c", getTsNow(), outKey->data);
+      debug_print("stroke(%lf): %c", getTsNow(), outKey->data);
       if(logger.isSet()) logger.getInstance()->info("{}th keystroke {} occurs\t {}", seq-1, outKey->data, outKey->ts);
 
       portManager.sendOutput<KeyboardMsgType>("out_key", outKey);

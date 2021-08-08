@@ -26,7 +26,6 @@ namespace flexr
     {
     private:
       uint32_t seq;
-      components::FrequencyManager freqManager;
 
     public:
       /**

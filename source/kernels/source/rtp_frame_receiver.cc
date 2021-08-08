@@ -86,7 +86,7 @@ namespace flexr
               cv::cvtColor(yuvFrame, outFrame->data.useAsCVMat(), cv::COLOR_YUV2BGR_NV12);
 
             double et = getTsNow();
-            if(debugMode) debug_print("decodeTime(%lf), recvInfo %s:%d size(%d)", et-st, outFrame->tag, outFrame->seq, recvDataSize);
+            debug_print("decodeTime(%lf), recvInfo %s:%d size(%d)", et-st, outFrame->tag, outFrame->seq, recvDataSize);
             if(logger.isSet()) logger.getInstance()->info("st/et/decodingTime/recvSize\t{}\t {}\t {}\t {}",
                                                           st, et, et-st, recvDataSize);
 

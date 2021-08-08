@@ -20,6 +20,7 @@
 // Common Components
 #include "components/flexr_port_manager.h"
 #include "components/logger.h"
+#include "components/frequency_manager.h"
 
 namespace flexr
 {
@@ -35,13 +36,12 @@ namespace flexr
         std::string id;
         components::FleXRPortManager portManager;
         components::Logger logger;
-        bool debugMode;
+        components::FrequencyManager freqManager;
 
       public:
         FleXRKernel(): portManager(&input, &output)
         {
           id = "no_id";
-          debugMode = false;
         }
 
 
@@ -168,9 +168,15 @@ namespace flexr
         }
 
 
-       void setDebugMode()
+        /**
+         * @brief Kernel interface to set the running frequency
+         * @param targetFrequency
+         *  Target frequency to run
+         * @see flexr::components::FrequencyManager
+         */
+        void setFrequency(int targetFrequency)
         {
-          debugMode = true;
+          freqManager.setFrequency(targetFrequency);
         }
     };
 

@@ -19,7 +19,7 @@ namespace flexr
 
       double et = getTsNow();
 
-      if(debugMode) debug_print("e2e info: %s(%d:%lf)", inFrame->tag, inFrame->seq, et-inFrame->ts);
+      debug_print("e2e info: %s(%d:%lf)", inFrame->tag, inFrame->seq, et-inFrame->ts);
       if(logger.isSet()) logger.getInstance()->info("{}frame\t E2E latency\t{}", inFrame->seq, et - inFrame->ts);
 
       inFrame->data.release();

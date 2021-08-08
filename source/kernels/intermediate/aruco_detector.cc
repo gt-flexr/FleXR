@@ -83,7 +83,7 @@ namespace flexr
       inFrame->data.release();
       portManager.freeInput("in_frame", inFrame);
 
-      if(debugMode) debug_print("st(%lf) et(%lf) exe(%lf)", st, et, et-st);
+      debug_print("st(%lf) et(%lf) exe(%lf)", st, et, et-st);
       if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}", st, et, et-st);
       return raft::proceed;
     }

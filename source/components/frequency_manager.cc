@@ -8,9 +8,18 @@ namespace flexr
 
     FrequencyManager::FrequencyManager(int targetFrequency)
     {
-      periodUs = (uint32_t)(1000000/targetFrequency);
+      setFrequency(targetFrequency);
+    }
+
+
+    void FrequencyManager::setFrequency(int targetFrequency)
+    {
+      if(targetFrequency == 0) periodUs = 0;
+      else periodUs = (uint32_t)(1000000/targetFrequency);
+
       lastTs = getTsUs();
     }
+
 
     void FrequencyManager::adjust()
     {

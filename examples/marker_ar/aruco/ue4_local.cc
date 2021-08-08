@@ -38,7 +38,6 @@ int main()
   raft::map sendingPipeline, receivingPipeline;
 
   BagCamera bagCam("bag_frame", bagFile, bagTopic, bagFPS);
-  bagCam.setDebugMode();
   bagCam.setLogger("bag_cam_logger", "bag_cam.log");
   bagCam.setFramesToCache(1000, 0);
   bagCam.activateOutPortAsLocal<BagCameraMsgType>("out_frame");
@@ -49,7 +48,6 @@ int main()
   rgbaConverter.activateOutPortAsRemote<Message<Frame>>("out_frame", "127.0.0.1", appFramePort);
 
   Keyboard keyboard;
-  keyboard.setDebugMode();
   keyboard.activateOutPortAsRemote<Message<char>>("out_key", "127.0.0.1", appKeyPort);
 
   ArUcoCamLocator arucoCamLocator(cv::aruco::DICT_6X6_250, width, height);
@@ -62,7 +60,6 @@ int main()
   rgbConverter.activateOutPortAsLocal<Message<Frame>>("out_frame");
 
   CVDisplay display;
-  //display.setDebugMode();
   //display.setLogger("display_logger", "display.log");
   display.activateInPortAsLocal<NonDisplayMsgType>("in_frame");
 

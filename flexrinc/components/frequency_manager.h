@@ -17,7 +17,8 @@ namespace flexr
         uint32_t periodUs;
         uint32_t lastTs, exePeriod;
       public:
-        FrequencyManager(int targetFrequency);
+        FrequencyManager(int targetFrequency = 200);
+        void setFrequency(int targetFrequency);
         void adjust();
     };
 

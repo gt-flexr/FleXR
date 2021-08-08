@@ -30,7 +30,6 @@ namespace flexr
     private:
       uint32_t seq;
       components::ROSBagFrameReader bagReader;
-      components::FrequencyManager freqManager;
 
     public:
       ~BagCamera();

@@ -103,7 +103,7 @@ namespace flexr
           if(rtpSender.sendWithTrackingInfo(encodingPacket.data, encodingPacket.size,
                                             inFrame->tag, inFrame->seq, inFrame->ts)) {
             double et = getTsNow();
-            if(debugMode) debug_print("encodeTime(%lf), sentSize(%d)", et-st, sentSize);
+            debug_print("encodeTime(%lf), sentSize(%d)", et-st, sentSize);
             if(logger.isSet()) logger.getInstance()->info("encodingTime/rtpSendingTime/KernelExeTime/Sent Size\t{}\t {}\t {}\t {}",
                 enct-st, et-enct, et-st, sentSize);
 

@@ -32,7 +32,6 @@ namespace flexr
     {
     private:
       components::CVFrameReader frameReader;
-      components::FrequencyManager freqManager;
       uint32_t seq;
 
 
