@@ -22,11 +22,11 @@ int main()
   string serverDecoder = config["server_decoder"].as<string>();
 
   raft::map pipeline;
-  RTPFrameReceiver rtpFrameReceiver(serverFramePort, serverDecoder, width, height);
+  RTPFrameReceiver rtpFrameReceiver("rtp_frame_receive", serverFramePort, serverDecoder, width, height);
   rtpFrameReceiver.setLogger("rtp_frame_receiver_logger", "rtp_frame_receiver.log");
   rtpFrameReceiver.activateOutPortAsLocal<FrameReceiverMsgType>("out_frame");
 
-  CVDisplay cvDisplay;
+  CVDisplay cvDisplay("cv_display");
   cvDisplay.setLogger("cv_display_logger", "cv_display.log");
   cvDisplay.activateInPortAsLocal<CVDisplayMsgType>("in_frame");
 

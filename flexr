@@ -28,7 +28,6 @@
 #include "./flexrinc/types/clock_types.h"
 
 #include "./flexrinc/types/cv/types.h"
-#include "./flexrinc/types/cv/orb_marker_tracker.h"
 
 #include "./flexrinc/types/gl/types.h"
 #include "./flexrinc/types/gl/mesh.h"
@@ -55,6 +54,8 @@
 #include "./flexrinc/components/zmq_port.h"
 #include "./flexrinc/components/flexr_port.h"
 #include "./flexrinc/components/flexr_port_manager.h"
+
+#include "./flexrinc/components/orb_marker_tracker.h"
 
 
 /* Kernels

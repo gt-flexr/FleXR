@@ -28,12 +28,12 @@ int main()
 
   raft::map pipeline;
 
-  RTPFrameReceiver rtpFrameReceiver(serverFramePort, serverDecoder, width, height);
+  RTPFrameReceiver rtpFrameReceiver("rtp_frame_receiver", serverFramePort, serverDecoder, width, height);
   rtpFrameReceiver.setLogger("rtp_frame_receiver_logger", "rtp_frame_receiver.log");
   rtpFrameReceiver.activateOutPortAsLocal<FrameReceiverMsgType>("out_frame");
 
-  RTPFrameSender rtpFrameSender(clientAddr, clientFramePort, serverEncoder, width, height,
-                                               width*height*4, fps);
+  RTPFrameSender rtpFrameSender("rtp_frame_sender", clientAddr, clientFramePort, serverEncoder, width, height,
+                                width*height*4, fps);
   rtpFrameSender.setLogger("rtp_frame_sender_logger", "rtp_frame_sender.log");
   rtpFrameSender.activateInPortAsLocal<FrameSenderMsgType>("in_frame");
 

@@ -59,7 +59,7 @@ int main()
   rgbConverter.activateInPortAsRemote<Message<Frame>>("in_frame", flexrFramePort);
   rgbConverter.activateOutPortAsLocal<Message<Frame>>("out_frame");
 
-  CVDisplay display;
+  CVDisplay display("cv_display");
   //display.setLogger("display_logger", "display.log");
   display.activateInPortAsLocal<NonDisplayMsgType>("in_frame");
 

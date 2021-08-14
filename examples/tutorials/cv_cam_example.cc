@@ -19,11 +19,11 @@ int main()
   int height = config["height"].as<int>();
 
   raft::map pipeline;
-  CVCamera cvCam("cvcam", camIdx, width, height);
+  CVCamera cvCam("cvcam", camIdx, width, height, 30);
   cvCam.setLogger("cv_cam_logger", "cv_cam.log");
   cvCam.activateOutPortAsLocal<CVCameraMsgType>("out_frame");
 
-  CVDisplay cvDisplay;
+  CVDisplay cvDisplay("cv_display");
   cvDisplay.activateInPortAsLocal<NonDisplayMsgType>("in_frame");
   cvDisplay.setLogger("cv_display_logger", "cv_display.log");
 

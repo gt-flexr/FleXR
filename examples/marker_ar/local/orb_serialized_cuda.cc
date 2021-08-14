@@ -33,8 +33,8 @@ int main(int argc, char const *argv[])
   /*
    *  Load a marker from an image
    */
-  flexr::cv_types::ORBMarkerTracker orbMarkerTracker;
-  flexr::cv_utils::setMarkerFromImages(markerPath + "/", 0, 1, orbMarkerTracker);
+  flexr::components::OrbMarkerTracker orbMarkerTracker;
+  orbMarkerTracker.setMarkerFromImage(markerPath + "/0.png");
   std::vector<flexr::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
 
 

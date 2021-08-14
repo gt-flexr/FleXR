@@ -56,8 +56,8 @@ int main(int argc, char const *argv[])
   flexr::kernels::Keyboard keyboard;
   keyboard.activateOutPortAsRemote<Message<char>>("out_key", serverAddr, serverMessagePort);
 
-  flexr::kernels::RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder,
-                                               width, height, width*height*4, bagFPS);
+  flexr::kernels::RTPFrameSender rtpFrameSender("rtp_frame_sender", serverAddr, serverFramePort, clientEncoder,
+                                                width, height, width*height*4, bagFPS);
   rtpFrameSender.setLogger("rtp_frame_sender_logger", "rtp_frame_sender.log");
   rtpFrameSender.activateInPortAsLocal<Message<Frame>>("in_frame");
 
@@ -68,11 +68,11 @@ int main(int argc, char const *argv[])
   // 2. create & run a receiving pipeline
   raft::map recvPipe;
 
-  flexr::kernels::RTPFrameReceiver rtpFrameReceiver(clientFramePort, clientDecoder, width, height);
+  flexr::kernels::RTPFrameReceiver rtpFrameReceiver("rtp_frame_receiver", clientFramePort, clientDecoder, width, height);
   rtpFrameReceiver.setLogger("rtp_frame_receiver_logger", "rtp_frame_receiver.log");
   rtpFrameReceiver.activateOutPortAsLocal<Message<Frame>>("out_frame");
 
-  flexr::kernels::NonDisplay nonDisplay;
+  flexr::kernels::NonDisplay nonDisplay("non_display");
   nonDisplay.setLogger("non_display_logger", "non_display.log");
   nonDisplay.activateInPortAsLocal<Message<Frame>>("in_frame");
 

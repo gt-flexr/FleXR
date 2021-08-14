@@ -32,24 +32,21 @@ int main(int argc, char const *argv[])
     return -1;
   }
 
-  flexr::cv_types::ORBMarkerTracker orbMarkerTracker;
-  flexr::cv_utils::setMarkerFromImages(markerPath + "/", 0, 1, orbMarkerTracker);
-  std::vector<flexr::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
-
   raft::map pipeline;
 
-  flexr::kernels::ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), width, height);
+  flexr::kernels::ObjectRenderer objRenderer("obj_renderer",width, height);
   objRenderer.setLogger("obj_renderer_logger", "obj_renderer.log");
   objRenderer.activateInPortAsRemote<ObjRendererInKeyType>("in_key", serverMessagePort);
   objRenderer.activateInPortAsRemote<ObjRendererInCtxType>("in_marker_contexts", serverMessagePort2);
   objRenderer.activateInPortAsLocal<ObjRendererInFrameType>("in_frame");
   objRenderer.activateOutPortAsLocal<ObjRendererOutFrameType>("out_frame");
 
-  flexr::kernels::RTPFrameReceiver rtpFrameReceiver(serverFramePort, serverDecoder, width, height);
+  flexr::kernels::RTPFrameReceiver rtpFrameReceiver("rtp_frame_receiver", serverFramePort, serverDecoder, width, height);
   rtpFrameReceiver.setLogger("rtp_frame_receiver_logger", "rtp_frame_receiver.log");
   rtpFrameReceiver.activateOutPortAsLocal<FrameReceiverMsgType>("out_frame");
 
-  flexr::kernels::RTPFrameSender rtpFrameSender(clientAddr, clientFramePort, serverEncoder, width, height, width*height*4, 60);
+  flexr::kernels::RTPFrameSender rtpFrameSender("rtp_frame_sender", clientAddr, clientFramePort, serverEncoder,
+                                                width, height, width*height*4, 60);
   rtpFrameSender.setLogger("rtp_frame_sender_logger", "rtp_frame_sender.log");
   rtpFrameSender.activateInPortAsLocal<FrameSenderMsgType>("in_frame");
 

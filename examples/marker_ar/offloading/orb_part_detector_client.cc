@@ -38,10 +38,6 @@ int main(int argc, char const *argv[])
     return -1;
   }
 
-  flexr::cv_types::ORBMarkerTracker orbMarkerTracker;
-  flexr::cv_utils::setMarkerFromImages(markerPath + "/", 0, 1, orbMarkerTracker);
-  std::vector<flexr::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
-
   raft::map pipeline;
 
   BagCamera bagCam("bag_frame", bagFile, bagTopic, bagFPS);
@@ -53,8 +49,8 @@ int main(int argc, char const *argv[])
   Keyboard keyboard;
   keyboard.activateOutPortAsLocal<KeyboardMsgType>("out_key");
 
-  RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder,
-                                               width, height, width*height*4, bagFPS);
+  RTPFrameSender rtpFrameSender("rtp_frame_sender", serverAddr, serverFramePort, clientEncoder,
+                                width, height, width*height*4, bagFPS);
   rtpFrameSender.setLogger("rtp_frame_sender_logger", "rtp_frame_sender.log");
   rtpFrameSender.activateInPortAsLocal<FrameSenderMsgType>("in_frame");
 
@@ -63,14 +59,14 @@ int main(int argc, char const *argv[])
   markerCtxExtractor.activateInPortAsRemote<CtxExtractorInMarkerType>("in_detected_markers", clientMessagePort);
   markerCtxExtractor.activateOutPortAsLocal<CtxExtractorOutCtxType>("out_marker_contexts");
 
-  ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), width, height);
+  ObjectRenderer objRenderer("obj_renderer", width, height);
   objRenderer.setLogger("obj_renderer_logger", "obj_renderer.log");
   objRenderer.activateInPortAsLocal<ObjRendererInFrameType>("in_frame");
   objRenderer.activateInPortAsLocal<ObjRendererInKeyType>("in_key");
   objRenderer.activateInPortAsLocal<ObjRendererInCtxType>("in_marker_contexts");
   objRenderer.activateOutPortAsLocal<ObjRendererOutFrameType>("out_frame");
 
-  NonDisplay nonDisplay;
+  NonDisplay nonDisplay("non_display");
   nonDisplay.setLogger("non_display_logger", "non_display.log");
   nonDisplay.activateInPortAsLocal<NonDisplayMsgType>("in_frame");
 

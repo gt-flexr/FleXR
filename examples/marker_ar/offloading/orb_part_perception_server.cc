@@ -30,17 +30,13 @@ int main(int argc, char const *argv[])
     return -1;
   }
 
-  flexr::cv_types::ORBMarkerTracker orbMarkerTracker;
-  flexr::cv_utils::setMarkerFromImages(markerPath + "/", 0, 1, orbMarkerTracker);
-  std::vector<flexr::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
-
   raft::map pipeline;
 
-  flexr::kernels::RTPFrameReceiver rtpFrameReceiver(serverFramePort, serverDecoder, width, height);
+  flexr::kernels::RTPFrameReceiver rtpFrameReceiver("rtp_frame_receiver", serverFramePort, serverDecoder, width, height);
   rtpFrameReceiver.setLogger("rtp_frame_receiver_logger", "rtp_frame_receiver.log");
   rtpFrameReceiver.activateOutPortAsLocal<FrameReceiverMsgType>("out_frame");
 
-  flexr::kernels::CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
+  flexr::kernels::CudaORBDetector cudaORBDetector("cuda_orb_detector", markerPath + "/0.png");
   cudaORBDetector.setLogger("cuda_orb_detector_logger", "cuda_orb_detector.log");
   cudaORBDetector.activateInPortAsLocal<CudaORBDetectorInFrameType>("in_frame");
   cudaORBDetector.activateOutPortAsLocal<CudaORBDetectorOutMarkerType>("out_detected_markers");

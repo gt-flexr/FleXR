@@ -34,23 +34,19 @@ int main(int argc, char const *argv[])
     return -1;
   }
 
-  flexr::cv_types::ORBMarkerTracker orbMarkerTracker;
-  flexr::cv_utils::setMarkerFromImages(markerPath + "/", 0, 1, orbMarkerTracker);
-  std::vector<flexr::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
-
   raft::map pipeline;
 
-  RTPFrameReceiver rtpFrameReceiver(serverFramePort, serverDecoder, width, height);
+  RTPFrameReceiver rtpFrameReceiver("rtp_frame_receiver", serverFramePort, serverDecoder, width, height);
   rtpFrameReceiver.setLogger("rtp_frame_receiver_logger", "rtp_frame_receiver.log");
   rtpFrameReceiver.activateOutPortAsLocal<FrameReceiverMsgType>("out_frame");
   rtpFrameReceiver.duplicateOutPortAsLocal<FrameReceiverMsgType>("out_frame", "out_frame2");
 
-  RTPFrameSender rtpFrameSender(clientAddr, clientFramePort, serverEncoder,
-                                               width, height, width*height*4, 60);
+  RTPFrameSender rtpFrameSender("rtp_frame_sender", clientAddr, clientFramePort, serverEncoder,
+                                width, height, width*height*4, 60);
   rtpFrameSender.setLogger("rtp_frame_sender_logger", "rtp_frame_sender.log");
   rtpFrameSender.activateInPortAsLocal<FrameSenderMsgType>("in_frame");
 
-  CudaORBDetector cudaORBDetector(orbMarkerTracker.getRegisteredObjects());
+  CudaORBDetector cudaORBDetector("cuda_orb_detector", markerPath + "/0.png");
   cudaORBDetector.setLogger("cuda_orb_detector_logger", "cuda_orb_detector.log");
   cudaORBDetector.activateInPortAsLocal<CudaORBDetectorInFrameType>("in_frame");
   cudaORBDetector.activateOutPortAsLocal<CudaORBDetectorOutMarkerType>("out_detected_markers");
@@ -60,7 +56,7 @@ int main(int argc, char const *argv[])
   markerCtxExtractor.activateInPortAsLocal<CtxExtractorInMarkerType>("in_detected_markers");
   markerCtxExtractor.activateOutPortAsLocal<CtxExtractorOutCtxType>("out_marker_contexts");
 
-  ObjectRenderer objRenderer(orbMarkerTracker.getRegisteredObjects(), width, height);
+  ObjectRenderer objRenderer("obj_renderer", width, height);
   objRenderer.setLogger("obj_renderer_logger", "obj_renderer.log");
   objRenderer.activateInPortAsLocal<ObjRendererInFrameType>("in_frame");
   objRenderer.activateInPortAsRemote<ObjRendererInKeyType>("in_key", serverMessagePort);

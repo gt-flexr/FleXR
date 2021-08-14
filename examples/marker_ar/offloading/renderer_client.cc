@@ -39,11 +39,6 @@ int main(int argc, char const *argv[])
     return -1;
   }
 
-  flexr::cv_types::ORBMarkerTracker orbMarkerTracker;
-  flexr::cv_utils::setMarkerFromImages(markerPath + "/", 0, 1, orbMarkerTracker);
-  std::vector<flexr::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
-
-
   // Create flexr components
   raft::map pipeline;
 
@@ -53,7 +48,7 @@ int main(int argc, char const *argv[])
   bagCam.activateOutPortAsLocal<BagCameraMsgType>("out_frame");
   bagCam.duplicateOutPortAsLocal<BagCameraMsgType>("out_frame", "out_frame2");
 
-  flexr::kernels::ORBDetector orbDetector(orbMarkerTracker.getRegisteredObjects());
+  flexr::kernels::ORBDetector orbDetector("orb_detector", markerPath + "/0.png");
   orbDetector.setLogger("orb_detector_logger", "orb_detector.log");
   orbDetector.activateInPortAsLocal<ORBDetectorInFrameType>("in_frame");
   orbDetector.activateOutPortAsLocal<ORBDetectorOutMarkerType>("out_detected_markers");
@@ -67,17 +62,17 @@ int main(int argc, char const *argv[])
   flexr::kernels::Keyboard keyboard;
   keyboard.activateOutPortAsRemote<KeyboardMsgType>("out_key", serverAddr, serverMessagePort);
 
-  flexr::kernels::RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder,
-                                               width, height, width*height*4, bagFPS);
+  flexr::kernels::RTPFrameSender rtpFrameSender("rtp_frame_sender", serverAddr, serverFramePort, clientEncoder,
+                                                width, height, width*height*4, bagFPS);
   rtpFrameSender.setLogger("rtp_frame_sender_logger", "rtp_frame_sender.log");
   rtpFrameSender.activateInPortAsLocal<FrameSenderMsgType>("in_frame");
 
   raft::map recvPipe;
-  flexr::kernels::RTPFrameReceiver rtpFrameReceiver(clientFramePort, clientDecoder, width, height);
+  flexr::kernels::RTPFrameReceiver rtpFrameReceiver("rtp_frame_receiver", clientFramePort, clientDecoder, width, height);
   rtpFrameReceiver.setLogger("rtp_frame_receiver_logger", "rtp_frame_receiver.log");
   rtpFrameReceiver.activateOutPortAsLocal<FrameReceiverMsgType>("out_frame");
 
-  flexr::kernels::NonDisplay nonDisplay;
+  flexr::kernels::NonDisplay nonDisplay("non_display");
   nonDisplay.setLogger("non_display_logger", "non_display.log");
   nonDisplay.activateInPortAsLocal<NonDisplayMsgType>("in_frame");
 

@@ -37,7 +37,8 @@ int main()
   bagCam.setFramesToCache(400, 400);
   bagCam.activateOutPortAsLocal<BagCameraMsgType>("out_frame");
 
-  RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder, width, height, width*height*4, 60);
+  RTPFrameSender rtpFrameSender("rtp_frame_sender", serverAddr, serverFramePort, clientEncoder,
+                                width, height, width*height*4, 60);
   rtpFrameSender.setLogger("rtp_frame_sender_logger", "rtp_frame_sender.log");
   rtpFrameSender.activateInPortAsLocal<FrameSenderMsgType>("in_frame");
 
@@ -46,11 +47,11 @@ int main()
   std::thread sendThread(flexr::kernels::runPipeline, &sendingPipeline);
 
   raft::map receivingPipeline;
-  RTPFrameReceiver rtpFrameReceiver(clientFramePort, clientDecoder, width, height);
+  RTPFrameReceiver rtpFrameReceiver("rtp_frame_receiver", clientFramePort, clientDecoder, width, height);
   rtpFrameReceiver.setLogger("rtp_frame_receiver_logger", "rtp_frame_receiver.log");
   rtpFrameReceiver.activateOutPortAsLocal<FrameReceiverMsgType>("out_frame");
 
-  NonDisplay nonDisplay;
+  NonDisplay nonDisplay("non_display");
   nonDisplay.setLogger("non_display_logger", "non_display.log");
   nonDisplay.activateInPortAsLocal<NonDisplayMsgType>("in_frame");
 

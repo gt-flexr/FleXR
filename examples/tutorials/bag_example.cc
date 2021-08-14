@@ -27,7 +27,7 @@ int main()
   bagCam.setFramesToCache(400, 400);
   bagCam.activateOutPortAsLocal<BagCameraMsgType>("out_frame");
 
-  CVDisplay cvDisplay;
+  CVDisplay cvDisplay("cv_display");
   cvDisplay.activateInPortAsLocal<CVDisplayMsgType>("in_frame");
   cvDisplay.setLogger("cv_display_logger", "cv_display.log");
 
