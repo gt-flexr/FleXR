@@ -10,9 +10,10 @@ namespace flexr
   namespace kernels
   {
 
-    ObjectRenderer::ObjectRenderer(std::vector<flexr::cv_types::MarkerInfo> registeredMarkers, int width, int height) :
-      FleXRKernel(), width(width), height(height)
+    ObjectRenderer::ObjectRenderer(std::string id, int width, int height) :
+      FleXRKernel(id), width(width), height(height)
     {
+      setName("ObjectRenderer");
       portManager.registerInPortTag("in_frame", components::PortDependency::NONBLOCKING, 0);
       portManager.registerInPortTag("in_marker_contexts",
                                     components::PortDependency::BLOCKING,
@@ -33,11 +34,14 @@ namespace flexr
       // 2. Set AR Worlds via WorldManager
       // 2.1. Init shader
       worldManager.initShader();
+
       // 2.2. Add new worlds
-      std::vector<flexr::cv_types::MarkerInfo>::iterator markerInfo;
-      for(markerInfo = registeredMarkers.begin(); markerInfo != registeredMarkers.end(); ++markerInfo) {
-        worldManager.addWorld(markerInfo->index);
-      }
+      //std::vector<flexr::cv_types::MarkerInfo>::iterator markerInfo;
+      //for(markerInfo = registeredMarkers.begin(); markerInfo != registeredMarkers.end(); ++markerInfo) {
+      //  worldManager.addWorld(markerInfo->index);
+      //}
+
+      worldManager.addWorld(0);
       // 2.3. Add an object to each world (temporarily)
       for(int i = 0; i < worldManager.numOfWorlds; i++)
         worldManager.addObjectToWorld(i);
@@ -47,11 +51,13 @@ namespace flexr
       binding = false;
     }
 
+
     ObjectRenderer::~ObjectRenderer()
     {
       flexr::egl_utils::terminatePbuffer(*pbuf);
       delete [] pbuf;
     }
+
 
     bool ObjectRenderer::logic(ObjRendererInFrameType  *inFrame,
                                ObjRendererInKeyType    *inKey,
@@ -91,6 +97,7 @@ namespace flexr
       outFrame->seq = inMarkerContexts->seq;
       return true;
     }
+
 
     raft::kstatus ObjectRenderer::run()
     {

@@ -59,7 +59,7 @@ namespace flexr
        * @param registeredMarkers
        *  Registered marker lists
        */
-      ObjectRenderer(std::vector<flexr::cv_types::MarkerInfo> registeredMarkers, int width, int height);
+      ObjectRenderer(std::string id, int width, int height);
 
 
       ~ObjectRenderer();

@@ -9,10 +9,13 @@
 #include <opencv2/highgui.hpp>
 
 #include "defs.h"
-#include "utils/cv_utils.h"
+
 #include "types/cv/types.h"
 #include "types/clock_types.h"
 #include "types/frame.h"
+#include "utils/cv_utils.h"
+
+#include "components/orb_marker_tracker.h"
 
 #include "kernels/kernel.h"
 
@@ -36,6 +39,7 @@ namespace flexr
     class ORBDetector : public FleXRKernel
     {
       private:
+        components::OrbMarkerTracker orbMarkerTracker;
         std::vector<flexr::cv_types::MarkerInfo> registeredMarkers;
         cv::Ptr<cv::Feature2D> detector;
         cv::Ptr<cv::DescriptorMatcher> matcher;
@@ -49,10 +53,12 @@ namespace flexr
       public:
         /**
          * @brief Initialize kernel with registered marker info
-         * @param registeredMarkers
-         *  Registered marker lists
+         * @param id
+         *  Kernel ID
+         * @param markerImage
+         *  Marker image file to set it as a marker
          */
-        ORBDetector(std::vector<flexr::cv_types::MarkerInfo> registeredMarkers);
+        ORBDetector(std::string id, std::string markerImage);
 
         raft::kstatus run() override;
 
@@ -60,7 +66,7 @@ namespace flexr
                    ORBDetectorOutMarkerType *outDetectedMarkers);
     };
 
-  }   // namespace pipeline
+  }   // namespace kernels
 } // namespace flexr
 
 #endif

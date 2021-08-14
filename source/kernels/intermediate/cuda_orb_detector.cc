@@ -11,14 +11,17 @@ namespace flexr
 {
   namespace kernels
   {
-    CudaORBDetector::CudaORBDetector(std::vector<flexr::cv_types::MarkerInfo> registeredMarkers) :
-      FleXRKernel(), registeredMarkers(registeredMarkers)
+    CudaORBDetector::CudaORBDetector(std::string id, std::string markerImage): FleXRKernel(id)
     {
+      setName("CudaORBDetector");
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
       portManager.registerOutPortTag("out_detected_markers",
                                      utils::sendLocalBasicCopy<CudaORBDetectorOutMarkerType>,
                                      utils::sendRemoteMarkers,
                                      types::freePrimitiveMsg<CudaORBDetectorOutMarkerType>);
+
+      orbMarkerTracker.setMarkerFromImage(markerImage);
+      registeredMarkers = orbMarkerTracker.getRegisteredObjects();
 
       // Object Detection Parameters
       knnMatchRatio = 0.9f;
@@ -31,6 +34,7 @@ namespace flexr
       detector = cv::cuda::ORB::create();
       matcher = cv::cuda::DescriptorMatcher::createBFMatcher(cv::NORM_HAMMING);
     }
+
 
     bool CudaORBDetector::logic(CudaORBDetectorInFrameType *inFrame, CudaORBDetectorOutMarkerType *outDetectedMarkers)
     {
@@ -111,6 +115,7 @@ namespace flexr
 
       return true;
     }
+
 
     raft::kstatus CudaORBDetector::run() {
       CudaORBDetectorInFrameType *inFrame = portManager.getInput<CudaORBDetectorInFrameType>("in_frame");

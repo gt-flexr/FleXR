@@ -8,7 +8,6 @@
 #include <opencv2/highgui.hpp>
 
 #include "defs.h"
-#include "types/cv/orb_marker_tracker.h"
 
 namespace flexr
 {
@@ -73,48 +72,6 @@ namespace flexr
       return r;
     }
 
-
-    static void setMarkerFromImages(std::string path, std::string stemName, int startIndex, int maxPlaceValue,
-        flexr::cv_types::ORBMarkerTracker &orbMarkerTracker) {
-      cv::Mat image;
-
-      while(1) {
-        std::stringstream ss;
-        ss << std::setfill('0') << std::setw(maxPlaceValue);
-        ss << startIndex++;
-        std::string imagePath = path + stemName + ss.str() + ".png";
-        image = cv::imread(imagePath);
-        if(image.empty()) {
-          break;
-        }
-
-        cv::Rect roiRect(0, 0, image.cols, image.rows);
-        orbMarkerTracker.registerObject(image, roiRect);
-      }
-      orbMarkerTracker.printRegisteredObjects();
-    }
-
-
-    static void setMarkerFromImages(std::string path, int startIndex, int maxPlaceValue,
-                                    flexr::cv_types::ORBMarkerTracker &orbMarkerTracker)
-    {
-      cv::Mat image;
-
-      while(1) {
-        std::stringstream ss;
-        ss << std::setfill('0') << std::setw(maxPlaceValue);
-        ss << startIndex++;
-        std::string imagePath = path + ss.str() + ".png";
-        image = cv::imread(imagePath);
-        if(image.empty()) {
-          break;
-        }
-
-        cv::Rect roiRect(0, 0, image.cols, image.rows);
-        orbMarkerTracker.registerObject(image, roiRect);
-      }
-      orbMarkerTracker.printRegisteredObjects();
-    }
   } // namespace cv_utils
 } // namespace flexr
 

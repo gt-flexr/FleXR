@@ -8,14 +8,17 @@ namespace flexr
   namespace kernels
   {
     /* Constructor */
-    ORBDetector::ORBDetector(std::vector<flexr::cv_types::MarkerInfo> registeredMarkers):
-      FleXRKernel(), registeredMarkers(registeredMarkers)
+    ORBDetector::ORBDetector(std::string id, std::string markerImage): FleXRKernel(id)
     {
+      setName("ORBDetector");
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
       portManager.registerOutPortTag("out_detected_markers",
                                      utils::sendLocalBasicCopy<ORBDetectorOutMarkerType>,
                                      utils::sendRemoteMarkers,
                                      types::freePrimitiveMsg<ORBDetectorOutMarkerType>);
+
+      orbMarkerTracker.setMarkerFromImage(markerImage);
+      registeredMarkers = orbMarkerTracker.getRegisteredObjects();
 
       // Object Detection Parameters
       knnMatchRatio = 0.9f;
@@ -26,6 +29,7 @@ namespace flexr
       detector = cv::ORB::create();
       matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
     }
+
 
     bool ORBDetector::logic(ORBDetectorInFrameType *inFrame, ORBDetectorOutMarkerType *outDetectedMarkers)
     {
@@ -105,6 +109,7 @@ namespace flexr
 
       return true;
     }
+
 
     raft::kstatus ORBDetector::run()
     {

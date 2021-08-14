@@ -6,14 +6,17 @@
 #include <opencv2/highgui.hpp>
 #include "types/frame.h"
 
-namespace flexr {
-  namespace components {
+namespace flexr
+{
+  namespace components
+  {
 
     /**
      * @brief Component for live camera stream with OpenCV
      * @details
      */
-    class CVFrameReader {
+    class CVFrameReader
+    {
     private:
       cv::VideoCapture instance;
       cv::Mat intrinsic;

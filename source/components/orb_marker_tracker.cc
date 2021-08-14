@@ -1,16 +1,16 @@
-#include <types/cv/orb_marker_tracker.h>
+#include <components/orb_marker_tracker.h>
 
 namespace flexr
 {
-  namespace cv_types
+  namespace components
   {
-    ORBMarkerTracker::ORBMarkerTracker(): numOfObjs(0) {
+    OrbMarkerTracker::OrbMarkerTracker(): numOfObjs(0) {
       detector = cv::ORB::create();
-      matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
+      matcher  = cv::DescriptorMatcher::create("BruteForce-Hamming");
     }
 
 
-    void ORBMarkerTracker::registerObject(const cv::Mat frame, cv::Rect roiRect) {
+    void OrbMarkerTracker::registerObject(const cv::Mat frame, cv::Rect roiRect) {
       cv::Point roiMask[4];
 
       roiMask[0] = cv::Point2f(static_cast<float>(roiRect.x), static_cast<float>(roiRect.y));
@@ -23,7 +23,7 @@ namespace flexr
       cv::Mat maskFrame = cv::Mat::zeros(frame.size(), CV_8UC1);
       cv::fillPoly(maskFrame, &roiMaskHead, &roiPointNum, 1, cv::Scalar::all(255));
 
-      MarkerInfo newMarker;
+      cv_types::MarkerInfo newMarker;
       newMarker.defaultLocationIn3D.push_back(cv::Point3f(0, 0, 0));
       newMarker.defaultLocationIn3D.push_back(cv::Point3f(roiRect.width, 0, 0));
       newMarker.defaultLocationIn3D.push_back(cv::Point3f(roiRect.width, roiRect.height, 0));
@@ -42,9 +42,9 @@ namespace flexr
     }
 
 
-    void ORBMarkerTracker::printRegisteredObjects() {
+    void OrbMarkerTracker::printRegisteredObjects() {
       std::cout << "===== printRegisteredObjects =====" << std::endl;
-      for(std::vector<MarkerInfo>::iterator it = markerInfo.begin(); it != markerInfo.end(); ++it) {
+      for(std::vector<cv_types::MarkerInfo>::iterator it = markerInfo.begin(); it != markerInfo.end(); ++it) {
         printf("%dth Object Info \n", it->index);
         std::cout << "\tROI size: " << it->img.size() << std::endl;
         if (it->defaultLocationIn2D.size() == 4)
@@ -59,6 +59,65 @@ namespace flexr
       }
       std::cout << "==================================" << std::endl;
     }
+
+
+    void OrbMarkerTracker::setMarkerFromImages(std::string path, std::string stemName,
+                                               int startIndex, int maxPlaceValue)
+    {
+      cv::Mat image;
+
+      while(1) {
+        std::stringstream ss;
+        ss << std::setfill('0') << std::setw(maxPlaceValue);
+        ss << startIndex++;
+        std::string imagePath = path + stemName + ss.str() + ".png";
+        image = cv::imread(imagePath);
+        if(image.empty()) {
+          break;
+        }
+
+        cv::Rect roiRect(0, 0, image.cols, image.rows);
+        registerObject(image, roiRect);
+      }
+      printRegisteredObjects();
+    }
+
+
+    void OrbMarkerTracker::setMarkerFromImages(std::string path, int startIndex, int maxPlaceValue)
+    {
+      cv::Mat image;
+
+      while(1) {
+        std::stringstream ss;
+        ss << std::setfill('0') << std::setw(maxPlaceValue);
+        ss << startIndex++;
+        std::string imagePath = path + ss.str() + ".png";
+        image = cv::imread(imagePath);
+        if(image.empty()) {
+          break;
+        }
+
+        cv::Rect roiRect(0, 0, image.cols, image.rows);
+        registerObject(image, roiRect);
+      }
+      printRegisteredObjects();
+    }
+
+
+    void OrbMarkerTracker::setMarkerFromImage(std::string path)
+    {
+      cv::Mat image;
+      image = cv::imread(path);
+      if(image.empty()) {
+        debug_print("invalid path");
+        return;
+      }
+
+      cv::Rect roiRect(0, 0, image.cols, image.rows);
+      registerObject(image, roiRect);
+      printRegisteredObjects();
+    }
+
 
   } // namespace cv_types
 } // namespace flexr
