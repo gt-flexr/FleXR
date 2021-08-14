@@ -52,6 +52,8 @@ namespace flexr
       public:
         /**
          * @brief Initialize RTP frame sender
+         * @param id
+         *  Kernel ID
          * @param adder
          *  IP address of remote node to send the stream
          * @param port
@@ -66,7 +68,7 @@ namespace flexr
          *  Target FPS of encoding w.r.t. bitrates
          * @see flexr::components::RTPSender
          */
-        RTPFrameSender(std::string addr, int port, std::string encoderName, int width, int height,
+        RTPFrameSender(std::string id, std::string addr, int port, std::string encoderName, int width, int height,
                        int bitrate, int fps=60);
 
 

@@ -10,6 +10,7 @@ namespace flexr
 
     Keyboard::Keyboard(int frequency): FleXRKernel()
     {
+      setName("Keyboard");
       seq = 0;
       portManager.registerOutPortTag("out_key",
                                      utils::sendLocalBasicCopy<KeyboardMsgType>,

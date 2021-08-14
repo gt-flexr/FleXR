@@ -8,6 +8,7 @@ namespace flexr
   namespace kernels
   {
     MarkerCtxExtractor::MarkerCtxExtractor(int width, int height) {
+      setName("MarkerCtxExtractor");
       portManager.registerInPortTag("in_detected_markers",
                                     components::PortDependency::BLOCKING,
                                     utils::recvDetectedMarkers);

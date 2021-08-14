@@ -6,9 +6,9 @@ namespace flexr
 {
   namespace kernels
   {
-
-    NonDisplay::NonDisplay()
+    NonDisplay::NonDisplay(std::string id): FleXRKernel(id)
     {
+      setName("NonDisplay");
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
     }
 

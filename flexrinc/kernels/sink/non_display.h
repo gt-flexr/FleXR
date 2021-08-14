@@ -29,6 +29,7 @@ namespace flexr
     {
     public:
       NonDisplay();
+      NonDisplay(std::string id);
       raft::kstatus run() override;
     };
 

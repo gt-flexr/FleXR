@@ -9,6 +9,7 @@ namespace flexr
     /* Constructor */
     ArUcoDetector::ArUcoDetector(cv::aruco::PREDEFINED_DICTIONARY_NAME dictName, int width, int height): FleXRKernel()
     {
+      setName("ArUcoDetector");
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
       portManager.registerOutPortTag("out_marker_poses",
                                      utils::sendLocalBasicCopy<OutMarkerPoses>,

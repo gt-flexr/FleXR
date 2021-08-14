@@ -19,6 +19,8 @@ namespace flexr
   namespace kernels
   {
     using namespace flexr::types;
+    using FrameConverterInMsgType = types::Message<types::Frame>;
+    using FrameConverterOutMsgType = types::Message<types::Frame>;
 
 
     /**
@@ -38,6 +40,14 @@ namespace flexr
 
 
       /**
+       * @brief Initialize kernel only with id
+       * @param id
+       *  Kernel ID
+       */
+        FrameConverter(std::string id);
+
+
+      /**
        * @brief Initialize kernel with conversion info
        * @param id
        *  Kernel ID
@@ -51,14 +61,43 @@ namespace flexr
         FrameConverter(std::string id, int width, int height, Conversion conv);
 
 
+      /**
+       * @brief Set frame resolution to convert
+       * @param width
+       *  Frame width
+       * @param height
+       *  Frame height
+       */
+        void setResolution(int width, int height);
+
+
+      /**
+       * @brief Set conversion type with string
+       * @param conv
+       *  Conversion type string
+       */
+        void setConversion(std::string conversionType);
+
+
+      /**
+       * @brief Set conversion type with enumerator
+       * @param conv
+       *  Conversion type enumerator
+       */
+        void setConversion(Conversion conv);
+
+
         raft::kstatus run() override;
 
 
       private:
         int width, height;
+        Conversion conv;
+
         cv::Mat inFormat;
         int inFrameSize;
-        Conversion conv;
+
+        void setInFormat();
     };
 
   }   // namespace kernels

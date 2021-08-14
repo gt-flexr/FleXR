@@ -8,29 +8,66 @@ namespace flexr
   namespace kernels
   {
 
-    FrameConverter::FrameConverter(std::string id, int width, int height, Conversion conv): FleXRKernel(id)
+    FrameConverter::FrameConverter(std::string id): FleXRKernel(id)
     {
-      this->width = width; this->height = height;
-      this->conv = conv;
-
-      switch(conv) {
-      case Conversion::RGB2RGBA:
-        inFormat = cv::Mat(height, width, CV_8UC3);
-        break;
-      case Conversion::RGBA2RGB:
-      case Conversion::BGRA2RGB:
-        inFormat = cv::Mat(height, width, CV_8UC4);
-        break;
-      default:
-        debug_print("Conversion type is not specified");
-        break;
-      }
-      inFrameSize = inFormat.elemSize() * inFormat.total();
-
+      setName("FrameConverter");
+      this->width = 0; this->height = 0;
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, utils::recvRemoteFrame,
                                     types::allocFrameWithBuffer);
       portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, utils::sendRemoteFrame,
                                      types::freeFrameMsg);
+    }
+
+
+    FrameConverter::FrameConverter(std::string id, int width, int height, Conversion conv): FrameConverter(id)
+    {
+      this->width = width; this->height = height;
+      setConversion(conv);
+    }
+
+
+    void FrameConverter::setResolution(int width, int height)
+    {
+      this->width = width;
+      this->height = height;
+
+      setInFormat();
+    }
+
+
+    void FrameConverter::setConversion(std::string conv)
+    {
+      if(conv == "RGB2RGBA") this->conv = Conversion::RGB2RGBA;
+      else if(conv == "RGBA2RGB") this->conv = Conversion::RGBA2RGB;
+      else if(conv == "BGRA2RGB") this->conv = Conversion::BGRA2RGB;
+
+      setInFormat();
+    }
+
+
+    void FrameConverter::setConversion(Conversion conv)
+    {
+      this->conv = conv;
+
+      setInFormat();
+    }
+
+
+    void FrameConverter::setInFormat()
+    {
+      switch(conv) {
+        case Conversion::RGB2RGBA:
+          inFormat = cv::Mat(height, width, CV_8UC3);
+          break;
+        case Conversion::RGBA2RGB:
+        case Conversion::BGRA2RGB:
+          inFormat = cv::Mat(height, width, CV_8UC4);
+          break;
+        default:
+          debug_print("Conversion type is not specified");
+          break;
+      }
+      inFrameSize = inFormat.elemSize() * inFormat.total();
     }
 
 

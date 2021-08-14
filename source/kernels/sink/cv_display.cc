@@ -8,11 +8,12 @@ namespace flexr
   namespace kernels
   {
 
-    CVDisplay::CVDisplay(int width, int height, FrameType frameType): FleXRKernel()
+    CVDisplay::CVDisplay(std::string id): FleXRKernel(id)
     {
-      this->width = width, this->height = height;
+      setName("CVDisplay");
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
     }
+
 
     raft::kstatus CVDisplay::run()
     {
@@ -22,8 +23,8 @@ namespace flexr
 
       debug_print("displaying frame size: %d / %d", inFrame->dataSize, inFrame->data.dataSize);
 
-      //cv::imshow("CVDisplay", inFrame->data.useAsCVMat());
-      //int inKey = cv::waitKey(1) & 0xFF;
+      cv::imshow("CVDisplay", inFrame->data.useAsCVMat());
+      int inKey = cv::waitKey(1) & 0xFF;
 
       double et = getTsNow();
       debug_print("disp(%lf), e2e info: %s(%d:%lf)", et-st, inFrame->tag, inFrame->seq, et-inFrame->ts);

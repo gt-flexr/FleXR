@@ -32,6 +32,7 @@ namespace flexr
       components::ROSBagFrameReader bagReader;
 
     public:
+      BagCamera(std::string id);
       ~BagCamera();
 
 
@@ -47,7 +48,18 @@ namespace flexr
        *  Target frequency to feed frames
        * @see flexr::components::ROSBagFrameReader
        */
-      BagCamera(std::string id="", std::string bagPath="", std::string bagTopic="", int targetFps=30);
+      BagCamera(std::string id, std::string bagPath, std::string bagTopic, int targetFps);
+
+
+      /**
+       * @brief Subscribe a bag file
+       * @param bagPath
+       *  Bag file path to read
+       * @param bagTopic
+       *  Bag topic to subscribe
+       * @see flexr::components::ROSBagFrameReader
+       */
+      void subscribeBagFile(std::string bagPath, std::string bagTopic);
 
 
       /**

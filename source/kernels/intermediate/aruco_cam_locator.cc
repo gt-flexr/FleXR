@@ -9,6 +9,7 @@ namespace flexr
     /* Constructor */
     ArUcoCamLocator::ArUcoCamLocator(cv::aruco::PREDEFINED_DICTIONARY_NAME dictName, int width, int height): FleXRKernel()
     {
+      setName("ArUcoCamLocator");
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
       portManager.registerOutPortTag("out_cam_pose",
                                      utils::sendLocalBasicCopy<OutCamPose>,

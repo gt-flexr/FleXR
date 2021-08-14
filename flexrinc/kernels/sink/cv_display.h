@@ -30,28 +30,15 @@ namespace flexr
     class CVDisplay : public FleXRKernel
     {
     public:
-      enum FrameType { RGB, RGBA };
-
 
       /**
        * @brief Initialize display kernel
-       * @param width
-       *  Frame width
-       * @param height
-       *  Frame height
-       * @param frameType
-       *  Frame type
+       * @param id
+       *  Kernel ID
        */
-      CVDisplay(int width=1920, int height=1080, FrameType frameType=FrameType::RGB);
-
+      CVDisplay(std::string id);
 
       raft::kstatus run() override;
-
-
-    private:
-      int width, height;
-      FrameType frameType;
-      cv::Mat inFormat;
     };
 
   }   // namespace kernels

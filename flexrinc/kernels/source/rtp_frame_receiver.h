@@ -54,6 +54,8 @@ namespace flexr
       public:
         /**
          * @brief Initialize RTP frame receiver
+         * @param id
+         *  Kernel ID
          * @param port
          *  Port number to receive the stream
          * @param decoderName
@@ -64,7 +66,7 @@ namespace flexr
          *  Frame height
          * @see flexr::components::RTPReceiver
          */
-        RTPFrameReceiver(int port, std::string decoderName, int width, int height);
+        RTPFrameReceiver(std::string id, int port, std::string decoderName, int width, int height);
 
 
         ~RTPFrameReceiver();

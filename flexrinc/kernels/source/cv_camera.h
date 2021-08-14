@@ -50,7 +50,7 @@ namespace flexr
        *  Target frequency to feed frames
        * @see flexr::components::CVFrameReader
        */
-      CVCamera(std::string id="cv_camera", int devIdx=0, int width=1280, int height=720, int tagetFps=30);
+      CVCamera(std::string id, int devIdx, int width, int height, int tagetFps);
 
 
       ~CVCamera();

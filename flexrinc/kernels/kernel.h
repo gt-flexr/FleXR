@@ -33,7 +33,7 @@ namespace flexr
     class FleXRKernel : public raft::kernel
     {
       protected:
-        std::string id;
+        std::string name, id;
         components::FleXRPortManager portManager;
         components::Logger logger;
         components::FrequencyManager freqManager;
@@ -42,6 +42,7 @@ namespace flexr
         FleXRKernel(): portManager(&input, &output)
         {
           id = "no_id";
+          name = "FleXRKernel";
         }
 
 
@@ -52,6 +53,36 @@ namespace flexr
         FleXRKernel(std::string id): FleXRKernel()
         {
           this->id = id;
+        }
+
+        /**
+         * @brief Get kernel ID
+         * @return Kernel ID as std::string
+         */
+        std::string getId()
+        {
+          return id;
+        }
+
+
+        /**
+         * @brief Set kernel class name
+         * @param newName
+         *  Kernel class name to set
+         */
+        void setName(std::string newName)
+        {
+          name = newName;
+        }
+
+
+        /**
+         * @brief Get kernel class name
+         * @return Kernel class name as std::string
+         */
+        std::string getName()
+        {
+          return name;
         }
 
 

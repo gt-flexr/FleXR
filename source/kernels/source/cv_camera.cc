@@ -9,6 +9,7 @@ namespace flexr
     CVCamera::CVCamera(std::string id, int devIdx, int width, int height, int targetFps):
       FleXRKernel(id), frameReader(devIdx, width, height)
     {
+      setName("CVCamera");
       seq = 0;
       portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, 0, 0);
       freqManager.setFrequency(targetFps);

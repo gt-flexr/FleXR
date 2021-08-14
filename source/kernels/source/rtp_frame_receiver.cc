@@ -9,11 +9,12 @@ namespace flexr
   namespace kernels
   {
     /* Constructor() */
-    RTPFrameReceiver::RTPFrameReceiver(int port, std::string decoderName, int width, int height):
+    RTPFrameReceiver::RTPFrameReceiver(std::string id, int port, std::string decoderName, int width, int height):
       rtpReceiver("127.0.0.1", port),
       width(width), height(height), decoderName(decoderName),
-      FleXRKernel()
+      FleXRKernel(id)
     {
+      setName("RTPFrameReceiver");
       portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, 0, 0);
 
       // Decoder
