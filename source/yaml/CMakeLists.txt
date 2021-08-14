@@ -1,0 +1,9 @@
+add_library(flexr_yaml_kernel INTERFACE)
+
+add_subdirectory(kernels)
+
+target_link_libraries(flexr_yaml_kernel INTERFACE flexr_yaml_base_kernel)
+target_link_libraries(flexr_yaml_kernel INTERFACE flexr_source_kernel)
+target_link_libraries(flexr_yaml_kernel INTERFACE flexr_sink_kernel)
+target_link_libraries(flexr_yaml_kernel INTERFACE flexr_intermediate_kernel)
+
