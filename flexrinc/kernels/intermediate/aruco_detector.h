@@ -21,7 +21,8 @@ namespace flexr
   namespace kernels
   {
     using namespace flexr::types;
-    using OutMarkerPoses = Message<std::vector<ObjectPose>>;
+    using ArUcoDetectorInFrameType = Message<Frame>;
+    using ArUcoDetectorOutPosesType = Message<std::vector<ObjectPose>>;
 
 
     /**
@@ -42,6 +43,8 @@ namespace flexr
       public:
       /**
        * @brief Initialize kernel with ArUco contexts and frame info
+       * @param id
+       *  Kernel ID
        * @param dictName
        *  ArUco marker dictionary
        * @param width
@@ -49,7 +52,7 @@ namespace flexr
        * @param height
        *  Frame height
        */
-        ArUcoDetector(cv::aruco::PREDEFINED_DICTIONARY_NAME dictName = cv::aruco::DICT_6X6_250,
+        ArUcoDetector(std::string id, cv::aruco::PREDEFINED_DICTIONARY_NAME dictName = cv::aruco::DICT_6X6_250,
                       int width = 1920, int height = 1080);
 
 

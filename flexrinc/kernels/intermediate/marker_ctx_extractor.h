@@ -43,16 +43,20 @@ namespace flexr
     public:
       /**
        * @brief Initialize kernel with frame info
+       * @param id
+       *  Frame Kernel ID
        * @param width
        *  Frame width
        * @param height
        *  Frame height
        */
-      MarkerCtxExtractor(int width=1280, int height=720);
+      MarkerCtxExtractor(std::string id, int width=1280, int height=720);
 
 
       /**
        * @brief Initialize kernel with frame and camera info
+       * @param id
+       *  Kernel ID
        * @param width
        *  Frame width
        * @param height
@@ -62,7 +66,7 @@ namespace flexr
        * @param inDistCoeffs
        *  4x1 distortion coefficient matrix to set
        */
-      MarkerCtxExtractor(int width, int height, cv::Mat intrinsic, cv::Mat distCoeffs);
+      MarkerCtxExtractor(std::string id, int width, int height, cv::Mat intrinsic, cv::Mat distCoeffs);
 
 
       /**

@@ -22,7 +22,8 @@ namespace flexr
   {
 
     using namespace flexr::types;
-    using OutCamPose = Message<ObjectPose>;
+    using ArUcoCamLocatorInFrameType = Message<Frame>;
+    using ArUcoCamLocatorOutPoseType = Message<ObjectPose>;
 
 
     /**
@@ -43,6 +44,8 @@ namespace flexr
       public:
       /**
        * @brief Initialize kernel with ArUco contexts and frame info
+       * @param id
+       *  Kernel ID
        * @param dictName
        *  ArUco marker dictionary
        * @param width
@@ -50,7 +53,7 @@ namespace flexr
        * @param height
        *  Frame height
        */
-        ArUcoCamLocator(cv::aruco::PREDEFINED_DICTIONARY_NAME dictName = cv::aruco::DICT_6X6_250,
+        ArUcoCamLocator(std::string id, cv::aruco::PREDEFINED_DICTIONARY_NAME dictName = cv::aruco::DICT_6X6_250,
                         int width = 1920, int height = 1080);
 
         raft::kstatus run() override;

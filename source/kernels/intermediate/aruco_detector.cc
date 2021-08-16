@@ -7,14 +7,15 @@ namespace flexr
   {
 
     /* Constructor */
-    ArUcoDetector::ArUcoDetector(cv::aruco::PREDEFINED_DICTIONARY_NAME dictName, int width, int height): FleXRKernel()
+    ArUcoDetector::ArUcoDetector(std::string id, cv::aruco::PREDEFINED_DICTIONARY_NAME dictName,
+        int width, int height): FleXRKernel(id)
     {
       setName("ArUcoDetector");
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
       portManager.registerOutPortTag("out_marker_poses",
-                                     utils::sendLocalBasicCopy<OutMarkerPoses>,
-                                     utils::sendRemotePrimitiveVecData<OutMarkerPoses>,
-                                     types::freePrimitiveMsg<OutMarkerPoses>);
+                                     utils::sendLocalBasicCopy<ArUcoDetectorOutPosesType>,
+                                     utils::sendRemotePrimitiveVecData<ArUcoDetectorOutPosesType>,
+                                     types::freePrimitiveMsg<ArUcoDetectorOutPosesType>);
       markerDict = cv::aruco::getPredefinedDictionary(dictName);
 
       camIntrinsic  = cv::Mat(3, 3, CV_64FC1);
@@ -33,8 +34,8 @@ namespace flexr
 
     raft::kstatus ArUcoDetector::run()
     {
-      Message<Frame> *inFrame = portManager.getInput<Message<Frame>>("in_frame");
-      OutMarkerPoses *outMarkerPoses = portManager.getOutputPlaceholder<OutMarkerPoses>("out_marker_poses");
+      ArUcoDetectorInFrameType *inFrame = portManager.getInput<ArUcoDetectorInFrameType>("in_frame");
+      ArUcoDetectorOutPosesType *outMarkerPoses = portManager.getOutputPlaceholder<ArUcoDetectorOutPosesType>("out_marker_poses");
 
       std::vector<int> ids;
       std::vector<std::vector<cv::Point2f>> corners;

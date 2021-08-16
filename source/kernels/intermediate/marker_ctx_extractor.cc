@@ -7,7 +7,7 @@ namespace flexr
 {
   namespace kernels
   {
-    MarkerCtxExtractor::MarkerCtxExtractor(int width, int height) {
+    MarkerCtxExtractor::MarkerCtxExtractor(std::string id, int width, int height): FleXRKernel(id) {
       setName("MarkerCtxExtractor");
       portManager.registerInPortTag("in_detected_markers",
                                     components::PortDependency::BLOCKING,
@@ -37,21 +37,11 @@ namespace flexr
     }
 
 
-    MarkerCtxExtractor::MarkerCtxExtractor(int width, int height, cv::Mat intrinsic, cv::Mat distCoeffs) :
-      FleXRKernel()
+    MarkerCtxExtractor::MarkerCtxExtractor(std::string id, int width, int height,
+        cv::Mat intrinsic, cv::Mat distCoeffs) : MarkerCtxExtractor(id, width, height)
     {
-      this->width = width;
-      this->height = height;
-      camIntrinsic = intrinsic.clone();
-      camDistCoeffs = distCoeffs.clone();
-
-      portManager.registerInPortTag("in_detected_markers",
-                                    components::PortDependency::BLOCKING,
-                                    utils::recvDetectedMarkers);
-      portManager.registerOutPortTag("out_marker_contexts",
-                                     utils::sendLocalBasicCopy<CtxExtractorOutCtxType>,
-                                     utils::sendRemotePrimitiveVec<CtxExtractorOutCtxType>,
-                                     types::freePrimitiveMsg<CtxExtractorOutCtxType>);
+      setIntrinsic(intrinsic);
+      setDistCoeffs(distCoeffs);
     }
 
 
