@@ -4,6 +4,8 @@
 #include <bits/stdc++.h>
 #include <yaml-cpp/yaml.h>
 #include "defs.h"
+#include "kernels/source/bag_camera.h"
+
 #include "yaml/yaml_flexr_kernel.h"
 
 namespace flexr
@@ -49,6 +51,10 @@ namespace flexr
          * @brief Print parsed bag camera specifics
          */
         void printBagCameraSpecific();
+
+
+        void* make();
+
     };
   }
 }

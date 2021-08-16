@@ -4,6 +4,8 @@
 #include <bits/stdc++.h>
 #include <yaml-cpp/yaml.h>
 #include "defs.h"
+#include "kernels/intermediate/object_renderer.h"
+
 #include "yaml/yaml_flexr_kernel.h"
 
 namespace flexr
@@ -48,6 +50,8 @@ namespace flexr
          * @brief Print parsed ObjectRenderer specifics
          */
         void printObjectRendererSpecific();
+
+        void* make();
     };
   }
 }

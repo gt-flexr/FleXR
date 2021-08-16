@@ -4,6 +4,8 @@
 #include <bits/stdc++.h>
 #include <yaml-cpp/yaml.h>
 #include "defs.h"
+#include "kernels/source/rtp_frame_receiver.h"
+
 #include "yaml/yaml_flexr_kernel.h"
 
 namespace flexr
@@ -49,6 +51,9 @@ namespace flexr
          * @brief Print parsed RTPFrameReceiver specifics
          */
         void printRtpFrameReceiverSpecific();
+
+
+        void* make();
     };
   }
 }

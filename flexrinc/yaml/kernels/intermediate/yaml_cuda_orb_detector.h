@@ -1,9 +1,11 @@
-#ifndef __FLEXR_YAML_ORB_DETECTOR__
-#define __FLEXR_YAML_ORB_DETECTOR__
+#ifndef __FLEXR_YAML_CUDA_ORB_DETECTOR__
+#define __FLEXR_YAML_CUDA_ORB_DETECTOR__
 
 #include <bits/stdc++.h>
 #include <yaml-cpp/yaml.h>
 #include "defs.h"
+#include "kernels/intermediate/cuda_orb_detector.h"
+
 #include "yaml/yaml_flexr_kernel.h"
 
 namespace flexr
@@ -48,6 +50,9 @@ namespace flexr
          * @brief Print parsed CudaORBDetector specifics
          */
         void printCudaOrbDetectorSpecific();
+
+
+        void* make();
     };
   }
 }

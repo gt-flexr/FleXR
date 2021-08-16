@@ -4,6 +4,8 @@
 #include <bits/stdc++.h>
 #include <yaml-cpp/yaml.h>
 #include "defs.h"
+#include "kernels/source/cv_camera.h"
+
 #include "yaml/yaml_flexr_kernel.h"
 
 namespace flexr
@@ -48,6 +50,9 @@ namespace flexr
          * @brief Print parsed CV camera specifics
          */
         void printCvCameraSpecific();
+
+
+        void* make();
     };
   }
 }
