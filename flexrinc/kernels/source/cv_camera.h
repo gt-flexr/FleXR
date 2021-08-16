@@ -56,22 +56,6 @@ namespace flexr
       ~CVCamera();
 
 
-      /**
-       * @brief Set camera intrinsic matrix
-       * @param inIntrinsic
-       *  3x3 camera intrinsic matrix to set
-       */
-      void setIntrinsic(cv::Mat inIntrinsic);
-
-
-      /**
-       * @brief Set camera distortion coefficients
-       * @param inDistCoeffs
-       *  4x1 distortion coefficient matrix to set
-       */
-      void setDistCoeffs(cv::Mat inDistCoeffs);
-
-
       raft::kstatus run() override;
     };
 

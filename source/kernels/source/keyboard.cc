@@ -8,7 +8,7 @@ namespace flexr
   namespace kernels
   {
 
-    Keyboard::Keyboard(int frequency): FleXRKernel()
+    Keyboard::Keyboard(std::string id, int frequency): FleXRKernel(id)
     {
       setName("Keyboard");
       seq = 0;

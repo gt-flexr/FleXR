@@ -34,7 +34,7 @@ namespace flexr
        *  Target frequency to capture key strokes
        * @see flexr::components::FrequencyManager
        */
-      Keyboard(int frequency=60);
+      Keyboard(std::string id, int frequency=60);
 
 
       virtual raft::kstatus run();
