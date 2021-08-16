@@ -1,4 +1,3 @@
-
 #ifndef __FLEXR_YAML_KERNEL__
 #define __FLEXR_YAML_KERNEL__
 
@@ -18,12 +17,26 @@ namespace flexr
     class YamlFleXRKernel
     {
       protected:
+        bool baseSet, specificSet;
+
         /**
          * @brief Parse input ports info of the base
          * @param node
          *  YAML node to parse
          */
-        void parseInPorts(const YAML::Node &node);
+        void parseInPorts(const YAML::Node &node)
+        {
+          for(int i = 0; i < node.size(); i++) {
+            YamlInPort inPort;
+            inPort.portName       = node[i]["port_name"].as<std::string>();
+            inPort.connectionType = node[i]["connection_type"].as<std::string>();
+            if(inPort.connectionType == std::string("remote") && node[i]["binding_info"].IsDefined())
+            {
+              inPort.bindingPortNum = node[i]["binding_info"].as<int>();
+            }
+            inPorts.push_back(inPort);
+          }
+        }
 
 
         /**
@@ -31,7 +44,27 @@ namespace flexr
          * @param node
          *  YAML node to parse
          */
-        void parseOutPorts(const YAML::Node &node);
+        void parseOutPorts(const YAML::Node &node)
+        {
+          for(int i = 0; i < node.size(); i++) {
+            YamlOutPort outPort;
+            outPort.portName          = node[i]["port_name"].as<std::string>();
+            outPort.connectionType    = node[i]["connection_type"].as<std::string>();
+
+            if(outPort.connectionType == std::string("remote") && node[i]["remote_info"].IsDefined())
+            {
+              outPort.connectingAddr    = node[i]["remote_info"][0].as<std::string>();
+              outPort.connectingPortNum = node[i]["remote_info"][1].as<int>();
+            }
+
+            if(node[i]["duplicated_from"].IsDefined())
+            {
+              outPort.duplicatedFrom = node[i]["duplicated_from"].as<std::string>();
+            }
+
+            outPorts.push_back(outPort);
+          }
+        }
 
 
       public:
@@ -41,12 +74,36 @@ namespace flexr
         std::vector<YamlInPort> inPorts;
         std::vector<YamlOutPort> outPorts;
 
-        YamlFleXRKernel();
+        YamlFleXRKernel()
+        {
+          baseSet = specificSet = false;
+          name = id = loggerId = loggerFileName = "";
+          frequency = 0;
+        }
+
 
         /**
          * @brief Print FleXR Kernel info
          */
-        void printBase();
+        void printBase()
+        {
+          std::cout << "FleXR Kernel Base -------- " << std::endl;
+          std::cout << "\tKernel Name, ID: " << name << ", " << id << std::endl;
+          std::cout << "\tFrequency: " << frequency << std::endl;
+          std::cout << "\tLogger Info: " << loggerId << ", " << loggerFileName << std::endl;
+
+          for(int i = 0; i < inPorts.size(); i++)
+          {
+            inPorts[i].print();
+          }
+
+          for(int i = 0; i < outPorts.size(); i++)
+          {
+            outPorts[i].print();
+          }
+        }
+
+
 
 
         /**
@@ -54,7 +111,33 @@ namespace flexr
          * @param node
          *  YAML node to parse
          */
-        void parseBase(const YAML::Node &node);
+        void parseBase(const YAML::Node &node)
+        {
+          baseSet        = true;
+          name           = node["kernel"].as<std::string>();
+          id             = node["id"].as<std::string>();
+          frequency      = node["frequency"].as<int>();
+          loggerId       = node["logger"][0].as<std::string>();
+          loggerFileName = node["logger"][1].as<std::string>();
+
+          if(node["input"].IsDefined())
+          {
+            parseInPorts(node["input"]);
+          }
+
+          if(node["output"].IsDefined())
+          {
+            parseOutPorts(node["output"]);
+          }
+        }
+
+
+
+        /**
+         * @brief Make kernel instance with yaml recipe
+         * @return Pointer to the kernel instance
+         */
+        virtual void* make() {return nullptr;};
     };
   }
 }

@@ -15,6 +15,15 @@ namespace flexr
         std::string connectionType;
         int bindingPortNum;
 
+
+        YamlInPort()
+        {
+          portName       = "";
+          connectionType = "";
+          bindingPortNum = -1;
+        }
+
+
         void print()
         {
           std::cout << "Inport -------- " << std::endl;
@@ -36,6 +45,19 @@ namespace flexr
         int connectingPortNum;
         std::string connectingKernelId, connectingPortName;
         std::string duplicatedFrom;
+
+
+        YamlOutPort()
+        {
+          portName           = "";
+          connectionType     = "";
+          connectingAddr     = "";
+          connectingPortNum  = -1;
+          connectingKernelId = "";
+          connectingPortName = "";
+          duplicatedFrom     = "";
+        }
+
 
         void print()
         {
