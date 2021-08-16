@@ -32,5 +32,6 @@ foreach(EXAMPLE_SRC ${EXAMPLE_SRCS})
 
   add_executable(${EXAMPLE_NAME} ${EXAMPLE_SRC})
   target_link_libraries(${EXAMPLE_NAME} flexr_kernel)
+  target_link_libraries(${EXAMPLE_NAME} flexr_yaml_kernel)
 endforeach(EXAMPLE_SRC ${EXAMPLE_SRCS})
 
