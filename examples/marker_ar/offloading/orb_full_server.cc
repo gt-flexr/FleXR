@@ -51,7 +51,7 @@ int main(int argc, char const *argv[])
   cudaORBDetector.activateInPortAsLocal<CudaORBDetectorInFrameType>("in_frame");
   cudaORBDetector.activateOutPortAsLocal<CudaORBDetectorOutMarkerType>("out_detected_markers");
 
-  MarkerCtxExtractor markerCtxExtractor(width, height);
+  MarkerCtxExtractor markerCtxExtractor("marker_ctx_extractor", width, height);
   markerCtxExtractor.setLogger("marker_ctx_extractor_logger", "marker_ctx_extractor.log");
   markerCtxExtractor.activateInPortAsLocal<CtxExtractorInMarkerType>("in_detected_markers");
   markerCtxExtractor.activateOutPortAsLocal<CtxExtractorOutCtxType>("out_marker_contexts");

@@ -53,7 +53,7 @@ int main(int argc, char const *argv[])
   bagCam.setFramesToCache(400, 400);
   bagCam.activateOutPortAsLocal<Message<Frame>>("out_frame");
 
-  flexr::kernels::Keyboard keyboard;
+  flexr::kernels::Keyboard keyboard("keyboard");
   keyboard.activateOutPortAsRemote<Message<char>>("out_key", serverAddr, serverMessagePort);
 
   flexr::kernels::RTPFrameSender rtpFrameSender("rtp_frame_sender", serverAddr, serverFramePort, clientEncoder,

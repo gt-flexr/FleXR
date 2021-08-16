@@ -47,12 +47,12 @@ int main()
   rgbaConverter.activateInPortAsLocal<Message<Frame>>("in_frame");
   rgbaConverter.activateOutPortAsRemote<Message<Frame>>("out_frame", "127.0.0.1", appFramePort);
 
-  Keyboard keyboard;
+  Keyboard keyboard("keyboard");
   keyboard.activateOutPortAsRemote<Message<char>>("out_key", "127.0.0.1", appKeyPort);
 
-  ArUcoCamLocator arucoCamLocator(cv::aruco::DICT_6X6_250, width, height);
-  arucoCamLocator.activateInPortAsLocal<Message<Frame>>("in_frame");
-  arucoCamLocator.activateOutPortAsRemote<OutCamPose>("out_cam_pose", "127.0.0.1", appMarkerPort);
+  ArUcoCamLocator arucoCamLocator("aruco_cam_locator", cv::aruco::DICT_6X6_250, width, height);
+  arucoCamLocator.activateInPortAsLocal<flexr::kernels::ArUcoCamLocatorInFrameType>("in_frame");
+  arucoCamLocator.activateOutPortAsRemote<flexr::kernels::ArUcoCamLocatorOutPoseType>("out_cam_pose", "127.0.0.1", appMarkerPort);
 
 
   FrameConverter rgbConverter("recv_frame_converter", width, height, FrameConverter::Conversion::RGBA2RGB);

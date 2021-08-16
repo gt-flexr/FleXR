@@ -36,7 +36,7 @@ int main()
   bagCam.activateOutPortAsLocal<BagCameraMsgType>("out_frame");
   bagCam.duplicateOutPortAsLocal<BagCameraMsgType>("out_frame", "out_frame2");
 
-  Keyboard keyboard;
+  Keyboard keyboard("keyboard");
   keyboard.activateOutPortAsLocal<KeyboardMsgType>("out_key");
 
   CudaORBDetector cudaORBDetector("cuda_orb_detector", markerPath + "/0.png");
@@ -44,7 +44,7 @@ int main()
   cudaORBDetector.activateInPortAsLocal<CudaORBDetectorInFrameType>("in_frame");
   cudaORBDetector.activateOutPortAsLocal<CudaORBDetectorOutMarkerType>("out_detected_markers");
 
-  MarkerCtxExtractor markerCtxExtractor(width, height);
+  MarkerCtxExtractor markerCtxExtractor("marker_ctx_extractor", width, height);
   markerCtxExtractor.setLogger("marker_ctx_extractor_logger", "marker_ctx_extractor.log");
   markerCtxExtractor.activateInPortAsLocal<CtxExtractorInMarkerType>("in_detected_markers");
   markerCtxExtractor.activateOutPortAsLocal<CtxExtractorOutCtxType>("out_marker_contexts");

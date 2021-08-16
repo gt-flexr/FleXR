@@ -47,7 +47,7 @@ int main(int argc, char const *argv[])
   bagCam.activateOutPortAsLocal<BagCameraMsgType>("out_frame");
   bagCam.duplicateOutPortAsLocal<BagCameraMsgType>("out_frame", "out_frame2");
 
-  Keyboard keyboard;
+  Keyboard keyboard("keyboard");
   keyboard.activateOutPortAsLocal<KeyboardMsgType>("out_key");
 
   RTPFrameSender rtpFrameSender("rtp_frame_sender", serverAddr, serverFramePort, clientEncoder,

@@ -46,7 +46,7 @@ int main(int argc, char const *argv[])
   bagCam.activateOutPortAsLocal<BagCameraMsgType>("out_frame");
   bagCam.duplicateOutPortAsLocal<BagCameraMsgType>("out_frame", "out_frame2");
 
-  Keyboard keyboard;
+  Keyboard keyboard("keyboard");
   keyboard.activateOutPortAsLocal<KeyboardMsgType>("out_key");
 
   RTPFrameSender rtpFrameSender("rtp_frame_sender", serverAddr, serverFramePort, clientEncoder,
@@ -54,7 +54,7 @@ int main(int argc, char const *argv[])
   rtpFrameSender.setLogger("rtp_frame_sender_logger", "rtp_frame_sender.log");
   rtpFrameSender.activateInPortAsLocal<FrameSenderMsgType>("in_frame");
 
-  MarkerCtxExtractor markerCtxExtractor(width, height);
+  MarkerCtxExtractor markerCtxExtractor("marker_ctx_extractor", width, height);
   markerCtxExtractor.setLogger("marker_ctx_extractor_logger", "marker_ctx_extractor.log");
   markerCtxExtractor.activateInPortAsRemote<CtxExtractorInMarkerType>("in_detected_markers", clientMessagePort);
   markerCtxExtractor.activateOutPortAsLocal<CtxExtractorOutCtxType>("out_marker_contexts");

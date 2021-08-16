@@ -53,13 +53,13 @@ int main(int argc, char const *argv[])
   orbDetector.activateInPortAsLocal<ORBDetectorInFrameType>("in_frame");
   orbDetector.activateOutPortAsLocal<ORBDetectorOutMarkerType>("out_detected_markers");
 
-  flexr::kernels::MarkerCtxExtractor markerCtxExtractor(width, height);
+  flexr::kernels::MarkerCtxExtractor markerCtxExtractor("marker_ctx_extractor", width, height);
   markerCtxExtractor.setLogger("marker_ctx_extractor_logger", "marker_ctx_extractor.log");
   markerCtxExtractor.activateInPortAsLocal<CtxExtractorInMarkerType>("in_detected_markers");
   markerCtxExtractor.activateOutPortAsRemote<CtxExtractorOutCtxType>("out_marker_contexts",
                                                                      serverAddr, serverMessagePort2);
 
-  flexr::kernels::Keyboard keyboard;
+  flexr::kernels::Keyboard keyboard("keyboard");
   keyboard.activateOutPortAsRemote<KeyboardMsgType>("out_key", serverAddr, serverMessagePort);
 
   flexr::kernels::RTPFrameSender rtpFrameSender("rtp_frame_sender", serverAddr, serverFramePort, clientEncoder,
