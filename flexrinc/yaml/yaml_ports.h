@@ -43,7 +43,6 @@ namespace flexr
         std::string connectionType;
         std::string connectingAddr;
         int connectingPortNum;
-        std::string connectingKernelId, connectingPortName;
         std::string duplicatedFrom;
 
 
@@ -53,8 +52,6 @@ namespace flexr
           connectionType     = "";
           connectingAddr     = "";
           connectingPortNum  = -1;
-          connectingKernelId = "";
-          connectingPortName = "";
           duplicatedFrom     = "";
         }
 

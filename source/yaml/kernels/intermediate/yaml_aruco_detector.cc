@@ -1,3 +1,4 @@
+#include "kernels/intermediate/aruco_detector.h"
 #include <yaml/kernels/intermediate/yaml_aruco_detector.h>
 
 namespace flexr
@@ -68,35 +69,37 @@ namespace flexr
                                                                                 inPorts[i].bindingPortNum);
             }
           }
+          else debug_print("invalid input port_name %s for ArUcoDetector", inPorts[i].portName.c_str());
         }
 
         for(int i = 0; i < outPorts.size(); i++)
         {
+          // Kernel specified ports
           if(outPorts[i].portName == "out_marker_poses")
           {
             if(outPorts[i].connectionType == "local")
-            {
-              if(outPorts[i].duplicatedFrom == "")
-                temp->activateOutPortAsLocal<kernels::ArUcoDetectorOutPosesType>(outPorts[i].portName);
-              else
-                temp->duplicateOutPortAsLocal<kernels::ArUcoDetectorOutPosesType>(outPorts[i].duplicatedFrom,
-                                                                                   outPorts[i].portName);
-            }
+              temp->activateOutPortAsLocal<kernels::ArUcoDetectorOutPosesType>(outPorts[i].portName);
             else if(outPorts[i].connectionType == "remote")
-            {
-              if(outPorts[i].duplicatedFrom == "")
-                temp->activateOutPortAsRemote<kernels::ArUcoDetectorOutPosesType>(
-                    outPorts[i].portName,
-                    outPorts[i].connectingAddr,
-                    outPorts[i].connectingPortNum);
-              else
-                temp->duplicateOutPortAsRemote<kernels::ArUcoDetectorOutPosesType>(
-                    outPorts[i].duplicatedFrom,
-                    outPorts[i].portName,
-                    outPorts[i].connectingAddr,
-                    outPorts[i].connectingPortNum);
-            }
+              temp->activateOutPortAsRemote<kernels::ArUcoDetectorOutPosesType>(outPorts[i].portName,
+                                                                                outPorts[i].connectingAddr,
+                                                                                outPorts[i].connectingPortNum);
           }
+          else
+          {
+            // Duplicated ports (non-specified)
+            if(outPorts[i].duplicatedFrom == "out_frame")
+            {
+              if(outPorts[i].connectionType == "local")
+                temp->duplicateOutPortAsLocal<kernels::ArUcoDetectorOutPosesType>(outPorts[i].duplicatedFrom,
+                                                                                 outPorts[i].portName);
+              else if(outPorts[i].connectionType == "remote")
+                temp->duplicateOutPortAsRemote<kernels::ArUcoDetectorOutPosesType>(
+                    outPorts[i].duplicatedFrom, outPorts[i].portName,
+                    outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
+            }
+            else debug_print("invalid output port_name %s for ArUcoDetector", outPorts[i].portName.c_str());
+          }
+
         }
         return temp;
       }

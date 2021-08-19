@@ -57,40 +57,47 @@ namespace flexr
 
         for(int i = 0; i < inPorts.size(); i++)
         {
-          if(inPorts[i].connectionType == "local")
+          if(inPorts[i].portName == "in_frame")
           {
-            temp->activateInPortAsLocal<kernels::FrameConverterInMsgType>(inPorts[i].portName);
+            if(inPorts[i].connectionType == "local")
+            {
+              temp->activateInPortAsLocal<kernels::FrameConverterInMsgType>(inPorts[i].portName);
+            }
+            else if(inPorts[i].connectionType == "remote")
+            {
+              temp->activateInPortAsRemote<kernels::FrameConverterInMsgType>(inPorts[i].portName,
+                  inPorts[i].bindingPortNum);
+            }
           }
-          else if(inPorts[i].connectionType == "remote")
-          {
-            temp->activateInPortAsRemote<kernels::FrameConverterInMsgType>(inPorts[i].portName,
-                                                                          inPorts[i].bindingPortNum);
-          }
+          else debug_print("invalid input port_name %s for FrameConverter", inPorts[i].portName.c_str());
         }
 
         for(int i = 0; i < outPorts.size(); i++)
         {
-          if(outPorts[i].connectionType == "local")
+          // Kernel specified ports
+          if(outPorts[i].portName == "out_frame")
           {
-            if(outPorts[i].duplicatedFrom == "")
+            if(outPorts[i].connectionType == "local")
               temp->activateOutPortAsLocal<kernels::FrameConverterOutMsgType>(outPorts[i].portName);
-            else
-              temp->duplicateOutPortAsLocal<kernels::FrameConverterOutMsgType>(outPorts[i].duplicatedFrom,
-                                                                               outPorts[i].portName);
+            else if(outPorts[i].connectionType == "remote")
+              temp->activateOutPortAsRemote<kernels::FrameConverterOutMsgType>(outPorts[i].portName,
+                                                                               outPorts[i].connectingAddr,
+                                                                               outPorts[i].connectingPortNum);
           }
-          else if(outPorts[i].connectionType == "remote")
+          else
           {
-            if(outPorts[i].duplicatedFrom == "")
-              temp->activateOutPortAsRemote<kernels::FrameConverterOutMsgType>(
-                  outPorts[i].portName,
-                  outPorts[i].connectingAddr,
-                  outPorts[i].connectingPortNum);
-            else
-              temp->duplicateOutPortAsRemote<kernels::FrameConverterOutMsgType>(
-                  outPorts[i].duplicatedFrom,
-                  outPorts[i].portName,
-                  outPorts[i].connectingAddr,
-                  outPorts[i].connectingPortNum);
+            // Duplicated ports (non-specified)
+            if(outPorts[i].duplicatedFrom == "out_frame")
+            {
+              if(outPorts[i].connectionType == "local")
+                temp->duplicateOutPortAsLocal<kernels::FrameConverterOutMsgType>(outPorts[i].duplicatedFrom,
+                                                                                 outPorts[i].portName);
+              else if(outPorts[i].connectionType == "remote")
+                temp->duplicateOutPortAsRemote<kernels::FrameConverterOutMsgType>(
+                    outPorts[i].duplicatedFrom, outPorts[i].portName,
+                    outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
+            }
+            else debug_print("invalid output port_name %s for FrameConverter", outPorts[i].portName.c_str());
           }
         }
         return temp;

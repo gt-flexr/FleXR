@@ -62,34 +62,35 @@ namespace flexr
                   inPorts[i].bindingPortNum);
             }
           }
+          else debug_print("invalid input port_name %s for CudaORBDetector", inPorts[i].portName.c_str());
         }
 
         for(int i = 0; i < outPorts.size(); i++)
         {
+          // Kernel specified ports
           if(outPorts[i].portName == "out_detected_markers")
           {
             if(outPorts[i].connectionType == "local")
-            {
-              if(outPorts[i].duplicatedFrom == "")
-                temp->activateOutPortAsLocal<kernels::CudaORBDetectorOutMarkerType>(outPorts[i].portName);
-              else
-                temp->duplicateOutPortAsLocal<kernels::CudaORBDetectorOutMarkerType>(
-                    outPorts[i].duplicatedFrom, outPorts[i].portName);
-            }
+              temp->activateOutPortAsLocal<kernels::CudaORBDetectorOutMarkerType>(outPorts[i].portName);
             else if(outPorts[i].connectionType == "remote")
+              temp->activateOutPortAsRemote<kernels::CudaORBDetectorOutMarkerType>(outPorts[i].portName,
+                                                                                   outPorts[i].connectingAddr,
+                                                                                   outPorts[i].connectingPortNum);
+          }
+          else
+          {
+            // Duplicated ports (non-specified)
+            if(outPorts[i].duplicatedFrom == "out_detected_markers")
             {
-              if(outPorts[i].duplicatedFrom == "")
-                temp->activateOutPortAsRemote<kernels::CudaORBDetectorOutMarkerType>(
-                    outPorts[i].portName,
-                    outPorts[i].connectingAddr,
-                    outPorts[i].connectingPortNum);
-              else
+              if(outPorts[i].connectionType == "local")
+                temp->duplicateOutPortAsLocal<kernels::CudaORBDetectorOutMarkerType>(outPorts[i].duplicatedFrom,
+                                                                                     outPorts[i].portName);
+              else if(outPorts[i].connectionType == "remote")
                 temp->duplicateOutPortAsRemote<kernels::CudaORBDetectorOutMarkerType>(
-                    outPorts[i].duplicatedFrom,
-                    outPorts[i].portName,
-                    outPorts[i].connectingAddr,
-                    outPorts[i].connectingPortNum);
+                    outPorts[i].duplicatedFrom, outPorts[i].portName,
+                    outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
             }
+            else debug_print("invalid output port_name %s for CudaORBDetector", outPorts[i].portName.c_str());
           }
         }
         return temp;

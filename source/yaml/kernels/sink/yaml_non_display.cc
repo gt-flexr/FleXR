@@ -34,10 +34,14 @@ namespace flexr
 
         for(int i = 0; i < inPorts.size(); i++)
         {
-          if(inPorts[i].connectionType == "local")
-            temp->activateInPortAsLocal<kernels::NonDisplayMsgType>(inPorts[i].portName);
-          else
-            temp->activateInPortAsRemote<kernels::NonDisplayMsgType>(inPorts[i].portName, inPorts[i].bindingPortNum);
+          if(inPorts[i].portName == "in_frame")
+          {
+            if(inPorts[i].connectionType == "local")
+              temp->activateInPortAsLocal<kernels::NonDisplayMsgType>(inPorts[i].portName);
+            else
+              temp->activateInPortAsRemote<kernels::NonDisplayMsgType>(inPorts[i].portName, inPorts[i].bindingPortNum);
+          }
+          else debug_print("invalid input port_name %s for NonDisplay", inPorts[i].portName.c_str());
         }
         return temp;
       }

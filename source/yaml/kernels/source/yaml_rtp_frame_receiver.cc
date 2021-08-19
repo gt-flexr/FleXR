@@ -54,23 +54,30 @@ namespace flexr
 
         for(int i = 0; i < outPorts.size(); i++)
         {
-          if(outPorts[i].connectionType == "local")
+          // Kernel specified ports
+          if(outPorts[i].portName == "out_frame")
           {
-            if(outPorts[i].duplicatedFrom == "")
+            if(outPorts[i].connectionType == "local")
               temp->activateOutPortAsLocal<kernels::FrameReceiverMsgType>(outPorts[i].portName);
-            else
-              temp->duplicateOutPortAsLocal<kernels::FrameReceiverMsgType>(outPorts[i].duplicatedFrom,
-                                                                           outPorts[i].portName);
+            else if(outPorts[i].connectionType == "remote")
+              temp->activateOutPortAsRemote<kernels::FrameReceiverMsgType>(outPorts[i].portName,
+                                                                           outPorts[i].connectingAddr,
+                                                                           outPorts[i].connectingPortNum);
           }
-          else if(outPorts[i].connectionType == "remote")
+          else
           {
-            if(outPorts[i].duplicatedFrom == "")
-              temp->activateOutPortAsRemote<kernels::FrameReceiverMsgType>(
-                  outPorts[i].portName, outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
-            else
-              temp->duplicateOutPortAsRemote<kernels::FrameReceiverMsgType>(
-                  outPorts[i].duplicatedFrom, outPorts[i].portName,
-                  outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
+            // Duplicated ports (non-specified)
+            if(outPorts[i].duplicatedFrom == "out_frame")
+            {
+              if(outPorts[i].connectionType == "local")
+                temp->duplicateOutPortAsLocal<kernels::FrameReceiverMsgType>(outPorts[i].duplicatedFrom,
+                                                                             outPorts[i].portName);
+              else if(outPorts[i].connectionType == "remote")
+                temp->duplicateOutPortAsRemote<kernels::FrameReceiverMsgType>(
+                    outPorts[i].duplicatedFrom, outPorts[i].portName,
+                    outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
+            }
+            else debug_print("invalid output port_name %s for RTPFrameReceiver", outPorts[i].portName.c_str());
           }
         }
         return temp;

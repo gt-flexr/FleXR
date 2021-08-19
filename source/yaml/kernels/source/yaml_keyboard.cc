@@ -32,23 +32,30 @@ namespace flexr
 
         for(int i = 0; i < outPorts.size(); i++)
         {
-          if(outPorts[i].connectionType == "local")
+          // Kernel specified ports
+          if(outPorts[i].portName == "out_key")
           {
-            if(outPorts[i].duplicatedFrom == "")
+            if(outPorts[i].connectionType == "local")
               temp->activateOutPortAsLocal<kernels::KeyboardMsgType>(outPorts[i].portName);
-            else
-              temp->duplicateOutPortAsLocal<kernels::KeyboardMsgType>(outPorts[i].duplicatedFrom,
-                                                                      outPorts[i].portName);
+            else if(outPorts[i].connectionType == "remote")
+              temp->activateOutPortAsRemote<kernels::KeyboardMsgType>(outPorts[i].portName,
+                  outPorts[i].connectingAddr,
+                  outPorts[i].connectingPortNum);
           }
-          else if(outPorts[i].connectionType == "remote")
+          else
           {
-            if(outPorts[i].duplicatedFrom == "")
-              temp->activateOutPortAsRemote<kernels::KeyboardMsgType>(
-                  outPorts[i].portName, outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
-            else
-              temp->duplicateOutPortAsRemote<kernels::KeyboardMsgType>(
-                  outPorts[i].duplicatedFrom, outPorts[i].portName,
-                  outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
+            // Duplicated ports (non-specified)
+            if(outPorts[i].duplicatedFrom == "out_key")
+            {
+              if(outPorts[i].connectionType == "local")
+                temp->duplicateOutPortAsLocal<kernels::KeyboardMsgType>(outPorts[i].duplicatedFrom,
+                                                                        outPorts[i].portName);
+              else if(outPorts[i].connectionType == "remote")
+                temp->duplicateOutPortAsRemote<kernels::KeyboardMsgType>(
+                    outPorts[i].duplicatedFrom, outPorts[i].portName,
+                    outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
+            }
+            else debug_print("invalid output port_name %s for Keyboard", outPorts[i].portName.c_str());
           }
         }
         return temp;

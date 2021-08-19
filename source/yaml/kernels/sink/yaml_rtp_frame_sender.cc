@@ -57,8 +57,12 @@ namespace flexr
 
         for(int i = 0; i < inPorts.size(); i++)
         {
-          if(inPorts[i].connectionType == "local")
-            temp->activateInPortAsLocal<kernels::FrameSenderMsgType>(inPorts[i].portName);
+          if(inPorts[i].portName == "in_frame")
+          {
+            if(inPorts[i].connectionType == "local")
+              temp->activateInPortAsLocal<kernels::FrameSenderMsgType>(inPorts[i].portName);
+          }
+          else debug_print("invalid input port_name %s for RTPFrameSender", inPorts[i].portName.c_str());
         }
         return temp;
       }

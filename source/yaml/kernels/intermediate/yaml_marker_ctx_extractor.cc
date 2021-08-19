@@ -51,40 +51,46 @@ namespace flexr
 
         for(int i = 0; i < inPorts.size(); i++)
         {
-          if(inPorts[i].connectionType == "local")
-          {
-            temp->activateInPortAsLocal<kernels::CtxExtractorInMarkerType>(inPorts[i].portName);
+          if(inPorts[i].portName == "in_detected_markers") {
+            if(inPorts[i].connectionType == "local")
+            {
+              temp->activateInPortAsLocal<kernels::CtxExtractorInMarkerType>(inPorts[i].portName);
+            }
+            else if(inPorts[i].connectionType == "remote")
+            {
+              temp->activateInPortAsRemote<kernels::CtxExtractorInMarkerType>(inPorts[i].portName,
+                  inPorts[i].bindingPortNum);
+            }
           }
-          else if(inPorts[i].connectionType == "remote")
-          {
-            temp->activateInPortAsRemote<kernels::CtxExtractorInMarkerType>(inPorts[i].portName,
-                                                                            inPorts[i].bindingPortNum);
-          }
+          else debug_print("invalid input port_name %s for MarkerCtxExtractor", inPorts[i].portName.c_str());
         }
 
         for(int i = 0; i < outPorts.size(); i++)
         {
-          if(outPorts[i].connectionType == "local")
+          // Kernel specified ports
+          if(outPorts[i].portName == "out_marker_contexts")
           {
-            if(outPorts[i].duplicatedFrom == "")
+            if(outPorts[i].connectionType == "local")
               temp->activateOutPortAsLocal<kernels::CtxExtractorOutCtxType>(outPorts[i].portName);
-            else
-              temp->duplicateOutPortAsLocal<kernels::CtxExtractorOutCtxType>(outPorts[i].duplicatedFrom,
-                                                                             outPorts[i].portName);
+            else if(outPorts[i].connectionType == "remote")
+              temp->activateOutPortAsRemote<kernels::CtxExtractorOutCtxType>(outPorts[i].portName,
+                                                                             outPorts[i].connectingAddr,
+                                                                             outPorts[i].connectingPortNum);
           }
-          else if(outPorts[i].connectionType == "remote")
+          else
           {
-            if(outPorts[i].duplicatedFrom == "")
-              temp->activateOutPortAsRemote<kernels::CtxExtractorOutCtxType>(
-                  outPorts[i].portName,
-                  outPorts[i].connectingAddr,
-                  outPorts[i].connectingPortNum);
-            else
-              temp->duplicateOutPortAsRemote<kernels::CtxExtractorOutCtxType>(
-                  outPorts[i].duplicatedFrom,
-                  outPorts[i].portName,
-                  outPorts[i].connectingAddr,
-                  outPorts[i].connectingPortNum);
+            // Duplicated ports (non-specified)
+            if(outPorts[i].duplicatedFrom == "out_frame")
+            {
+              if(outPorts[i].connectionType == "local")
+                temp->duplicateOutPortAsLocal<kernels::CtxExtractorOutCtxType>(outPorts[i].duplicatedFrom,
+                                                                             outPorts[i].portName);
+              else if(outPorts[i].connectionType == "remote")
+                temp->duplicateOutPortAsRemote<kernels::CtxExtractorOutCtxType>(
+                    outPorts[i].duplicatedFrom, outPorts[i].portName,
+                    outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
+            }
+            else debug_print("invalid output port_name %s for MarkerCtxExtractor", outPorts[i].portName.c_str());
           }
         }
         return temp;
