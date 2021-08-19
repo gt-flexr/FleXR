@@ -87,14 +87,18 @@
 /*
  * Yaml Kernels
  */
+#include "./flexrinc/yaml/yaml_parser.h"
 #include "./flexrinc/yaml/yaml_flexr_kernel.h"
 #include "./flexrinc/yaml/yaml_ports.h"
 #include "./flexrinc/yaml/yaml_local_connection.h"
 
 #include "./flexrinc/yaml/kernels/source/yaml_bag_camera.h"
 #include "./flexrinc/yaml/kernels/source/yaml_cv_camera.h"
+#include "./flexrinc/yaml/kernels/source/yaml_keyboard.h"
 #include "./flexrinc/yaml/kernels/source/yaml_rtp_frame_receiver.h"
 
+#include "./flexrinc/yaml/kernels/sink/yaml_cv_display.h"
+#include "./flexrinc/yaml/kernels/sink/yaml_non_display.h"
 #include "./flexrinc/yaml/kernels/sink/yaml_rtp_frame_sender.h"
 
 #include "./flexrinc/yaml/kernels/intermediate/yaml_orb_detector.h"
@@ -104,6 +108,7 @@
 #include "./flexrinc/yaml/kernels/intermediate/yaml_frame_converter.h"
 #include "./flexrinc/yaml/kernels/intermediate/yaml_aruco_detector.h"
 #include "./flexrinc/yaml/kernels/intermediate/yaml_aruco_cam_locator.h"
+
 
 #endif
 

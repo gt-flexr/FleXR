@@ -52,8 +52,8 @@ namespace flexr
 
         temp->setFrequency(frequency);
         temp->setLogger(loggerId, loggerFileName);
-        temp->setResolution(width, height);
         temp->setConversion(conversionType);
+        temp->setResolution(width, height);
 
         for(int i = 0; i < inPorts.size(); i++)
         {
