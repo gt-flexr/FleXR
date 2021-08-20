@@ -14,7 +14,7 @@ namespace flexr
   {
 
     /**
-     * @brief Yaml RTPFrameSender kernel
+     * @brief Yaml ObjectRenderer kernel
      * @see flexr::kernels::ObjectRenderer
      */
     class YamlObjectRenderer: public YamlFleXRKernel

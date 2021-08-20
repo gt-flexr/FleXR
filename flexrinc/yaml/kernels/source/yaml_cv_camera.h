@@ -14,7 +14,7 @@ namespace flexr
   {
 
     /**
-     * @brief Yaml CV camera kernel
+     * @brief Yaml CVCamera kernel
      * @see flexr::kernels::CVCamera
      */
     class YamlCvCamera: public YamlFleXRKernel
@@ -25,7 +25,7 @@ namespace flexr
         YamlCvCamera();
 
         /**
-         * @brief Parse CV camera kernel info
+         * @brief Parse CVCamera kernel info
          * @param node
          *  YAML node to parse
          */
@@ -33,7 +33,7 @@ namespace flexr
 
 
         /**
-         * @brief Parse specifics of CV camera kernel
+         * @brief Parse specifics of CVCamera kernel
          * @param node
          *  YAML node to parse
          */
@@ -41,13 +41,13 @@ namespace flexr
 
 
         /**
-         * @brief Print parsed CV camera info
+         * @brief Print parsed CVCamera info
          */
         void printCvCamera();
 
 
         /**
-         * @brief Print parsed CV camera specifics
+         * @brief Print parsed CVCamera specifics
          */
         void printCvCameraSpecific();
 

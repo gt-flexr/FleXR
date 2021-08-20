@@ -26,7 +26,7 @@ namespace flexr
         YamlRtpFrameSender();
 
         /**
-         * @brief Parse RTP frame sender kernel info
+         * @brief Parse RTPFrameSender kernel info
          * @param node
          *  YAML node to parse
          */
@@ -34,7 +34,7 @@ namespace flexr
 
 
         /**
-         * @brief Parse specifics of RTP frame sender kernel
+         * @brief Parse specifics of RTPFrameSender kernel
          * @param node
          *  YAML node to parse
          */
@@ -42,13 +42,13 @@ namespace flexr
 
 
         /**
-         * @brief Print parsed RTP frame sender info
+         * @brief Print parsed RTPFrameSender info
          */
         void printRtpFrameSender();
 
 
         /**
-         * @brief Print parsed RTP frame sender specifics
+         * @brief Print parsed RTPFrameSender specifics
          */
         void printRtpFrameSenderSpecific();
 

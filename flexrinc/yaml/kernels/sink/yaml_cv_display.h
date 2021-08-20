@@ -23,7 +23,7 @@ namespace flexr
         YamlCvDisplay();
 
         /**
-         * @brief Parse RTP frame sender kernel info
+         * @brief Parse CVDisplay kernel info
          * @param node
          *  YAML node to parse
          */
@@ -31,7 +31,7 @@ namespace flexr
 
 
         /**
-         * @brief Print parsed RTP frame sender info
+         * @brief Print parsed CVDisplay info
          */
         void printCvDisplay();
 

@@ -26,7 +26,7 @@ namespace flexr
         YamlBagCamera();
 
         /**
-         * @brief Parse bag camera kernel info
+         * @brief Parse BagCamera kernel info
          * @param node
          *  YAML node to parse
          */
@@ -34,7 +34,7 @@ namespace flexr
 
 
         /**
-         * @brief Parse specifics of bag camera kernel
+         * @brief Parse specifics of BagCamera kernel
          * @param node
          *  YAML node to parse
          */
@@ -42,13 +42,13 @@ namespace flexr
 
 
         /**
-         * @brief Print parsed bag camera info
+         * @brief Print parsed BagCamera info
          */
         void printBagCamera();
 
 
         /**
-         * @brief Print parsed bag camera specifics
+         * @brief Print parsed BagCamera specifics
          */
         void printBagCameraSpecific();
 

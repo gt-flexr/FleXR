@@ -23,7 +23,7 @@ namespace flexr
         YamlNonDisplay();
 
         /**
-         * @brief Parse RTP frame sender kernel info
+         * @brief Parse NonDisplay kernel info
          * @param node
          *  YAML node to parse
          */
@@ -31,7 +31,7 @@ namespace flexr
 
 
         /**
-         * @brief Print parsed RTP frame sender info
+         * @brief Print parsed NonDisplay info
          */
         void printNonDisplay();
 

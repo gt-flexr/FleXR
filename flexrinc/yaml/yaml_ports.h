@@ -8,6 +8,9 @@ namespace flexr
 {
   namespace yaml
   {
+    /**
+     * @brief Yaml input kernel port
+     */
     class YamlInPort
     {
       public:
@@ -36,6 +39,9 @@ namespace flexr
     };
 
 
+    /**
+     * @brief Yaml output kernel port
+     */
     class YamlOutPort
     {
       public:

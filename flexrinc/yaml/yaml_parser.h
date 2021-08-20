@@ -47,26 +47,36 @@ namespace flexr
 
       public:
         /**
-         * @brief Parse base info
+         * @brief Init parser with YAML file
          * @param node
          *  YAML node to parse
          */
         YamlFleXRParser(std::string yamlFile)
         {
-          doc = YAML::LoadFile(yamlFile);
+          loadYamlFile(yamlFile);
         }
 
 
         ~YamlFleXRParser()
         {
-          clearParsedInfo();
+          removeParsedInfo();
         }
 
 
         /**
-         * @brief Parse base info
-         * @param node
-         *  YAML node to parse
+         * @brief Load YAML file
+         * @param yamlFile
+         *  YAML file to load
+         */
+        void loadYamlFile(std::string yamlFile)
+        {
+          doc = YAML::LoadFile(yamlFile);
+        }
+
+
+        /**
+         * @brief Get instantiated kernel map
+         * @return Kernel map
          */
         std::map<std::string, flexr::kernels::FleXRKernel*> getKernelMap()
         {
@@ -75,9 +85,8 @@ namespace flexr
 
 
         /**
-         * @brief Parse base info
-         * @param node
-         *  YAML node to parse
+         * @brief Get parsed connections
+         * @param Parsed connections
          */
         std::vector<YamlLocalConnection> getConnections()
         {
@@ -85,26 +94,39 @@ namespace flexr
         }
 
 
-
-
         /**
-         * @brief Parse base info
-         * @param node
-         *  YAML node to parse
+         * @brief Remove parsed info and instantiated kernels
          */
-        void clearParsedInfo()
+        void removeParsedInfo()
         {
-          parsedConnections.clear();
-          clearKernelMap();
+          removeParsedConnections();
+          removeKernels();
+          removeKernelMap();
         }
 
 
         /**
-         * @brief Parse base info
-         * @param node
-         *  YAML node to parse
+         * @brief Remove parsed connections
          */
-        void clearKernelMap()
+        void removeParsedConnections()
+        {
+          parsedConnections.clear();
+        }
+
+
+        /**
+         * @brief Remove kernel map
+         */
+        void removeKernelMap()
+        {
+          parsedKernelMap.clear();
+        }
+
+
+        /**
+         * @brief Remove instantiated kernels
+         */
+        void removeKernels()
         {
           std::map<std::string, flexr::kernels::FleXRKernel*>::iterator iter;
           for(iter = parsedKernelMap.begin(); iter != parsedKernelMap.end(); iter++)
@@ -133,9 +155,12 @@ namespace flexr
 
 
         /**
-         * @brief Parse base info
-         * @param node
-         *  YAML node to parse
+         * @brief Initialize and instantiate kernels while parsing YAML recipe
+         * @see flexr::yaml::YamlBagCamera, flexr::yaml::YamlCvCamera, flexr::yaml::YamlKeyboard,
+         * flexr::yaml::YamlRtpFrameReceiver, flexr::yaml::YamlCvDisplay, flexr::yaml::YamlNonDisplay,
+         * flexr::yaml::YamlRtpFrameSender, flexr::yaml::YamlFrameConverter, flexr::yaml::YamlMarkerCtxExtractor,
+         * flexr::yaml::YamlCudaOrbDetector, flexr::yaml::YamlOrbDetector, flexr::yaml::YamlObjectRenderer,
+         * flexr::yaml::YamlArUcoDetector, flexr::yaml::YamlArUcoCamLocator
          */
         void initKernels()
         {
@@ -258,6 +283,10 @@ namespace flexr
         }
 
 
+        /**
+         * @brief Parse local connections from YAML recipe
+         * @see flexr::yaml::YamlLocalConnection
+         */
         void parseConnections()
         {
           for(int i = 0; i < doc.size(); i++)

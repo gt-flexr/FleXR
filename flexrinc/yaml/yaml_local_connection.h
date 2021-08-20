@@ -9,6 +9,9 @@ namespace flexr
   namespace yaml
   {
 
+    /**
+     * @brief Yaml local lonnection
+     */
     class YamlLocalConnection
     {
       public:
@@ -16,6 +19,9 @@ namespace flexr
         std::string recvKernel, recvPortName;
         int queueSize;
 
+        /**
+         * @brief Print connection info
+         */
         void printConnection()
         {
           std::cout << "Connection --------" << std::endl;

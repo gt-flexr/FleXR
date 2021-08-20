@@ -13,6 +13,7 @@ namespace flexr
 
     /**
      * @brief Yaml FleXR kernel
+     * @see flexr::kernels::FleXRKernel
      */
     class YamlFleXRKernel
     {
@@ -20,7 +21,7 @@ namespace flexr
         bool baseSet, specificSet;
 
         /**
-         * @brief Parse input ports info of the base
+         * @brief Parse input ports info of the base kernel
          * @param node
          *  YAML node to parse
          */
@@ -40,7 +41,7 @@ namespace flexr
 
 
         /**
-         * @brief Parse output ports info of the base
+         * @brief Parse output ports info of the base kernel
          * @param node
          *  YAML node to parse
          */
@@ -83,7 +84,7 @@ namespace flexr
 
 
         /**
-         * @brief Print FleXR Kernel info
+         * @brief Print base kernel info
          */
         void printBase()
         {
@@ -107,7 +108,7 @@ namespace flexr
 
 
         /**
-         * @brief Parse base info
+         * @brief Parse base kernel info
          * @param node
          *  YAML node to parse
          */
@@ -134,7 +135,7 @@ namespace flexr
 
 
         /**
-         * @brief Make kernel instance with yaml recipe
+         * @brief Make kernel instance with parsed yaml recipe
          * @return Pointer to the kernel instance
          */
         virtual void* make() {return nullptr;};
