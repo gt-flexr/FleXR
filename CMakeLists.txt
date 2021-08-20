@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
-project(MXRE CXX)
+project(FLEXR CXX)
 set(CMAKE_CXX_COMPILER g++)
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -23,19 +23,19 @@ endif()
 build_option(DEBUG "Set Debug/Release" ON)
 build_option(PROFILE "Set kernel profiling" ON)
 
-mxre_option(USE_FFMPEG_NVCODEC "Use nvcodec with ffmpeg" OFF)
-mxre_option(USE_OPENCV_CUDA "Use cuda-accelerated functions of OpenCV" OFF)
+flexr_option(USE_FFMPEG_NVCODEC "Use nvcodec with ffmpeg" OFF)
+flexr_option(USE_OPENCV_CUDA "Use cuda-accelerated functions of OpenCV" OFF)
 
 # Source codes & headers
 configure_file(config/root_directory.h.in config/root_directory.h)
 
-# MXRE compile info
-set(MXRE_CXX_FLAGS "")
-set(MXRE_LINKER_FLAGS "")
-set(MXRE_LINKER_LIBS "")
+# FLEXR compile info
+set(FLEXR_CXX_FLAGS "")
+set(FLEXR_LINKER_FLAGS "")
+set(FLEXR_LINKER_LIBS "")
 
 # Include cmake modules
-include_directories("mxreinc")
+include_directories("flexrinc")
 include(cmake/modules/OpenGL.cmake)
 include(cmake/modules/OpenCV.cmake)
 include(cmake/modules/RaftLib.cmake)
@@ -46,24 +46,24 @@ include(cmake/modules/yaml-cpp.cmake)
 include(cmake/modules/uvgRTP.cmake)
 include(cmake/modules/rosbag.cmake)
 
-message(STATUS "[MXRE COMPILE INFO]")
+message(STATUS "[FLEXR COMPILE INFO]")
 
-message("\t MXRE_CXX_FLAGS: ${MXRE_CXX_FLAGS}")
-message("\t MXRE_LINKER_FLAGS: ${MXRE_LINKER_FLAGS}")
-message("\t MXRE_LINKER_LIBS: ${MXRE_LINKER_LIBS}")
+message("\t FLEXR_CXX_FLAGS: ${FLEXR_CXX_FLAGS}")
+message("\t FLEXR_LINKER_FLAGS: ${FLEXR_LINKER_FLAGS}")
+message("\t FLEXR_LINKER_LIBS: ${FLEXR_LINKER_LIBS}")
 
 add_subdirectory(third-party)
-add_subdirectory(mxreinc)
+add_subdirectory(flexrinc)
 add_subdirectory(source)
 add_subdirectory(examples)
 
 # Install
-string(REPLACE ";" " " MXRE_CXX_FLAGS "${MXRE_CXX_FLAGS}")
-string(REPLACE ";" " " MXRE_LINKER_FLAGS "${MXRE_LINKER_FLAGS}")
-string(REPLACE ";" " " MXRE_LINKER_LIBS "${MXRE_LINKER_LIBS}")
+string(REPLACE ";" " " FLEXR_CXX_FLAGS "${FLEXR_CXX_FLAGS}")
+string(REPLACE ";" " " FLEXR_LINKER_FLAGS "${FLEXR_LINKER_FLAGS}")
+string(REPLACE ";" " " FLEXR_LINKER_LIBS "${FLEXR_LINKER_LIBS}")
 
-set(MXRE_HEADER mxre)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/${MXRE_HEADER} DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+set(FLEXR_HEADER flexr)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/${FLEXR_HEADER} DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
 
 if(NOT WIN32)
   if(NOT DEFINED ENV{PKG_CONFIG_PATH})
@@ -71,7 +71,7 @@ if(NOT WIN32)
     message("PKG_CONFIG_PATH is not found. Set it with ${PKG_CONFIG_PATH}")
   endif(NOT DEFINED ENV{PKG_CONFIG_PATH})
 
-  configure_file("mxre.pc.in" "mxre.pc" @ONLY)
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mxre.pc DESTINATION ${PKG_CONFIG_PATH}/)
+  configure_file("flexr.pc.in" "flexr.pc" @ONLY)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/flexr.pc DESTINATION ${PKG_CONFIG_PATH}/)
 endif(NOT WIN32)
 

@@ -1,15 +1,15 @@
-#include <mxre>
+#include <flexr>
 
 using namespace std;
-using namespace mxre::kernels;
+using namespace flexr::kernels;
 
 int main()
 {
-  string mxreHome = getenv("MXRE_HOME");
-  if(mxreHome.empty()) {
-    debug_print("Set MXRE_HOME as a environment variable"); return -1;
+  string flexrHome = getenv("FLEXR_HOME");
+  if(flexrHome.empty()) {
+    debug_print("Set FLEXR_HOME as a environment variable"); return -1;
   }
-  string configYaml = mxreHome + "/examples/tutorials/config.yaml";
+  string configYaml = flexrHome + "/examples/tutorials/config.yaml";
   debug_print("configurations from %s", configYaml.c_str());
 
   YAML::Node config = YAML::LoadFile(configYaml);
@@ -33,33 +33,30 @@ int main()
   raft::map sendingPipeline;
 
   BagCamera bagCam("bag_cam", bagFile, bagTopic, fps);
-  bagCam.setDebugMode();
   bagCam.setLogger("bag_cam_logger", "bag_cam.log");
   bagCam.setFramesToCache(400, 400);
   bagCam.activateOutPortAsLocal<BagCameraMsgType>("out_frame");
 
-  RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder, width, height, width*height*4, 60);
-  rtpFrameSender.setDebugMode();
+  RTPFrameSender rtpFrameSender("rtp_frame_sender", serverAddr, serverFramePort, clientEncoder,
+                                width, height, width*height*4, 60);
   rtpFrameSender.setLogger("rtp_frame_sender_logger", "rtp_frame_sender.log");
   rtpFrameSender.activateInPortAsLocal<FrameSenderMsgType>("in_frame");
 
   sendingPipeline += bagCam["out_frame"] >> rtpFrameSender["in_frame"];
 
-  std::thread sendThread(mxre::kernels::runPipeline, &sendingPipeline);
+  std::thread sendThread(flexr::kernels::runPipeline, &sendingPipeline);
 
   raft::map receivingPipeline;
-  RTPFrameReceiver rtpFrameReceiver(clientFramePort, clientDecoder, width, height);
-  rtpFrameReceiver.setDebugMode();
+  RTPFrameReceiver rtpFrameReceiver("rtp_frame_receiver", clientFramePort, clientDecoder, width, height);
   rtpFrameReceiver.setLogger("rtp_frame_receiver_logger", "rtp_frame_receiver.log");
   rtpFrameReceiver.activateOutPortAsLocal<FrameReceiverMsgType>("out_frame");
 
-  NonDisplay nonDisplay;
-  nonDisplay.setDebugMode();
+  NonDisplay nonDisplay("non_display");
   nonDisplay.setLogger("non_display_logger", "non_display.log");
   nonDisplay.activateInPortAsLocal<NonDisplayMsgType>("in_frame");
 
   receivingPipeline += rtpFrameReceiver["out_frame"] >> nonDisplay["in_frame"];
-  std::thread recvThread(mxre::kernels::runPipeline, &receivingPipeline);
+  std::thread recvThread(flexr::kernels::runPipeline, &receivingPipeline);
 
   recvThread.join();
   sendThread.join();

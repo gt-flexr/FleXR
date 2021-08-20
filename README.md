@@ -1,1 +1,2 @@
-# mxre
+# FleXR: Flexible Edge-assisted XR
+

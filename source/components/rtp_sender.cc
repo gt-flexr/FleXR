@@ -1,7 +1,7 @@
 #include <components/rtp_sender.h>
 #include <bits/stdc++.h>
 
-namespace mxre {
+namespace flexr {
   namespace components {
     RTPSender::~RTPSender() {
       rtpSession->destroy_stream(rtpFragmentingStream);
@@ -10,16 +10,16 @@ namespace mxre {
     }
 
 
-    RTPSender::RTPSender(std::string dest, int even_port)
+    RTPSender::RTPSender(std::string addr, int evenPort)
     {
-      rtpSession = rtpContext.create_session(dest);
-      rtpFragmentingStream = rtpSession->create_stream(-1, even_port, RTP_FORMAT_GENERIC, RCE_FRAGMENT_GENERIC);
-      rtpTinyStream = rtpSession->create_stream(-1, even_port, RTP_FORMAT_GENERIC, 0);
+      rtpSession = rtpContext.create_session(addr);
+      rtpFragmentingStream = rtpSession->create_stream(-1, evenPort, RTP_FORMAT_GENERIC, RCE_FRAGMENT_GENERIC);
+      rtpTinyStream = rtpSession->create_stream(-1, evenPort, RTP_FORMAT_GENERIC, 0);
     }
 
 
     bool RTPSender::send(uint8_t *inData, uint32_t inDataSize) {
-      if(inDataSize > MXRE_RTP_PAYLOAD_UNIT_SIZE) {
+      if(inDataSize > FLEXR_RTP_PAYLOAD_UNIT_SIZE) {
         if (rtpFragmentingStream->push_frame(inData, inDataSize, RTP_SLICE) != RTP_OK) {
           debug_print("RTP push_frame failed..");
           return false;
@@ -40,7 +40,7 @@ namespace mxre {
                                          char *tag, uint32_t seq, double ts)
     {
       types::RTPTrackingInfo trackingInfo;
-      trackingInfo.invoice = MXRE_RTP_TRACKING_INVOICE;
+      trackingInfo.invoice = FLEXR_RTP_TRACKING_INVOICE;
 
       strcpy(trackingInfo.tag, tag);
       trackingInfo.seq      = seq;
@@ -54,3 +54,4 @@ namespace mxre {
     }
   }
 }
+

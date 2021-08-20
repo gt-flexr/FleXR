@@ -6,8 +6,8 @@ macro(use_spdlog)
     message("\t SPDLOG_LDFLAGS: ${SPDLOG_LDFLAGS}")
 
     include_directories(${SPDLOG_INCLUDE_DIRS})
-    list(APPEND MXRE_CXX_FLAGS ${SPDLOG_CFLAGS_OTHER})
-    list(APPEND MXRE_LINKER_FLAGS ${SPDLOG_LDFLAGS})
+    list(APPEND FLEXR_CXX_FLAGS ${SPDLOG_CFLAGS_OTHER})
+    list(APPEND FLEXR_LINKER_FLAGS ${SPDLOG_LDFLAGS})
   endif(SPDLOG_FOUND)
 endmacro()
 

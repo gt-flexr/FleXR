@@ -7,18 +7,21 @@
 #include <types/types.h>
 
 
-namespace mxre
+namespace flexr
 {
   namespace kernels
   {
-    CudaORBDetector::CudaORBDetector(std::vector<mxre::cv_types::MarkerInfo> registeredMarkers) :
-      MXREKernel(), registeredMarkers(registeredMarkers)
+    CudaORBDetector::CudaORBDetector(std::string id, std::string markerImage): FleXRKernel(id)
     {
+      setName("CudaORBDetector");
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
       portManager.registerOutPortTag("out_detected_markers",
                                      utils::sendLocalBasicCopy<CudaORBDetectorOutMarkerType>,
                                      utils::sendRemoteMarkers,
                                      types::freePrimitiveMsg<CudaORBDetectorOutMarkerType>);
+
+      orbMarkerTracker.setMarkerFromImage(markerImage);
+      registeredMarkers = orbMarkerTracker.getRegisteredObjects();
 
       // Object Detection Parameters
       knnMatchRatio = 0.9f;
@@ -31,6 +34,7 @@ namespace mxre
       detector = cv::cuda::ORB::create();
       matcher = cv::cuda::DescriptorMatcher::createBFMatcher(cv::NORM_HAMMING);
     }
+
 
     bool CudaORBDetector::logic(CudaORBDetectorInFrameType *inFrame, CudaORBDetectorOutMarkerType *outDetectedMarkers)
     {
@@ -51,7 +55,7 @@ namespace mxre
       numKps = frameKps.size();
 
       // 3. multi-obj detection
-      std::vector<mxre::cv_types::MarkerInfo>::iterator markerInfo;
+      std::vector<flexr::cv_types::MarkerInfo>::iterator markerInfo;
       for(markerInfo = registeredMarkers.begin(); markerInfo!=registeredMarkers.end(); ++markerInfo){
         cv::cuda::GpuMat cuObjDesc;
         std::vector<std::vector<cv::DMatch>> matches;
@@ -79,8 +83,8 @@ namespace mxre
 
         // 4. Find the homography with matched kps (at least 4kps for planar obj)
         if(objMatch.size() > 4) {
-          homography = findHomography(mxre::cv_utils::convertKpsToPts(objMatch),
-                                      mxre::cv_utils::convertKpsToPts(frameMatch),
+          homography = findHomography(flexr::cv_utils::convertKpsToPts(objMatch),
+                                      flexr::cv_utils::convertKpsToPts(frameMatch),
                                       cv::RANSAC, ransacThresh, inlierMask);
         }
 
@@ -112,6 +116,7 @@ namespace mxre
       return true;
     }
 
+
     raft::kstatus CudaORBDetector::run() {
       CudaORBDetectorInFrameType *inFrame = portManager.getInput<CudaORBDetectorInFrameType>("in_frame");
       CudaORBDetectorOutMarkerType *outDetectedMarkers = \
@@ -126,7 +131,7 @@ namespace mxre
       portManager.freeInput("in_frame", inFrame);
 
 
-      if(debugMode) debug_print("st(%lf) et(%lf) exe(%lf)", st, et, et-st);
+      debug_print("st(%lf) et(%lf) exe(%lf)", st, et, et-st);
       if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}\t {}", st, et, et-st, numKps);
       numKps = 0;
 
@@ -134,7 +139,7 @@ namespace mxre
     }
 
   } // namespace ctx_understanding
-} // namespace mxre
+} // namespace flexr
 
 #endif
 

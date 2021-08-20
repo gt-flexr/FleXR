@@ -3,19 +3,22 @@
 #include <utils/msg_sending_functions.h>
 #include <unistd.h>
 
-namespace mxre
+namespace flexr
 {
   namespace kernels
   {
     /* Constructor */
-    ORBDetector::ORBDetector(std::vector<mxre::cv_types::MarkerInfo> registeredMarkers):
-      MXREKernel(), registeredMarkers(registeredMarkers)
+    ORBDetector::ORBDetector(std::string id, std::string markerImage): FleXRKernel(id)
     {
+      setName("ORBDetector");
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
       portManager.registerOutPortTag("out_detected_markers",
                                      utils::sendLocalBasicCopy<ORBDetectorOutMarkerType>,
                                      utils::sendRemoteMarkers,
                                      types::freePrimitiveMsg<ORBDetectorOutMarkerType>);
+
+      orbMarkerTracker.setMarkerFromImage(markerImage);
+      registeredMarkers = orbMarkerTracker.getRegisteredObjects();
 
       // Object Detection Parameters
       knnMatchRatio = 0.9f;
@@ -26,6 +29,7 @@ namespace mxre
       detector = cv::ORB::create();
       matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
     }
+
 
     bool ORBDetector::logic(ORBDetectorInFrameType *inFrame, ORBDetectorOutMarkerType *outDetectedMarkers)
     {
@@ -43,7 +47,7 @@ namespace mxre
       detector->detectAndCompute(grayFrame, cv::noArray(), frameKps, frameDesc);
 
       // multiple object detection
-      std::vector<mxre::cv_types::MarkerInfo>::iterator markerInfo;
+      std::vector<flexr::cv_types::MarkerInfo>::iterator markerInfo;
       for (markerInfo = registeredMarkers.begin(); markerInfo != registeredMarkers.end(); ++markerInfo)
       {
         // 2. use the matcher to find correspondence
@@ -70,8 +74,8 @@ namespace mxre
         // 3. get the homography from the matches
         if (objMatch.size() >= 4)
         {
-          homography = findHomography(mxre::cv_utils::convertKpsToPts(objMatch),
-                                      mxre::cv_utils::convertKpsToPts(frameMatch),
+          homography = findHomography(flexr::cv_utils::convertKpsToPts(objMatch),
+                                      flexr::cv_utils::convertKpsToPts(frameMatch),
                                       cv::RANSAC, ransacThresh, inlierMask);
         }
 
@@ -98,13 +102,14 @@ namespace mxre
             detectedMarker.defaultLocationIn3D = markerInfo->defaultLocationIn3D;
             perspectiveTransform(markerInfo->defaultLocationIn2D, detectedMarker.locationIn2D, homography);
             outDetectedMarkers->data.push_back(detectedMarker);
-            //mxre::cv_utils::drawBoundingBox(frame.cvMat, objIter->location2D);
+            //flexr::cv_utils::drawBoundingBox(frame.cvMat, objIter->location2D);
           }
         }
       }
 
       return true;
     }
+
 
     raft::kstatus ORBDetector::run()
     {
@@ -121,11 +126,11 @@ namespace mxre
       portManager.freeInput("in_frame", inFrame);
 
 
-      if(debugMode) debug_print("st(%lf) et(%lf) exe(%lf)", st, et, et-st);
+      debug_print("st(%lf) et(%lf) exe(%lf)", st, et, et-st);
       if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}", st, et, et-st);
       return raft::proceed;
     }
 
   } // namespace kernels
-} // namespace mxre
+} // namespace flexr
 

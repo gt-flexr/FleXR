@@ -3,18 +3,22 @@
 #include <utils/msg_sending_functions.h>
 #include <types/types.h>
 
-namespace mxre
+namespace flexr
 {
   namespace kernels
   {
-    Keyboard::Keyboard(int frequency): MXREKernel(), freqManager(frequency)
+
+    Keyboard::Keyboard(std::string id, int frequency): FleXRKernel(id)
     {
+      setName("Keyboard");
       seq = 0;
       portManager.registerOutPortTag("out_key",
                                      utils::sendLocalBasicCopy<KeyboardMsgType>,
                                      utils::sendRemotePrimitive<KeyboardMsgType>,
                                      types::freePrimitiveMsg<KeyboardMsgType>);
+      freqManager.setFrequency(frequency);
     }
+
 
     raft::kstatus Keyboard::run() {
       KeyboardMsgType *outKey = portManager.getOutputPlaceholder<KeyboardMsgType>("out_key");
@@ -22,9 +26,9 @@ namespace mxre
       strcpy(outKey->tag, "keystroke");
       outKey->seq  = seq++;
       outKey->ts   = getTsNow();
-      outKey->data = mxre::utils::getch();
+      outKey->data = flexr::utils::getch();
 
-      if(debugMode) debug_print("stroke(%lf): %c", getTsNow(), outKey->data);
+      debug_print("stroke(%lf): %c", getTsNow(), outKey->data);
       if(logger.isSet()) logger.getInstance()->info("{}th keystroke {} occurs\t {}", seq-1, outKey->data, outKey->ts);
 
       portManager.sendOutput<KeyboardMsgType>("out_key", outKey);
@@ -34,5 +38,5 @@ namespace mxre
     }
 
   } // namespace kernels
-} // namespace mxre
+} // namespace flexr
 

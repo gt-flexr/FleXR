@@ -1,16 +1,18 @@
 #include <kernels/sink/rtp_frame_sender.h>
 #include <unistd.h>
 
-namespace mxre
+namespace flexr
 {
   namespace kernels
   {
     /* Constructor() */
-    RTPFrameSender::RTPFrameSender(std::string destAddr, int destPortBase, std::string encoderName,
+    RTPFrameSender::RTPFrameSender(std::string id, std::string addr, int port, std::string encoderName,
                                    int width, int height, int bitrate, int fps):
-      rtpSender(destAddr, destPortBase),
+      FleXRKernel(id),
+      rtpSender(addr, port),
       encoderName(encoderName), width(width), height(height)
     {
+      setName("RTPFrameSender");
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
 
       // Encoder
@@ -103,7 +105,7 @@ namespace mxre
           if(rtpSender.sendWithTrackingInfo(encodingPacket.data, encodingPacket.size,
                                             inFrame->tag, inFrame->seq, inFrame->ts)) {
             double et = getTsNow();
-            if(debugMode) debug_print("encodeTime(%lf), sentSize(%d)", et-st, sentSize);
+            debug_print("encodeTime(%lf), sentSize(%d)", et-st, sentSize);
             if(logger.isSet()) logger.getInstance()->info("encodingTime/rtpSendingTime/KernelExeTime/Sent Size\t{}\t {}\t {}\t {}",
                 enct-st, et-enct, et-st, sentSize);
 
@@ -118,5 +120,5 @@ namespace mxre
     }
 
   } // namespace kernels
-} // namespace mxre
+} // namespace flexr
 

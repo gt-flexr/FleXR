@@ -2,12 +2,13 @@
 #include <string>
 #include <unistd.h>
 
-namespace mxre
+namespace flexr
 {
   namespace kernels
   {
-    NonDisplay::NonDisplay()
+    NonDisplay::NonDisplay(std::string id): FleXRKernel(id)
     {
+      setName("NonDisplay");
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
     }
 
@@ -18,13 +19,14 @@ namespace mxre
 
       double et = getTsNow();
 
-      if(debugMode) debug_print("e2e info: %s(%d:%lf)", inFrame->tag, inFrame->seq, et-inFrame->ts);
+      debug_print("e2e info: %s(%d:%lf)", inFrame->tag, inFrame->seq, et-inFrame->ts);
       if(logger.isSet()) logger.getInstance()->info("{}frame\t E2E latency\t{}", inFrame->seq, et - inFrame->ts);
 
       inFrame->data.release();
       portManager.freeInput("in_frame", inFrame);
       return raft::proceed;
+
     }
   } // namespace kernels
-} // namespace mxre
+} // namespace flexr
 

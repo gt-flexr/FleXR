@@ -6,8 +6,8 @@ macro(use_uvgrtp)
     message("\t UVGRTP_LDFLAGS: ${UVGRTP_LDFLAGS}")
 
     include_directories(${UVGRTP_INCLUDE_DIRS})
-    list(APPEND MXRE_CXX_FLAGS ${UVGRTP_CFLAGS_OTHER})
-    list(APPEND MXRE_LINKER_FLAGS ${UVGRTP_LDFLAGS})
+    list(APPEND FLEXR_CXX_FLAGS ${UVGRTP_CFLAGS_OTHER})
+    list(APPEND FLEXR_LINKER_FLAGS ${UVGRTP_LDFLAGS})
   endif(UVGRTP_FOUND)
 endmacro()
 

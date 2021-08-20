@@ -1,0 +1,114 @@
+#ifndef __FLEXR__
+#define __FLEXR__
+
+#ifndef STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#endif
+
+/* FLEXR Dependencies */
+#include <bits/stdc++.h>
+#include <raft>
+#include <yaml-cpp/yaml.h>
+
+
+/* Utils */
+#include "./flexrinc/utils/getch.h"
+#include "./flexrinc/utils/path_finder.h"
+#include "./flexrinc/utils/cv_utils.h"
+#include "./flexrinc/utils/gl_utils.h"
+#include "./flexrinc/utils/egl_utils.h"
+
+
+/* defs */
+#include "./flexrinc/defs.h"
+
+
+/* Types */
+#include "./flexrinc/types/frame.h"
+#include "./flexrinc/types/clock_types.h"
+
+#include "./flexrinc/types/cv/types.h"
+
+#include "./flexrinc/types/gl/types.h"
+#include "./flexrinc/types/gl/mesh.h"
+#include "./flexrinc/types/gl/model.h"
+#include "./flexrinc/types/gl/camera.h"
+#include "./flexrinc/types/gl/shader.h"
+
+#include "./flexrinc/types/ar/virtual_world.h"
+#include "./flexrinc/types/ar/virtual_object.h"
+#include "./flexrinc/types/ar/virtual_world_manager.h"
+
+
+/* Components */
+#include "./flexrinc/components/rosbag_reader.h"
+#include "./flexrinc/components/rosbag_frame_reader.h"
+
+#include "./flexrinc/components/rtp_sender.h"
+#include "./flexrinc/components/rtp_receiver.h"
+
+#include "./flexrinc/components/cv_frame_reader.h"
+#include "./flexrinc/components/logger.h"
+#include "./flexrinc/components/frequency_manager.h"
+
+#include "./flexrinc/components/zmq_port.h"
+#include "./flexrinc/components/flexr_port.h"
+#include "./flexrinc/components/flexr_port_manager.h"
+
+#include "./flexrinc/components/orb_marker_tracker.h"
+
+
+/* Kernels
+ *   - 3 Types: Source, Intermediate, Sink
+ *   - Source      : output ports only
+ *   - Intermediate: input and output ports
+ *   - Sink        : input ports only
+ */
+#include "./flexrinc/kernels/kernel.h"
+
+#include "./flexrinc/kernels/source/bag_camera.h"
+#include "./flexrinc/kernels/source/cv_camera.h"
+#include "./flexrinc/kernels/source/keyboard.h"
+#include "./flexrinc/kernels/source/rtp_frame_receiver.h"
+
+#include "./flexrinc/kernels/sink/cv_display.h"
+#include "./flexrinc/kernels/sink/non_display.h"
+#include "./flexrinc/kernels/sink/rtp_frame_sender.h"
+
+#include "./flexrinc/kernels/intermediate/cuda_orb_detector.h"
+#include "./flexrinc/kernels/intermediate/marker_ctx_extractor.h"
+#include "./flexrinc/kernels/intermediate/object_renderer.h"
+#include "./flexrinc/kernels/intermediate/orb_detector.h"
+#include "./flexrinc/kernels/intermediate/frame_converter.h"
+#include "./flexrinc/kernels/intermediate/aruco_detector.h"
+#include "./flexrinc/kernels/intermediate/aruco_cam_locator.h"
+
+
+/*
+ * Yaml Kernels
+ */
+#include "./flexrinc/yaml/yaml_parser.h"
+#include "./flexrinc/yaml/yaml_flexr_kernel.h"
+#include "./flexrinc/yaml/yaml_ports.h"
+#include "./flexrinc/yaml/yaml_local_connection.h"
+
+#include "./flexrinc/yaml/kernels/source/yaml_bag_camera.h"
+#include "./flexrinc/yaml/kernels/source/yaml_cv_camera.h"
+#include "./flexrinc/yaml/kernels/source/yaml_keyboard.h"
+#include "./flexrinc/yaml/kernels/source/yaml_rtp_frame_receiver.h"
+
+#include "./flexrinc/yaml/kernels/sink/yaml_cv_display.h"
+#include "./flexrinc/yaml/kernels/sink/yaml_non_display.h"
+#include "./flexrinc/yaml/kernels/sink/yaml_rtp_frame_sender.h"
+
+#include "./flexrinc/yaml/kernels/intermediate/yaml_orb_detector.h"
+#include "./flexrinc/yaml/kernels/intermediate/yaml_cuda_orb_detector.h"
+#include "./flexrinc/yaml/kernels/intermediate/yaml_marker_ctx_extractor.h"
+#include "./flexrinc/yaml/kernels/intermediate/yaml_object_renderer.h"
+#include "./flexrinc/yaml/kernels/intermediate/yaml_frame_converter.h"
+#include "./flexrinc/yaml/kernels/intermediate/yaml_aruco_detector.h"
+#include "./flexrinc/yaml/kernels/intermediate/yaml_aruco_cam_locator.h"
+
+
+#endif
+

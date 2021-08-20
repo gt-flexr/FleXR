@@ -4,16 +4,17 @@
 #include <opencv2/imgproc.hpp>
 #include <unistd.h>
 
-namespace mxre
+namespace flexr
 {
   namespace kernels
   {
     /* Constructor() */
-    RTPFrameReceiver::RTPFrameReceiver(int port, std::string decoderName, int width, int height):
+    RTPFrameReceiver::RTPFrameReceiver(std::string id, int port, std::string decoderName, int width, int height):
       rtpReceiver("127.0.0.1", port),
       width(width), height(height), decoderName(decoderName),
-      MXREKernel()
+      FleXRKernel(id)
     {
+      setName("RTPFrameReceiver");
       portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, 0, 0);
 
       // Decoder
@@ -86,7 +87,7 @@ namespace mxre
               cv::cvtColor(yuvFrame, outFrame->data.useAsCVMat(), cv::COLOR_YUV2BGR_NV12);
 
             double et = getTsNow();
-            if(debugMode) debug_print("decodeTime(%lf), recvInfo %s:%d size(%d)", et-st, outFrame->tag, outFrame->seq, recvDataSize);
+            debug_print("decodeTime(%lf), recvInfo %s:%d size(%d)", et-st, outFrame->tag, outFrame->seq, recvDataSize);
             if(logger.isSet()) logger.getInstance()->info("st/et/decodingTime/recvSize\t{}\t {}\t {}\t {}",
                                                           st, et, et-st, recvDataSize);
 
@@ -100,5 +101,5 @@ namespace mxre
       return raft::proceed;
     }
   } // namespace kernels
-} // namespace mxre
+} // namespace flexr
 

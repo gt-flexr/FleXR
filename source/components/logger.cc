@@ -2,7 +2,7 @@
 #include <bits/stdc++.h>
 #include <unistd.h>
 
-namespace mxre {
+namespace flexr {
   namespace components {
     Logger::Logger()
     {
@@ -18,7 +18,7 @@ namespace mxre {
 
     void Logger::set(std::string loggerID, std::string logFileName)
     {
-      instance = spdlog::basic_logger_st(loggerID, "mxre_logs/" + std::to_string(pid) + "/" + logFileName);
+      instance = spdlog::basic_logger_st(loggerID, "flexr_logs/" + std::to_string(pid) + "/" + logFileName);
     }
 
     bool Logger::isSet()

@@ -2,15 +2,17 @@
 #include <utils/msg_sending_functions.h>
 #include <unistd.h>
 
-namespace mxre
+namespace flexr
 {
   namespace kernels
   {
-    CVCamera::CVCamera(std::string id, int dev_idx, int width, int height, int targetFps):
-      MXREKernel(id), frameReader(dev_idx, width, height), freqManager(targetFps)
+    CVCamera::CVCamera(std::string id, int devIdx, int width, int height, int targetFps):
+      FleXRKernel(id), frameReader(devIdx, width, height)
     {
+      setName("CVCamera");
       seq = 0;
       portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, 0, 0);
+      freqManager.setFrequency(targetFps);
     }
 
     CVCamera::~CVCamera()
@@ -26,7 +28,7 @@ namespace mxre
       strcpy(outFrame->tag, "cvcam_frame");
       outFrame->seq = seq++;
       outFrame->ts  = getTsNow();
-      if(debugMode) debug_print("FrameInfo: %s:%d %lf", outFrame->tag, outFrame->seq, outFrame->ts);
+      debug_print("FrameInfo: %s:%d %lf", outFrame->tag, outFrame->seq, outFrame->ts);
 
       portManager.sendOutput<CVCameraMsgType>("out_frame", outFrame);
 
@@ -39,5 +41,5 @@ namespace mxre
     }
 
   } // namespace device
-} // namespace mxre
+} // namespace flexr
 

@@ -1,14 +1,14 @@
-#include <mxre>
+#include <flexr>
 
 using namespace std;
-using namespace mxre::kernels;
+using namespace flexr::kernels;
 
 int main(int argc, char const *argv[])
 {
-  string mxre_home = getenv("MXRE_HOME");
-  string config_yaml = mxre_home + "/examples/marker_ar/config.yaml";
-  if(mxre_home.empty()) {
-    cout << "Set MXRE_HOME as a environment variable" << endl;
+  string flexr_home = getenv("FLEXR_HOME");
+  string config_yaml = flexr_home + "/examples/marker_ar/config.yaml";
+  if(flexr_home.empty()) {
+    cout << "Set FLEXR_HOME as a environment variable" << endl;
     return 0;
   }
   else cout << config_yaml << endl;
@@ -39,62 +39,51 @@ int main(int argc, char const *argv[])
     return -1;
   }
 
-  mxre::cv_types::ORBMarkerTracker orbMarkerTracker;
-  mxre::cv_utils::setMarkerFromImages(markerPath + "/", 0, 1, orbMarkerTracker);
-  std::vector<mxre::cv_types::MarkerInfo> registeredMarkers = orbMarkerTracker.getRegisteredObjects();
-
-
-  // Create mxre components
+  // Create flexr components
   raft::map pipeline;
 
-  mxre::kernels::BagCamera bagCam("bag_frame", bagFile, bagTopic, bagFPS);
-  bagCam.setDebugMode();
+  flexr::kernels::BagCamera bagCam("bag_frame", bagFile, bagTopic, bagFPS);
   bagCam.setLogger("bag_cam_logger", "bag_cam.log");
   bagCam.setFramesToCache(400, 400);
   bagCam.activateOutPortAsLocal<BagCameraMsgType>("out_frame");
   bagCam.duplicateOutPortAsLocal<BagCameraMsgType>("out_frame", "out_frame2");
 
-  mxre::kernels::ORBDetector orbDetector(orbMarkerTracker.getRegisteredObjects());
-  orbDetector.setDebugMode();
+  flexr::kernels::ORBDetector orbDetector("orb_detector", markerPath + "/0.png");
   orbDetector.setLogger("orb_detector_logger", "orb_detector.log");
   orbDetector.activateInPortAsLocal<ORBDetectorInFrameType>("in_frame");
   orbDetector.activateOutPortAsLocal<ORBDetectorOutMarkerType>("out_detected_markers");
 
-  mxre::kernels::MarkerCtxExtractor markerCtxExtractor(width, height);
+  flexr::kernels::MarkerCtxExtractor markerCtxExtractor("marker_ctx_extractor", width, height);
   markerCtxExtractor.setLogger("marker_ctx_extractor_logger", "marker_ctx_extractor.log");
   markerCtxExtractor.activateInPortAsLocal<CtxExtractorInMarkerType>("in_detected_markers");
   markerCtxExtractor.activateOutPortAsRemote<CtxExtractorOutCtxType>("out_marker_contexts",
                                                                      serverAddr, serverMessagePort2);
 
-  mxre::kernels::Keyboard keyboard;
-  keyboard.setDebugMode();
+  flexr::kernels::Keyboard keyboard("keyboard");
   keyboard.activateOutPortAsRemote<KeyboardMsgType>("out_key", serverAddr, serverMessagePort);
 
-  mxre::kernels::RTPFrameSender rtpFrameSender(serverAddr, serverFramePort, clientEncoder,
-                                               width, height, width*height*4, bagFPS);
-  rtpFrameSender.setDebugMode();
+  flexr::kernels::RTPFrameSender rtpFrameSender("rtp_frame_sender", serverAddr, serverFramePort, clientEncoder,
+                                                width, height, width*height*4, bagFPS);
   rtpFrameSender.setLogger("rtp_frame_sender_logger", "rtp_frame_sender.log");
   rtpFrameSender.activateInPortAsLocal<FrameSenderMsgType>("in_frame");
 
   raft::map recvPipe;
-  mxre::kernels::RTPFrameReceiver rtpFrameReceiver(clientFramePort, clientDecoder, width, height);
-  rtpFrameReceiver.setDebugMode();
+  flexr::kernels::RTPFrameReceiver rtpFrameReceiver("rtp_frame_receiver", clientFramePort, clientDecoder, width, height);
   rtpFrameReceiver.setLogger("rtp_frame_receiver_logger", "rtp_frame_receiver.log");
   rtpFrameReceiver.activateOutPortAsLocal<FrameReceiverMsgType>("out_frame");
 
-  mxre::kernels::NonDisplay nonDisplay;
-  nonDisplay.setDebugMode();
+  flexr::kernels::NonDisplay nonDisplay("non_display");
   nonDisplay.setLogger("non_display_logger", "non_display.log");
   nonDisplay.activateInPortAsLocal<NonDisplayMsgType>("in_frame");
 
   pipeline += bagCam["out_frame2"] >> rtpFrameSender["in_frame"];
   pipeline.link(&bagCam, "out_frame", &orbDetector, "in_frame", 1);
   pipeline += orbDetector["out_detected_markers"] >> markerCtxExtractor["in_detected_markers"];
-  std::thread sendThread(mxre::kernels::runPipeline, &pipeline);
-  std::thread keyThread(mxre::kernels::runSingleKernel, &keyboard);
+  std::thread sendThread(flexr::kernels::runPipeline, &pipeline);
+  std::thread keyThread(flexr::kernels::runSingleKernel, &keyboard);
 
   recvPipe += rtpFrameReceiver["out_frame"] >> nonDisplay["in_frame"];
-  std::thread recvThread(mxre::kernels::runPipeline, &recvPipe);
+  std::thread recvThread(flexr::kernels::runPipeline, &recvPipe);
 
   sendThread.join();
   keyThread.join();

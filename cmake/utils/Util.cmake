@@ -1,4 +1,4 @@
-macro(mxre_option var desc val)
+macro(flexr_option var desc val)
   set(${var} ${val})
 endmacro()
 

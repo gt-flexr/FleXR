@@ -1,7 +1,7 @@
 #include <components/rtp_receiver.h>
 #include <bits/stdc++.h>
 
-namespace mxre {
+namespace flexr {
   namespace components
   {
     RTPReceiver::~RTPReceiver()
@@ -10,10 +10,10 @@ namespace mxre {
       rtpContext.destroy_session(rtpSession);
     }
 
-    RTPReceiver::RTPReceiver(std::string ip, int even_port)
+    RTPReceiver::RTPReceiver(std::string addr, int even_port)
     {
-      debug_print("Receive RTP stream from %s:%d", ip.c_str(), even_port);
-      rtpSession = rtpContext.create_session(ip);
+      debug_print("Receive RTP stream from %s:%d", addr.c_str(), even_port);
+      rtpSession = rtpContext.create_session(addr);
       rtpStream = rtpSession->create_stream(even_port, -1, RTP_FORMAT_GENERIC, RCE_FRAGMENT_GENERIC);
     }
 
@@ -44,7 +44,7 @@ namespace mxre {
       //     - invoice of tracking info
       //   - if tracking info is fine, receive data
       if(receiveStatic(sizeof(types::RTPTrackingInfo), &trackingInfo)) {
-        if(trackingInfo.invoice == MXRE_RTP_TRACKING_INVOICE) {
+        if(trackingInfo.invoice == FLEXR_RTP_TRACKING_INVOICE) {
           strcpy(outTag, trackingInfo.tag);
           outSeq = trackingInfo.seq;
           outTs = trackingInfo.ts;
@@ -91,7 +91,7 @@ namespace mxre {
       //     - invoice of tracking info
       //   - if tracking info is fine, receive data
       if(receiveStatic(sizeof(types::RTPTrackingInfo), &trackingInfo)) {
-        if(trackingInfo.invoice == MXRE_RTP_TRACKING_INVOICE) {
+        if(trackingInfo.invoice == FLEXR_RTP_TRACKING_INVOICE) {
           strcpy(outTag, trackingInfo.tag);
           outSeq = trackingInfo.seq;
           outTs = trackingInfo.ts;

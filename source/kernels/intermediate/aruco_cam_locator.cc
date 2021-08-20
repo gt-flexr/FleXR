@@ -1,18 +1,21 @@
 #include <kernels/intermediate/aruco_cam_locator.h>
 #include <utils/msg_sending_functions.h>
 
-namespace mxre
+namespace flexr
 {
   namespace kernels
   {
+
     /* Constructor */
-    ArUcoCamLocator::ArUcoCamLocator(cv::aruco::PREDEFINED_DICTIONARY_NAME dictName, int width, int height): MXREKernel()
+    ArUcoCamLocator::ArUcoCamLocator(std::string id, cv::aruco::PREDEFINED_DICTIONARY_NAME dictName,
+                                     int width, int height): FleXRKernel(id)
     {
+      setName("ArUcoCamLocator");
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
       portManager.registerOutPortTag("out_cam_pose",
-                                     utils::sendLocalBasicCopy<OutCamPose>,
-                                     utils::sendRemotePrimitive<OutCamPose>,
-                                     types::freePrimitiveMsg<OutCamPose>);
+                                     utils::sendLocalBasicCopy<ArUcoCamLocatorOutPoseType>,
+                                     utils::sendRemotePrimitive<ArUcoCamLocatorOutPoseType>,
+                                     types::freePrimitiveMsg<ArUcoCamLocatorOutPoseType>);
       markerDict = cv::aruco::getPredefinedDictionary(dictName);
 
       camIntrinsic  = cv::Mat(3, 3, CV_64FC1);
@@ -31,8 +34,9 @@ namespace mxre
 
     raft::kstatus ArUcoCamLocator::run()
     {
-      Message<Frame> *inFrame = portManager.getInput<Message<Frame>>("in_frame");
-      OutCamPose *outCamPose = portManager.getOutputPlaceholder<OutCamPose>("out_cam_pose");
+      ArUcoCamLocatorInFrameType *inFrame = portManager.getInput<ArUcoCamLocatorInFrameType>("in_frame");
+      ArUcoCamLocatorOutPoseType *outCamPose = \
+                                          portManager.getOutputPlaceholder<ArUcoCamLocatorOutPoseType>("out_cam_pose");
 
       std::vector<int> ids;
       std::vector<std::vector<cv::Point2f>> corners;
@@ -72,10 +76,11 @@ namespace mxre
       inFrame->data.release();
       portManager.freeInput("in_frame", inFrame);
 
-      if(debugMode) debug_print("st(%lf) et(%lf) exe(%lf)", st, et, et-st);
+      debug_print("st(%lf) et(%lf) exe(%lf)", st, et, et-st);
       if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}", st, et, et-st);
       return raft::proceed;
     }
+
   } // namespace kernels
-} // namespace mxre
+} // namespace flexr
 

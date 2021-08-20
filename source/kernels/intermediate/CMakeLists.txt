@@ -1,15 +1,15 @@
-file(GLOB_RECURSE MXRE_INTERMEDIATE_KERNEL_SRCS *.cc)
+file(GLOB_RECURSE FLEXR_INTERMEDIATE_KERNEL_SRCS *.cc)
 
-add_library(mxre_intermediate_kernel ${MXRE_INTERMEDIATE_KERNEL_SRCS})
-target_include_directories(mxre_intermediate_kernel PUBLIC
+add_library(flexr_intermediate_kernel ${FLEXR_INTERMEDIATE_KERNEL_SRCS})
+target_include_directories(flexr_intermediate_kernel PUBLIC
                            "${PROJECT_SOURCE_DIR}"
-                           "${PROJECT_SOURCE_DIR}/mxreinc")
+                           "${PROJECT_SOURCE_DIR}/flexrinc")
 
-target_compile_options(mxre_intermediate_kernel PUBLIC ${MXRE_CXX_FLAGS})
-target_link_libraries(mxre_intermediate_kernel ${MXRE_LINKER_FLAGS})
-target_link_libraries(mxre_intermediate_kernel ${MXRE_LINKER_LIBS})
-target_link_libraries(mxre_intermediate_kernel mxre_type)
-target_link_libraries(mxre_intermediate_kernel mxre_component)
+target_compile_options(flexr_intermediate_kernel PUBLIC ${FLEXR_CXX_FLAGS})
+target_link_libraries(flexr_intermediate_kernel ${FLEXR_LINKER_FLAGS})
+target_link_libraries(flexr_intermediate_kernel ${FLEXR_LINKER_LIBS})
+target_link_libraries(flexr_intermediate_kernel flexr_type)
+target_link_libraries(flexr_intermediate_kernel flexr_component)
 
-install(TARGETS mxre_intermediate_kernel ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+install(TARGETS flexr_intermediate_kernel ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 

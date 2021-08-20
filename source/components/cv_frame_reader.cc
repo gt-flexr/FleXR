@@ -1,7 +1,7 @@
 #include <components/cv_frame_reader.h>
 #include <bits/stdc++.h>
 
-namespace mxre {
+namespace flexr {
   namespace components {
     CVFrameReader::CVFrameReader (int devIdx, int width, int height):
       intrinsic (3, 3, CV_64FC1),
@@ -29,11 +29,13 @@ namespace mxre {
       this->intrinsic.at<double>(2, 2) = 1;
     }
 
+
     CVFrameReader::~CVFrameReader () { if (instance.isOpened()) instance.release(); }
 
-    mxre::types::Frame CVFrameReader::readFrame ()
+
+    flexr::types::Frame CVFrameReader::readFrame ()
     {
-      mxre::types::Frame temp(height, width, CV_8UC3);
+      flexr::types::Frame temp(height, width, CV_8UC3);
 
       while (1) {
         instance.read(temp.useAsCVMat());

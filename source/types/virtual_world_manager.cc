@@ -1,6 +1,6 @@
 #include <types/ar/virtual_world_manager.h>
 
-namespace mxre
+namespace flexr
 {
   namespace ar_types
   {
@@ -12,13 +12,13 @@ namespace mxre
 
     void VirtualWorldManager::initShader() {
       stbi_set_flip_vertically_on_load(true);
-      shader.init(mxre::utils::PathFinder::find("build/examples/model_loading.vs").c_str(),
-          mxre::utils::PathFinder::find("build/examples/model_loading.fs").c_str());
+      shader.init(flexr::utils::PathFinder::find("build/examples/model_loading.vs").c_str(),
+          flexr::utils::PathFinder::find("build/examples/model_loading.fs").c_str());
     }
 
 
     void VirtualWorldManager::addWorld(int index) {
-      mxre::ar_types::VirtualWorld newWorld(index);
+      flexr::ar_types::VirtualWorld newWorld(index);
       printf("%dth world: register models", index);
       int modelIndex = index % 5;
       switch(modelIndex) {
@@ -45,7 +45,7 @@ namespace mxre
 
     void VirtualWorldManager::addObjectToWorld(int worldIndex) {
       int objectIndex = worlds[worldIndex].objects.size();
-      mxre::ar_types::VirtualObject newObject(objectIndex);
+      flexr::ar_types::VirtualObject newObject(objectIndex);
       worlds[worldIndex].addObject(newObject);
     }
 
@@ -91,11 +91,11 @@ namespace mxre
     }
 
 
-    void VirtualWorldManager::startWorlds(char key, std::vector<mxre::gl_types::ObjectContext> objCtxs) {
+    void VirtualWorldManager::startWorlds(char key, std::vector<flexr::gl_types::ObjectContext> objCtxs) {
       handleKeystroke(key);
 
       shader.use();
-      std::vector<mxre::gl_types::ObjectContext>::iterator objCtxIter;
+      std::vector<flexr::gl_types::ObjectContext>::iterator objCtxIter;
       for (objCtxIter = objCtxs.begin(); objCtxIter != objCtxs.end(); ++objCtxIter) {
         int detectedWorldIdx = objCtxIter->index;
         shader.setMat4("projection", worlds[detectedWorldIdx].projection);
@@ -113,5 +113,5 @@ namespace mxre
     }
 
   } // namespace ar_types
-} // namespace mxre
+} // namespace flexr
 

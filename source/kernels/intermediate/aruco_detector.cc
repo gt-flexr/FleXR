@@ -1,18 +1,21 @@
 #include <kernels/intermediate/aruco_detector.h>
 #include <utils/msg_sending_functions.h>
 
-namespace mxre
+namespace flexr
 {
   namespace kernels
   {
+
     /* Constructor */
-    ArUcoDetector::ArUcoDetector(cv::aruco::PREDEFINED_DICTIONARY_NAME dictName, int width, int height): MXREKernel()
+    ArUcoDetector::ArUcoDetector(std::string id, cv::aruco::PREDEFINED_DICTIONARY_NAME dictName,
+        int width, int height): FleXRKernel(id)
     {
+      setName("ArUcoDetector");
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
       portManager.registerOutPortTag("out_marker_poses",
-                                     utils::sendLocalBasicCopy<OutMarkerPoses>,
-                                     utils::sendRemotePrimitiveVecData<OutMarkerPoses>,
-                                     types::freePrimitiveMsg<OutMarkerPoses>);
+                                     utils::sendLocalBasicCopy<ArUcoDetectorOutPosesType>,
+                                     utils::sendRemotePrimitiveVecData<ArUcoDetectorOutPosesType>,
+                                     types::freePrimitiveMsg<ArUcoDetectorOutPosesType>);
       markerDict = cv::aruco::getPredefinedDictionary(dictName);
 
       camIntrinsic  = cv::Mat(3, 3, CV_64FC1);
@@ -31,8 +34,8 @@ namespace mxre
 
     raft::kstatus ArUcoDetector::run()
     {
-      Message<Frame> *inFrame = portManager.getInput<Message<Frame>>("in_frame");
-      OutMarkerPoses *outMarkerPoses = portManager.getOutputPlaceholder<OutMarkerPoses>("out_marker_poses");
+      ArUcoDetectorInFrameType *inFrame = portManager.getInput<ArUcoDetectorInFrameType>("in_frame");
+      ArUcoDetectorOutPosesType *outMarkerPoses = portManager.getOutputPlaceholder<ArUcoDetectorOutPosesType>("out_marker_poses");
 
       std::vector<int> ids;
       std::vector<std::vector<cv::Point2f>> corners;
@@ -82,10 +85,11 @@ namespace mxre
       inFrame->data.release();
       portManager.freeInput("in_frame", inFrame);
 
-      if(debugMode) debug_print("st(%lf) et(%lf) exe(%lf)", st, et, et-st);
+      debug_print("st(%lf) et(%lf) exe(%lf)", st, et, et-st);
       if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}", st, et, et-st);
       return raft::proceed;
     }
+
   } // namespace kernels
-} // namespace mxre
+} // namespace flexr
 

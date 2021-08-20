@@ -1,15 +1,15 @@
-#include <mxre>
+#include <flexr>
 
 using namespace std;
-using namespace mxre::kernels;
+using namespace flexr::kernels;
 
 int main()
 {
-  string mxreHome = getenv("MXRE_HOME");
-  if(mxreHome.empty()) {
-    debug_print("Set MXRE_HOME as a environment variable"); return -1;
+  string flexrHome = getenv("FLEXR_HOME");
+  if(flexrHome.empty()) {
+    debug_print("Set FLEXR_HOME as a environment variable"); return -1;
   }
-  string configYaml = mxreHome + "/examples/tutorials/config.yaml";
+  string configYaml = flexrHome + "/examples/tutorials/config.yaml";
   debug_print("configurations from %s", configYaml.c_str());
 
   YAML::Node config = YAML::LoadFile(configYaml);
@@ -23,14 +23,12 @@ int main()
 
   raft::map pipeline;
   BagCamera bagCam("bag_cam", bagFile, bagTopic, fps);
-  bagCam.setDebugMode();
   bagCam.setLogger("bag_cam_logger", "bag_cam.log");
   bagCam.setFramesToCache(400, 400);
   bagCam.activateOutPortAsLocal<BagCameraMsgType>("out_frame");
 
-  CVDisplay cvDisplay;
+  CVDisplay cvDisplay("cv_display");
   cvDisplay.activateInPortAsLocal<CVDisplayMsgType>("in_frame");
-  cvDisplay.setDebugMode();
   cvDisplay.setLogger("cv_display_logger", "cv_display.log");
 
   pipeline += bagCam["out_frame"] >> cvDisplay["in_frame"];

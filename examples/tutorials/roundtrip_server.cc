@@ -1,15 +1,15 @@
-#include <mxre>
+#include <flexr>
 
 using namespace std;
-using namespace mxre::kernels;
+using namespace flexr::kernels;
 
 int main()
 {
-  string mxreHome = getenv("MXRE_HOME");
-  if(mxreHome.empty()) {
-    debug_print("Set MXRE_HOME as a environment variable"); return -1;
+  string flexrHome = getenv("FLEXR_HOME");
+  if(flexrHome.empty()) {
+    debug_print("Set FLEXR_HOME as a environment variable"); return -1;
   }
-  string configYaml = mxreHome + "/examples/tutorials/config.yaml";
+  string configYaml = flexrHome + "/examples/tutorials/config.yaml";
   debug_print("configurations from %s", configYaml.c_str());
 
   YAML::Node config = YAML::LoadFile(configYaml);
@@ -28,14 +28,12 @@ int main()
 
   raft::map pipeline;
 
-  RTPFrameReceiver rtpFrameReceiver(serverFramePort, serverDecoder, width, height);
-  rtpFrameReceiver.setDebugMode();
+  RTPFrameReceiver rtpFrameReceiver("rtp_frame_receiver", serverFramePort, serverDecoder, width, height);
   rtpFrameReceiver.setLogger("rtp_frame_receiver_logger", "rtp_frame_receiver.log");
   rtpFrameReceiver.activateOutPortAsLocal<FrameReceiverMsgType>("out_frame");
 
-  RTPFrameSender rtpFrameSender(clientAddr, clientFramePort, serverEncoder, width, height,
-                                               width*height*4, fps);
-  rtpFrameSender.setDebugMode();
+  RTPFrameSender rtpFrameSender("rtp_frame_sender", clientAddr, clientFramePort, serverEncoder, width, height,
+                                width*height*4, fps);
   rtpFrameSender.setLogger("rtp_frame_sender_logger", "rtp_frame_sender.log");
   rtpFrameSender.activateInPortAsLocal<FrameSenderMsgType>("in_frame");
 

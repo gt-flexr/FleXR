@@ -3,11 +3,12 @@
 #include <utils/msg_sending_functions.h>
 #include <unistd.h>
 
-namespace mxre
+namespace flexr
 {
   namespace kernels
   {
-    MarkerCtxExtractor::MarkerCtxExtractor(int width, int height) {
+    MarkerCtxExtractor::MarkerCtxExtractor(std::string id, int width, int height): FleXRKernel(id) {
+      setName("MarkerCtxExtractor");
       portManager.registerInPortTag("in_detected_markers",
                                     components::PortDependency::BLOCKING,
                                     utils::recvDetectedMarkers);
@@ -36,21 +37,11 @@ namespace mxre
     }
 
 
-    MarkerCtxExtractor::MarkerCtxExtractor(int width, int height, cv::Mat intrinsic, cv::Mat distCoeffs) :
-      MXREKernel()
+    MarkerCtxExtractor::MarkerCtxExtractor(std::string id, int width, int height,
+        cv::Mat intrinsic, cv::Mat distCoeffs) : MarkerCtxExtractor(id, width, height)
     {
-      this->width = width;
-      this->height = height;
-      camIntrinsic = intrinsic.clone();
-      camDistCoeffs = distCoeffs.clone();
-
-      portManager.registerInPortTag("in_detected_markers",
-                                    components::PortDependency::BLOCKING,
-                                    utils::recvDetectedMarkers);
-      portManager.registerOutPortTag("out_marker_contexts",
-                                     utils::sendLocalBasicCopy<CtxExtractorOutCtxType>,
-                                     utils::sendRemotePrimitiveVec<CtxExtractorOutCtxType>,
-                                     types::freePrimitiveMsg<CtxExtractorOutCtxType>);
+      setIntrinsic(intrinsic);
+      setDistCoeffs(distCoeffs);
     }
 
 
@@ -61,7 +52,7 @@ namespace mxre
       outMarkerContexts->seq = inDetectedMarkers->seq;
       outMarkerContexts->ts  = inDetectedMarkers->ts;
 
-      std::vector<mxre::cv_types::DetectedMarker>::iterator detectedMarker;
+      std::vector<flexr::cv_types::DetectedMarker>::iterator detectedMarker;
       for (detectedMarker = inDetectedMarkers->data.begin();
            detectedMarker != inDetectedMarkers->data.end();
            ++detectedMarker)
@@ -71,7 +62,7 @@ namespace mxre
         cv::solvePnPRansac(detectedMarker->defaultLocationIn3D, detectedMarker->locationIn2D,
                            camIntrinsic, camDistCoeffs, rvec, tvec);
 
-        mxre::gl_types::ObjectContext markerContext;
+        flexr::gl_types::ObjectContext markerContext;
         markerContext.index = detectedMarker->index;
         float transX = (tvec.at<double>(0, 0) * 2) / width;
         float transY = (tvec.at<double>(0, 1) * 2) / height;
@@ -106,12 +97,12 @@ namespace mxre
 
       portManager.freeInput("in_detected_markers", inDetectedMarkers);
 
-      if(debugMode) debug_print("st(%lf) et(%lf) exe(%lf)", st, et, et-st);
+      debug_print("st(%lf) et(%lf) exe(%lf)", st, et, et-st);
       if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}", st, et, et-st);
 
       return raft::proceed;
     }
 
   } // namespace kernels
-} // namespace mxre
+} // namespace flexr
 
