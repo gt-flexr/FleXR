@@ -12,6 +12,7 @@
 
 
 /* Utils */
+#include "./flexrinc/utils/cxxopts.hpp"
 #include "./flexrinc/utils/getch.h"
 #include "./flexrinc/utils/path_finder.h"
 #include "./flexrinc/utils/cv_utils.h"
