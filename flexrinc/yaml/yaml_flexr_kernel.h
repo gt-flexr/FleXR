@@ -13,6 +13,16 @@ namespace flexr
 
     /**
      * @brief Yaml FleXR kernel
+     *
+     * YAML attribute | Details
+     * ---------------| ----------------------------
+     * kernel         | Kernel class
+     * id             | ID for a kernel instance
+     * frequency      | Target frequency of kernel
+     * logger         | Logger info [id, log_file.log]
+     * input          | @see flexr::yaml::YamlInPort
+     * output         | @see flexr::yaml::YamlOutPort
+     * others         | each kernel's yaml class specifics
      * @see flexr::kernels::FleXRKernel
      */
     class YamlFleXRKernel

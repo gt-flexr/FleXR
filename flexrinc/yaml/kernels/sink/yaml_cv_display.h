@@ -15,6 +15,11 @@ namespace flexr
 
     /**
      * @brief Yaml CVDisplay kernel
+     *
+     * YAML attribute | Details
+     * ---------------| ----------------------------
+     * No specifics   | NA
+     *
      * @see flexr::kernels::CVDisplay
      */
     class YamlCvDisplay: public YamlFleXRKernel

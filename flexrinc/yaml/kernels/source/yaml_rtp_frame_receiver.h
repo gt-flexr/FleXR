@@ -15,6 +15,13 @@ namespace flexr
 
     /**
      * @brief Yaml RTPFrameReceiver kernel
+     *
+     * YAML attribute | Details
+     * ---------------| ----------------------------
+     * decoder        | Decoder name
+     * width          | Frmae width to send
+     * height         | Frame height to send
+     *
      * @see flexr::kernels::RTPFrameReceiver
      */
     class YamlRtpFrameReceiver: public YamlFleXRKernel

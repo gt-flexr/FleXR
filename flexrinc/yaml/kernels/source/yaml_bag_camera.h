@@ -15,6 +15,14 @@ namespace flexr
 
     /**
      * @brief Yaml Bag camera kernel
+     *
+     * YAML attribute | Details
+     * ---------------| ----------------------------
+     * frames_to_cache| Number of frames to cache
+     * start_index    | Start frame index
+     * bag_path       | Bag file path to read
+     * bag_topic      | Bag file topic to subscribe
+     *
      * @see flexr::kernels::BagCamera
      */
     class YamlBagCamera: public YamlFleXRKernel

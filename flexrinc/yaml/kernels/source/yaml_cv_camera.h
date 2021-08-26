@@ -15,6 +15,13 @@ namespace flexr
 
     /**
      * @brief Yaml CVCamera kernel
+     *
+     * YAML attribute | Details
+     * ---------------| ----------------------------
+     * dev_index      | VideoCapture index
+     * width          | Frame width to read
+     * height         | Frame height to read
+     *
      * @see flexr::kernels::CVCamera
      */
     class YamlCvCamera: public YamlFleXRKernel
