@@ -22,9 +22,9 @@ namespace flexr
     {
       specificSet       = true;
       YAML::Node others = node["others"][0];
-      devIdx            = others["frames_to_cache"].as<int>();
-      width             = others["start_index"].as<int>();
-      height            = others["bag_path"].as<int>();
+      devIdx            = others["dev_index"].as<int>();
+      width             = others["width"].as<int>();
+      height            = others["height"].as<int>();
     }
 
 
