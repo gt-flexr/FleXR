@@ -1,0 +1,42 @@
+- kernel   : RTPFrameReceiver
+  id       : rtp_frame_receiver
+  frequency: 60
+  logger   : [server_rtp_frame_receiver, server_rtp_frame_receiver.log]
+  others   :
+    - decoder: h264_cuvid
+      width  : 1920
+      height : 1080
+  input    :
+    - port_name      : in_frame
+      connection_type: remote
+      binding_info   : 49991
+  output   :
+    - port_name      : out_frame
+      connection_type: local
+
+
+- kernel   : RTPFrameSender
+  id       : rtp_frame_sender
+  frequency: 60
+  logger   : [server_rtp_frame_sender, server_rtp_frame_sender.log]
+  others   :
+    - encoder : h264_nvenc
+      width   : 1920
+      height  : 1080
+      bitrate : 100000000
+  input    :
+    - port_name      : in_frame
+      connection_type: local
+  output   :
+    - port_name      : out_frame
+      connection_type: remote
+      remote_info    : [127.0.0.1, 49992]
+
+
+- local_connections:
+  - send_kernel   : rtp_frame_receiver
+    send_port_name: out_frame
+    recv_kernel   : rtp_frame_sender
+    recv_port_name: in_frame
+    queue_size    : 1
+

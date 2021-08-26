@@ -1,0 +1,29 @@
+- kernel   : CVCamera
+  id       : cv_camera
+  frequency: 60
+  logger   : [cv_camera, cv_camera.log]
+  others   :
+    - dev_index: 0
+      width: 1280
+      height: 720
+  output   :
+    - port_name: out_frame
+      connection_type: local
+
+
+- kernel   : CVDisplay
+  id       : cv_display
+  frequency: 60
+  logger   : [cv_display, cv_display.log]
+  input    :
+    - port_name: in_frame
+      connection_type: local
+
+
+- local_connections:
+  - send_kernel: cv_camera
+    send_port_name: out_frame
+    recv_kernel: cv_display
+    recv_port_name: in_frame
+    queue_size: 1
+

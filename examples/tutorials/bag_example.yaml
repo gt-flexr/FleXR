@@ -1,0 +1,30 @@
+- kernel   : BagCamera
+  id       : bag_camera
+  frequency: 60
+  logger   : [bag_camera, bag_camera.log]
+  others   :
+    - frames_to_cache: 400
+      start_index    : 400
+      bag_path       :
+      bag_topic      : /camera/image_raw
+  output   :
+    - port_name: out_frame
+      connection_type: local
+
+
+- kernel   : CVDisplay
+  id       : cv_display
+  frequency: 60
+  logger   : [cv_display, cv_display.log]
+  input    :
+    - port_name      : in_frame
+      connection_type: local
+
+
+- local_connections:
+  - send_kernel   : bag_camera
+    send_port_name: out_frame
+    recv_kernel   : cv_display
+    recv_port_name: in_frame
+    queue_size    : 1
+
