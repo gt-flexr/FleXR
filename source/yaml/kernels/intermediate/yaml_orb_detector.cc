@@ -22,7 +22,7 @@ namespace flexr
     {
       specificSet       = true;
       YAML::Node others = node["others"][0];
-      markerImage       = node["marker_image"].as<std::string>();
+      markerImage       = others["marker_image"].as<std::string>();
     }
 
 

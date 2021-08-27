@@ -14,9 +14,11 @@ namespace flexr
       FleXRKernel(id), width(width), height(height)
     {
       setName("ObjectRenderer");
-      portManager.registerInPortTag("in_frame", components::PortDependency::NONBLOCKING, 0);
+      //portManager.registerInPortTag("in_frame", components::PortDependency::NONBLOCKING, 0);
+      portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
       portManager.registerInPortTag("in_marker_contexts",
-                                    components::PortDependency::BLOCKING,
+                                    components::PortDependency::NONBLOCKING,
+                                    //components::PortDependency::BLOCKING,
                                     utils::recvRemotePrimitiveVec<ObjRendererInCtxType>);
       portManager.registerInPortTag("in_key",
                                     components::PortDependency::NONBLOCKING,
@@ -89,12 +91,23 @@ namespace flexr
       glEnd();
       flexr::gl_utils::endBackground();
 
-      worldManager.startWorlds(key, inMarkerContexts->data);
+      if(inMarkerContexts != nullptr)
+      {
+        if(inMarkerContexts->data.size() > 0) {
+          worldManager.startWorlds(key, inMarkerContexts->data);
+
+          outFrame->data = flexr::gl_utils::exportGLBufferToCV(width, height);
+          strcpy(outFrame->tag, inMarkerContexts->tag);
+          outFrame->ts = inMarkerContexts->ts;
+          outFrame->seq = inMarkerContexts->seq;
+          return true;
+        }
+      }
 
       outFrame->data = flexr::gl_utils::exportGLBufferToCV(width, height);
-      strcpy(outFrame->tag, inMarkerContexts->tag);
-      outFrame->ts = inMarkerContexts->ts;
-      outFrame->seq = inMarkerContexts->seq;
+      strcpy(outFrame->tag, inFrame->tag);
+      outFrame->ts = inFrame->ts;
+      outFrame->seq = inFrame->seq;
       return true;
     }
 
