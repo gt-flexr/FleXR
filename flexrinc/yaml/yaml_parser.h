@@ -42,6 +42,7 @@ namespace flexr
       protected:
         YAML::Node doc;
         std::map<std::string, kernels::FleXRKernel*> parsedKernelMap;
+        std::vector<kernels::FleXRKernel*> singleKernels;
         std::vector<YamlLocalConnection> parsedConnections;
 
 
@@ -85,6 +86,16 @@ namespace flexr
 
 
         /**
+         * @brief Get single kernel vector
+         * @return Kernel vector
+         */
+        std::vector<flexr::kernels::FleXRKernel*> getSingleKernels()
+        {
+          return singleKernels;
+        }
+
+
+        /**
          * @brief Get parsed connections
          * @param Parsed connections
          */
@@ -100,8 +111,8 @@ namespace flexr
         void removeParsedInfo()
         {
           removeParsedConnections();
-          removeKernels();
           removeKernelMap();
+          removeSingleKernelVector();
         }
 
 
@@ -119,38 +130,51 @@ namespace flexr
          */
         void removeKernelMap()
         {
+          std::map<std::string, flexr::kernels::FleXRKernel*>::iterator iter;
+          for(iter = parsedKernelMap.begin(); iter != parsedKernelMap.end(); iter++)
+          {
+            destroyKernel(iter->second);
+          }
           parsedKernelMap.clear();
         }
 
 
         /**
-         * @brief Remove instantiated kernels
+         * @brief Remove single kernel vector
          */
-        void removeKernels()
+        void removeSingleKernelVector()
         {
-          std::map<std::string, flexr::kernels::FleXRKernel*>::iterator iter;
-          for(iter = parsedKernelMap.begin(); iter != parsedKernelMap.end(); iter++)
+          for(int i = 0; i < singleKernels.size(); i++)
           {
-            // Source kernels
-            if(iter->second->getName() == "BagCamera") delete (flexr::kernels::BagCamera*)iter->second;
-            if(iter->second->getName() == "CVCamera") delete (flexr::kernels::CVCamera*)iter->second;
-            if(iter->second->getName() == "Keyboard") delete (flexr::kernels::Keyboard*)iter->second;
-            if(iter->second->getName() == "RTPFrameReceiver") delete (flexr::kernels::RTPFrameReceiver*)iter->second;
-
-            // Sink kernels
-            if(iter->second->getName() == "CVDisplay") delete (flexr::kernels::CVDisplay*)iter->second;
-            if(iter->second->getName() == "NonDisplay") delete (flexr::kernels::NonDisplay*)iter->second;
-            if(iter->second->getName() == "RTPFrameSender") delete (flexr::kernels::RTPFrameSender*)iter->second;
-
-            // Intermediate kernels
-            if(iter->second->getName() == "FrameConverter") delete (flexr::kernels::FrameConverter*)iter->second;
-            if(iter->second->getName() == "MarkerCtxExtractor") delete (flexr::kernels::MarkerCtxExtractor*)iter->second;
-            if(iter->second->getName() == "CudaORBDetector") delete (flexr::kernels::CudaORBDetector*)iter->second;
-            if(iter->second->getName() == "ORBDetector") delete (flexr::kernels::ORBDetector*)iter->second;
-            if(iter->second->getName() == "ObjectRenderer") delete (flexr::kernels::ObjectRenderer*)iter->second;
-            if(iter->second->getName() == "ArUcoDetector") delete (flexr::kernels::ArUcoDetector*)iter->second;
-            if(iter->second->getName() == "ArUcoCamLocator") delete (flexr::kernels::ArUcoCamLocator*)iter->second;
+            destroyKernel(singleKernels[i]);
           }
+          singleKernels.clear();
+        }
+
+
+        /**
+         * @brief Destroy instantiated kernels
+         */
+        void destroyKernel(flexr::kernels::FleXRKernel *kernel)
+        {
+          if(kernel->getName() == "BagCamera") delete (flexr::kernels::BagCamera*) kernel;
+          if(kernel->getName() == "CVCamera") delete (flexr::kernels::CVCamera*) kernel;
+          if(kernel->getName() == "Keyboard") delete (flexr::kernels::Keyboard*) kernel;
+          if(kernel->getName() == "RTPFrameReceiver") delete (flexr::kernels::RTPFrameReceiver*) kernel;
+
+          // Sink kernels
+          if(kernel->getName() == "CVDisplay") delete (flexr::kernels::CVDisplay*) kernel;
+          if(kernel->getName() == "NonDisplay") delete (flexr::kernels::NonDisplay*) kernel;
+          if(kernel->getName() == "RTPFrameSender") delete (flexr::kernels::RTPFrameSender*) kernel;
+
+          // Intermediate kernels
+          if(kernel->getName() == "FrameConverter") delete (flexr::kernels::FrameConverter*) kernel;
+          if(kernel->getName() == "MarkerCtxExtractor") delete (flexr::kernels::MarkerCtxExtractor*) kernel;
+          if(kernel->getName() == "CudaORBDetector") delete (flexr::kernels::CudaORBDetector*) kernel;
+          if(kernel->getName() == "ORBDetector") delete (flexr::kernels::ORBDetector*) kernel;
+          if(kernel->getName() == "ObjectRenderer") delete (flexr::kernels::ObjectRenderer*) kernel;
+          if(kernel->getName() == "ArUcoDetector") delete (flexr::kernels::ArUcoDetector*) kernel;
+          if(kernel->getName() == "ArUcoCamLocator") delete (flexr::kernels::ArUcoCamLocator*) kernel;
         }
 
 
@@ -276,7 +300,10 @@ namespace flexr
 
               if(temp != nullptr)
               {
-                parsedKernelMap[temp->getId()] = temp;
+                if(doc[i]["single"])
+                  singleKernels.push_back(temp);
+                else
+                  parsedKernelMap[temp->getId()] = temp;
               }
             }
           }
@@ -291,7 +318,7 @@ namespace flexr
         {
           for(int i = 0; i < doc.size(); i++)
           {
-            if(doc[i]["local_connections"].IsDefined())
+            if(doc[i]["local_connections"].IsDefined() && !doc[i]["single"].IsDefined())
             {
               YAML::Node connectionNode = doc[i]["local_connections"];
               for(int i = 0; i < connectionNode.size(); i++)

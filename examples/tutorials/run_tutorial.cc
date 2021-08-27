@@ -36,12 +36,14 @@ int main(int argc, char **argv)
   flexr::yaml::YamlFleXRParser yamlParser(yamlRecipe);
 
   std::map<std::string, flexr::kernels::FleXRKernel*> kernelMap;
+  std::vector<flexr::kernels::FleXRKernel*> singleKernels;
   std::vector<flexr::yaml::YamlLocalConnection> connections;
 
   yamlParser.initKernels();
   yamlParser.parseConnections();
 
   kernelMap = yamlParser.getKernelMap();
+  singleKernels = yamlParser.getSingleKernels();
   connections = yamlParser.getConnections();
 
   raft::map pipeline;
@@ -51,7 +53,16 @@ int main(int argc, char **argv)
                   kernelMap[connections[i].recvKernel], connections[i].recvPortName, connections[i].queueSize);
   }
 
+  std::vector<std::thread> singleKernelThreads;
+  for(int i = 0; i < singleKernels.size(); i++)
+  {
+    std::thread singleKernelThread(flexr::kernels::runSingleKernel, singleKernels[i]);
+    singleKernelThreads.push_back(std::move(singleKernelThread));
+  }
+
   pipeline.exe();
+
+  for(int i = 0; i < singleKernelThreads.size(); i++) singleKernelThreads[i].join();
 
   return 0;
 }
