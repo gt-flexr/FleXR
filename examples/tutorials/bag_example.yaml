@@ -8,7 +8,7 @@
       bag_path       :
       bag_topic      : /camera/image_raw
   output   :
-    - port_name: out_frame
+    - port_name      : out_frame
       connection_type: local
 
 

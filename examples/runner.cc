@@ -1,14 +1,11 @@
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <vector>
+#include <bits/stdc++.h>
 #include <flexr>
 
 using namespace std;
 
 int main(int argc, char **argv)
 {
-  cxxopts::Options options("test", "A brief description");
+  cxxopts::Options options("FleXR Runner", "FleXR Runner");
   options.add_options()
     ("y, yaml", "YAML file", cxxopts::value<std::string>())
     ("h, help", "Print usage")
@@ -33,18 +30,18 @@ int main(int argc, char **argv)
     exit(0);
   }
 
+  // Parse YAML recipe
   flexr::yaml::YamlFleXRParser yamlParser(yamlRecipe);
-
-  std::map<std::string, flexr::kernels::FleXRKernel*> kernelMap;
-  std::vector<flexr::kernels::FleXRKernel*> singleKernels;
-  std::vector<flexr::yaml::YamlLocalConnection> connections;
-
   yamlParser.initKernels();
   yamlParser.parseConnections();
 
-  kernelMap = yamlParser.getKernelMap();
+  // Instantiate DAG components from the parsed info
+  std::map<std::string, flexr::kernels::FleXRKernel*> kernelMap;
+  std::vector<flexr::kernels::FleXRKernel*> singleKernels;
+  std::vector<flexr::yaml::YamlLocalConnection> connections;
+  kernelMap     = yamlParser.getKernelMap();
   singleKernels = yamlParser.getSingleKernels();
-  connections = yamlParser.getConnections();
+  connections   = yamlParser.getConnections();
 
   raft::map pipeline;
   for(int i = 0; i < connections.size(); i++)
