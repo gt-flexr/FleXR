@@ -1,3 +1,4 @@
+#ifdef __USE_OPENCV_CUDA__
 #include <yaml/kernels/intermediate/yaml_cuda_orb_detector.h>
 
 namespace flexr
@@ -105,4 +106,6 @@ namespace flexr
 
   }
 }
+
+#endif
 

@@ -1,0 +1,117 @@
+- kernel   : BagCamera
+  id       : bag_camera
+  frequency: 60
+  logger   : [bag_camera, bag_camera.log]
+  others   :
+    - frames_to_cache: 400
+      start_index    : 400
+      bag_path       : /home/jin/mnt/aruco/aruco.bag
+      bag_topic      : /camera/image_raw
+  output   :
+    - port_name      : out_frame
+      connection_type: local
+    - port_name      : out_frame2
+      connection_type: local
+      duplicated_from: out_frame
+
+
+- kernel   : Keyboard
+  id       : keyboard
+  frequency: 60
+  logger   : [keyboard, keyboard.log]
+  output    :
+    - port_name      : out_key
+      connection_type: local
+
+
+- kernel   : CudaORBDetector
+  id       : cuda_orb_detector
+  frequency: 60
+  logger   : [cuda_orb_detector, cuda_orb_detector.log]
+  others   :
+    - marker_image: /home/jin/mnt/aruco/0.png
+  input    :
+    - port_name      : in_frame
+      connection_type: local
+  output    :
+    - port_name      : out_detected_markers
+      connection_type: local
+
+
+- kernel   : MarkerCtxExtractor
+  id       : marker_ctx_extractor
+  frequency: 60
+  logger   : [marker_ctx_extractor, marker_ctx_extractor.log]
+  others   :
+    - width : 1920
+      height: 1080
+  input    :
+    - port_name      : in_detected_markers
+      connection_type: local
+  output    :
+    - port_name      : out_marker_contexts
+      connection_type: local
+
+
+- kernel   : ObjectRenderer
+  id       : object_renderer
+  frequency: 60
+  logger   : [object_renderer, object_renderer.log]
+  others   :
+    - width : 1920
+      height: 1080
+  input    :
+    - port_name      : in_frame
+      connection_type: local
+    - port_name      : in_key
+      connection_type: local
+    - port_name      : in_marker_contexts
+      connection_type: local
+  output    :
+    - port_name      : out_frame
+      connection_type: local
+
+
+- kernel   : CVDisplay
+  id       : cv_display
+  frequency: 60
+  logger   : [cv_display, cv_display.log]
+  input    :
+    - port_name      : in_frame
+      connection_type: local
+
+
+- local_connections:
+  - send_kernel   : bag_camera
+    send_port_name: out_frame
+    recv_kernel   : cuda_orb_detector
+    recv_port_name: in_frame
+    queue_size    : 1
+
+  - send_kernel   : cuda_orb_detector
+    send_port_name: out_detected_markers
+    recv_kernel   : marker_ctx_extractor
+    recv_port_name: in_detected_markers
+    queue_size    : 1
+
+  - send_kernel   : marker_ctx_extractor
+    send_port_name: out_marker_contexts
+    recv_kernel   : object_renderer
+    recv_port_name: in_marker_contexts
+    queue_size    : 1
+  - send_kernel   : keyboard
+    send_port_name: out_key
+    recv_kernel   : object_renderer
+    recv_port_name: in_key
+    queue_size    : 1
+  - send_kernel   : bag_camera
+    send_port_name: out_frame2
+    recv_kernel   : object_renderer
+    recv_port_name: in_frame
+    queue_size    : 1
+
+  - send_kernel   : object_renderer
+    send_port_name: out_frame
+    recv_kernel   : cv_display
+    recv_port_name: in_frame
+    queue_size    : 1

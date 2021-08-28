@@ -15,6 +15,14 @@ namespace flexr
 
     /**
      * @brief Yaml RTPFrameSender kernel
+     *
+     * YAML attribute | Details
+     * ---------------| ----------------------------
+     * encoder        | Encoder name
+     * width          | Frmae width to send
+     * height         | Frame height to send
+     * bitrate        | Target bitrate
+     *
      * @see flexr::kernels::RtpFrameSender
      */
     class YamlRtpFrameSender: public YamlFleXRKernel

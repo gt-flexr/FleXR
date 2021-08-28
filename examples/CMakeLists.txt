@@ -1,27 +1,28 @@
 file(GLOB_RECURSE EXAMPLE_SRCS
+     runner.cc
      tutorials/*.cc
      tests/*.cc
      )
 
 list(APPEND EXAMPLE_SRCS
-  marker_ar/local/orb_serialized.cc
-  marker_ar/local/orb_local.cc
-  marker_ar/offloading/orb_full_client.cc
-  marker_ar/offloading/orb_part_detector_client.cc
-  marker_ar/offloading/orb_part_perception_client.cc
-  marker_ar/offloading/renderer_client.cc
-  marker_ar/offloading/renderer_server.cc
-  marker_ar/aruco/ue4_local.cc
+  marker_ar/old/orb_serialized.cc
+  marker_ar/old/orb_local.cc
+  marker_ar/old/orb_full_client.cc
+  marker_ar/old/orb_part_detector_client.cc
+  marker_ar/old/orb_part_perception_client.cc
+  marker_ar/old/renderer_client.cc
+  marker_ar/old/renderer_server.cc
+  marker_ar/old/ue4_local.cc
 )
 
 
 if(${USE_OPENCV_CUDA})
 list(APPEND EXAMPLE_SRCS
-  marker_ar/local/orb_serialized_cuda.cc
-  marker_ar/local/orb_local_cuda.cc
-  marker_ar/offloading/orb_full_server.cc
-  marker_ar/offloading/orb_part_detector_server.cc
-  marker_ar/offloading/orb_part_perception_server.cc
+  marker_ar/old/orb_serialized_cuda.cc
+  marker_ar/old/orb_local_cuda.cc
+  marker_ar/old/orb_full_server.cc
+  marker_ar/old/orb_part_detector_server.cc
+  marker_ar/old/orb_part_perception_server.cc
 )
 endif(${USE_OPENCV_CUDA})
 

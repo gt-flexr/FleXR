@@ -10,6 +10,11 @@ namespace flexr
   {
     /**
      * @brief Yaml input kernel port
+     * YAML attribute | Details
+     * ---------------| ----------------------------
+     * port_name      | Registered inport name of kernel class
+     * connection_type| "local" or "remote"
+     * binding_info   | binding port number for remote type
      */
     class YamlInPort
     {
@@ -41,6 +46,12 @@ namespace flexr
 
     /**
      * @brief Yaml output kernel port
+     * YAML attribute | Details
+     * ---------------| ----------------------------
+     * port_name      | Outport name
+     * connection_type| "local" or "remote"
+     * remote_info    | [ip address, port number] of remote
+     * duplicated_from| Registered outport name of kernel class
      */
     class YamlOutPort
     {
