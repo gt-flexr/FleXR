@@ -170,7 +170,9 @@ namespace flexr
           // Intermediate kernels
           if(kernel->getName() == "FrameConverter") delete (flexr::kernels::FrameConverter*) kernel;
           if(kernel->getName() == "MarkerCtxExtractor") delete (flexr::kernels::MarkerCtxExtractor*) kernel;
+#ifdef __USE_OPENCV_CUDA__
           if(kernel->getName() == "CudaORBDetector") delete (flexr::kernels::CudaORBDetector*) kernel;
+#endif
           if(kernel->getName() == "ORBDetector") delete (flexr::kernels::ORBDetector*) kernel;
           if(kernel->getName() == "ObjectRenderer") delete (flexr::kernels::ObjectRenderer*) kernel;
           if(kernel->getName() == "ArUcoDetector") delete (flexr::kernels::ArUcoDetector*) kernel;
@@ -262,6 +264,7 @@ namespace flexr
                 yamlMarkerCtxExtractor.printMarkerCtxExtractor();
                 temp = (kernels::MarkerCtxExtractor*)yamlMarkerCtxExtractor.make();
               }
+#ifdef __USE_OPENCV_CUDA__
               if(doc[i]["kernel"].as<std::string>() == "CudaORBDetector")
               {
                 YamlCudaOrbDetector yamlCudaOrbDetector;
@@ -269,6 +272,7 @@ namespace flexr
                 yamlCudaOrbDetector.printCudaOrbDetector();
                 temp = (kernels::CudaORBDetector*)yamlCudaOrbDetector.make();
               }
+#endif
               if(doc[i]["kernel"].as<std::string>() == "ORBDetector")
               {
                 YamlOrbDetector yamlOrbDetector;

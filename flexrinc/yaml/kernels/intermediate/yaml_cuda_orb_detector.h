@@ -1,3 +1,4 @@
+#ifdef __USE_OPENCV_CUDA__
 #ifndef __FLEXR_YAML_CUDA_ORB_DETECTOR__
 #define __FLEXR_YAML_CUDA_ORB_DETECTOR__
 
@@ -57,5 +58,6 @@ namespace flexr
   }
 }
 
+#endif
 #endif
 
