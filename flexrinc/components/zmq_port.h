@@ -3,6 +3,7 @@
 
 #include <zmq.h>
 #include <zmq.hpp>
+#include <types/types.h>
 
 namespace flexr
 {
@@ -56,6 +57,31 @@ namespace flexr
         int sndhwm = 10; // out-bound high watermark
         assert(0 == zmq_setsockopt(socket, ZMQ_SNDHWM, &sndhwm, sizeof(sndhwm)));
         socket.connect("tcp://" + addr + ":" + std::to_string(port));
+      }
+
+
+      bool receiveMsg(bool inBlock, uint8_t* &outBuffer, uint32_t &outSize, uint32_t &outTs)
+      {
+        zmq::message_t msg;
+
+        if(inBlock)
+          socket.recv(msg, zmq::recv_flags::none);
+        else
+          socket.recv(msg, zmq::recv_flags::dontwait);
+
+        if(msg.size() > 0)
+        {
+          outSize = msg.size();
+          outBuffer = new uint8_t[outSize];
+          memcpy(outBuffer, msg.data(), outSize);
+          types::Message<int> *temp = (types::Message<int>*)outBuffer; // ts only
+          outTs = temp->ts;
+          debug_print("Received TCP msg: size(%ld), ts(%d)", msg.size(), outTs);
+
+          return true;
+        }
+
+        return false;
       }
     };
   }

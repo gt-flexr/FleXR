@@ -39,7 +39,7 @@ int main(int argc, char const *argv[])
   flexr::kernels::CudaORBDetector cudaORBDetector("cuda_orb_detector", markerPath + "/0.png");
   cudaORBDetector.setLogger("cuda_orb_detector_logger", "cuda_orb_detector.log");
   cudaORBDetector.activateInPortAsLocal<CudaORBDetectorInFrameType>("in_frame");
-  cudaORBDetector.activateOutPortAsRemote<CudaORBDetectorOutMarkerType>("out_detected_markers",
+  cudaORBDetector.activateOutPortAsRemote<CudaORBDetectorOutMarkerType>("out_detected_markers", "RTP",
                                                                         clientAddr, clientMessagePort);
 
   pipeline += rtpFrameReceiver["out_frame"] >> cudaORBDetector["in_frame"];

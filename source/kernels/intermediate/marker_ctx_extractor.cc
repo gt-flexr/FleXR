@@ -1,6 +1,5 @@
 #include <kernels/intermediate/marker_ctx_extractor.h>
-#include <utils/msg_receiving_functions.h>
-#include <utils/msg_sending_functions.h>
+#include <utils/local_copy_functions.h>
 #include <unistd.h>
 
 namespace flexr
@@ -10,12 +9,9 @@ namespace flexr
     MarkerCtxExtractor::MarkerCtxExtractor(std::string id, int width, int height): FleXRKernel(id) {
       setName("MarkerCtxExtractor");
       portManager.registerInPortTag("in_detected_markers",
-                                    components::PortDependency::BLOCKING,
-                                    utils::recvDetectedMarkers);
+                                    components::PortDependency::BLOCKING);
       portManager.registerOutPortTag("out_marker_contexts",
-                                     utils::sendLocalBasicCopy<CtxExtractorOutCtxType>,
-                                     utils::sendRemotePrimitiveVec<CtxExtractorOutCtxType>,
-                                     types::freePrimitiveMsg<CtxExtractorOutCtxType>);
+                                     utils::sendLocalBasicCopy<CtxExtractorOutCtxType>);
 
       cv::Mat tempIntrinsic(3, 3, CV_64FC1);
       cv::Mat tempDistCoeffs(4, 1, CV_64FC1, {0, 0, 0, 0});

@@ -1,5 +1,5 @@
 #include <kernels/source/cv_camera.h>
-#include <utils/msg_sending_functions.h>
+#include <utils/local_copy_functions.h>
 #include <unistd.h>
 
 namespace flexr
@@ -11,7 +11,7 @@ namespace flexr
     {
       setName("CVCamera");
       seq = 0;
-      portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, 0, 0);
+      portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy);
       freqManager.setFrequency(targetFps);
     }
 
@@ -28,7 +28,7 @@ namespace flexr
       strcpy(outFrame->tag, "cvcam_frame");
       outFrame->seq = seq++;
       outFrame->ts  = getTsNow();
-      debug_print("FrameInfo: %s:%d %lf", outFrame->tag, outFrame->seq, outFrame->ts);
+      debug_print("FrameInfo: %s:%d %d", outFrame->tag, outFrame->seq, outFrame->ts);
 
       portManager.sendOutput<CVCameraMsgType>("out_frame", outFrame);
 

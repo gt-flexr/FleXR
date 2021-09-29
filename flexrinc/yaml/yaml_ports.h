@@ -14,13 +14,14 @@ namespace flexr
      * ---------------| ----------------------------
      * port_name      | Registered inport name of kernel class
      * connection_type| "local" or "remote"
-     * binding_info   | binding port number for remote type
+     * remote_info    | [protocol, port number] for receive
      */
     class YamlInPort
     {
       public:
         std::string portName;
         std::string connectionType;
+        std::string protocol;
         int bindingPortNum;
 
 
@@ -28,6 +29,7 @@ namespace flexr
         {
           portName       = "";
           connectionType = "";
+          protocol       = "";
           bindingPortNum = -1;
         }
 
@@ -38,6 +40,7 @@ namespace flexr
           std::cout << "\tPort Name: " << portName << std::endl;
           std::cout << "\tConnection Type: " << connectionType << std::endl;
           if(connectionType == std::string("remote")) {
+            std::cout << "\tProtocol: " << protocol << std::endl;
             std::cout << "\tBinding Port Number: " << bindingPortNum << std::endl;
           }
         }
@@ -50,7 +53,7 @@ namespace flexr
      * ---------------| ----------------------------
      * port_name      | Outport name
      * connection_type| "local" or "remote"
-     * remote_info    | [ip address, port number] of remote
+     * remote_info    | [protocol, ip address, port number] of remote
      * duplicated_from| Registered outport name of kernel class
      */
     class YamlOutPort
@@ -58,6 +61,7 @@ namespace flexr
       public:
         std::string portName;
         std::string connectionType;
+        std::string protocol;
         std::string connectingAddr;
         int connectingPortNum;
         std::string duplicatedFrom;
@@ -67,6 +71,7 @@ namespace flexr
         {
           portName           = "";
           connectionType     = "";
+          protocol           = "";
           connectingAddr     = "";
           connectingPortNum  = -1;
           duplicatedFrom     = "";
@@ -84,6 +89,7 @@ namespace flexr
           }
           if(connectionType == std::string("remote"))
           {
+            std::cout << "\tProtocol: " << protocol << std::endl;
             std::cout << "\tRemote Address: " << connectingAddr << std::endl;
             std::cout << "\tRemote Port Number: " << connectingPortNum << std::endl;
           }

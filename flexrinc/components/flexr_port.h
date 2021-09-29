@@ -5,6 +5,7 @@
 #include <raftinc/port.hpp>
 
 #include "components/zmq_port.h"
+#include "components/rtp_port.h"
 #include "defs.h"
 
 namespace flexr
@@ -21,6 +22,12 @@ namespace flexr
     enum PortState {
       LOCAL,
       REMOTE
+    };
+
+
+    enum RemoteProtocol {
+      TCP,
+      RTP
     };
 
 
@@ -45,19 +52,100 @@ namespace flexr
         }
 
 
+        /**
+         * @brief Get input msg from internal network ports
+         * @param input
+         *  input message pointer to recv dst
+         */
+        template <typename T>
+        bool getInputFromRemote(T* &input)
+        {
+          uint8_t *data   = nullptr;
+          uint32_t size   = 0;
+          bool isBlocking = true;
+          bool received   = false;
+
+          if(dependency == PortDependency::BLOCKING)
+            isBlocking = true;
+          else
+            isBlocking = false;
+
+          if(protocol == RemoteProtocol::TCP)
+          {
+            received = tcpPort.receiveMsg(isBlocking, data, size, input->ts);
+          }
+
+          if(protocol == RemoteProtocol::RTP)
+          {
+            received = rtpPort.receiveMsg(isBlocking, data, size, input->ts);
+          }
+
+          if(deserialize != 0 && received)
+          {
+            deserialize(data, size, (void**)&input); // deserialize need to set output->data properly & free data
+            received = true;
+          }
+
+          return received;
+        }
+
+
+        /**
+         * @brief Send output msg via internal network ports
+         * @param output
+         *  output message pointer to send src
+         */
+        template <typename T>
+        void sendOutputToRemote(T *output)
+        {
+          uint8_t *data     = nullptr;
+          uint32_t size     = 0;
+
+          if(serialize != 0)
+          {
+            serialize((void**)&output, data, size); // serialize need to free output->data
+          }
+          else
+          {
+            // static msg: ex) T = Message<int>, Message<int[100]> ...
+            data         = (uint8_t*)output;
+            size         = sizeof(T);
+          }
+
+          if(protocol == RemoteProtocol::TCP)
+          {
+            zmq::message_t sendMsg(data, size);
+            tcpPort.socket.send(sendMsg, zmq::send_flags::none); // BK
+          }
+
+          if(protocol == RemoteProtocol::RTP)
+          {
+            rtpPort.send(data, size, output->ts); // NBK..., need to make BK
+          }
+
+          // delete serialized buffer after sending
+          if(serialize) delete data;
+        }
+
+
       public:
         std::string tag;
+
         Port           *localPort;
-        ZMQPort        remotePort;
+        ZMQPort        tcpPort;
+        RtpPort        rtpPort;
+
+        // Set by developer
         PortDependency dependency;
+
+        // Set by deployer
         PortState      state;
+        RemoteProtocol protocol;
 
         std::function<void (FleXRPort*, void*)> sendLocalCopy;
-        std::function<void (FleXRPort*, void*)> sendRemote;
-        std::function<void (void*)>            freeRemoteMsg;
-        std::function<void (FleXRPort*, void*)> recvRemote;
-        std::function<void (void**, int)>      allocRemoteMsg;
 
+        std::function<void (void*,      uint8_t* &, uint32_t &)> serialize;
+        std::function<void (uint8_t* &, uint32_t &,     void**)> deserialize;
 
         /**
          * @brief Check the existence of an activated local port
@@ -67,7 +155,11 @@ namespace flexr
          *  Tag of this port
          */
         FleXRPort(Port* localPort, std::string tag): localPort(localPort), tag(tag), activated(false)
-        { }
+        {
+          sendLocalCopy = 0;
+          serialize     = 0;
+          deserialize   = 0;
+        }
 
 
         /**
@@ -98,17 +190,30 @@ namespace flexr
 
         /**
          * @brief Activate an input port as remote and bind to a port
+         * @param p
+         *  Protocol to use
          * @param portNumber
          *  Port number to bind (listen)
          */
         template <typename T>
-        void activateAsRemoteInput(int portNumber)
+        void activateAsRemoteInput(RemoteProtocol p,  int portNumber)
         {
           if(activated) {
             debug_print("Port %s is already activated.", tag.c_str());
             return;
           }
-          remotePort.bind(portNumber);
+
+          if(p == RemoteProtocol::TCP)
+          {
+            tcpPort.bind(portNumber);
+            protocol = RemoteProtocol::TCP;
+          }
+          else if(p == RemoteProtocol::RTP)
+          {
+            rtpPort.init("127.0.0.1", portNumber, -1);
+            protocol = RemoteProtocol::RTP;
+          }
+
           state = PortState::REMOTE;
           activated = true;
         }
@@ -116,19 +221,32 @@ namespace flexr
 
         /**
          * @brief Activate an output port as remote and connect to remote node
+         * @param p
+         *  Protocol to use
          * @param addr
          *  IP address to connect
          * @param portNumber
          *  Port number to connect
          */
         template <typename T>
-        void activateAsRemoteOutput(const std::string addr, int portNumber)
+        void activateAsRemoteOutput(RemoteProtocol p, const std::string addr, int portNumber)
         {
           if(activated) {
             debug_print("Port %s is already activated.", tag.c_str());
             return;
           }
-          remotePort.connect(addr, portNumber);
+
+          if(p == RemoteProtocol::TCP)
+          {
+            tcpPort.connect(addr, portNumber);
+            protocol = RemoteProtocol::TCP;
+          }
+          else if(p == RemoteProtocol::RTP)
+          {
+            rtpPort.init(addr, -1, portNumber);
+            protocol = RemoteProtocol::RTP;
+          }
+
           state = PortState::REMOTE;
           activated = true;
         }
@@ -147,61 +265,38 @@ namespace flexr
           }
 
           T* input = nullptr;
-          switch(state) {
-          case PortState::LOCAL:
-            if(dependency == PortDependency::BLOCKING) {
-              T &temp = (*localPort)[tag].peek<T>();
-              input = &temp;
-            }
-            else if(dependency == PortDependency::NONBLOCKING) {
-              if(checkLocalPort()) {
+          switch(state)
+          {
+            case PortState::LOCAL:
+              if(dependency == PortDependency::BLOCKING) {
                 T &temp = (*localPort)[tag].peek<T>();
                 input = &temp;
               }
-            }
-            break;
-          case PortState::REMOTE:
-            // currently, REMOTE port only works in blocking mode.
-            input = new T;
-            recvRemote(this, input);
-            break;
-          }
-          return input;
-        }
+              else if(dependency == PortDependency::NONBLOCKING) {
+                if(checkLocalPort()) {
+                  T &temp = (*localPort)[tag].peek<T>();
+                  input = &temp;
+                }
+              }
+              break;
 
-
-        /**
-         * @brief Get input message with the given data size
-         * @param size
-         *  Size of the input message to get
-         * @return Pointer to the input message
-         */
-        template <typename T>
-        T* getInputWithSize(int size)
-        {
-          if(!activated) {
-            debug_print("Cannot getInput with inactivated port %s", tag.c_str());
-            return nullptr;
+            case PortState::REMOTE:
+              input = new T;
+              if(getInputFromRemote(input) == false) // for non-blocking recv
+              {
+                delete input;
+                input = nullptr;
+              }
+              break;
           }
 
-          T* input = nullptr;
-          switch(state) {
-          case PortState::LOCAL:
-            input = getInput<T>();
-            break;
-          case PortState::REMOTE:
-            if(allocRemoteMsg) allocRemoteMsg((void**)&input, size);
-            else input = new T;
-            recvRemote(this, input);
-            break;
-          }
           return input;
         }
 
 
         /**
          * @brief Get the placeholder of an output message
-         * @return Pointer to the output message
+         * @return Pointer to the output message placeholder
          */
         template <typename T>
         T* getOutputPlaceholder()
@@ -212,11 +307,14 @@ namespace flexr
           }
 
           T *outputPlaceholder = nullptr;
-          if(state == PortState::LOCAL) {
+
+          if(state == PortState::LOCAL)
+          {
             T &temp = (*localPort)[tag].allocate<T>();
             outputPlaceholder = &temp;
           }
-          else if(state == PortState::REMOTE) {
+          else if(state == PortState::REMOTE)
+          {
             outputPlaceholder = new T;
           }
 
@@ -242,8 +340,7 @@ namespace flexr
             (*localPort)[tag].send();
             break;
           case PortState::REMOTE:
-            sendRemote(this, msg);
-            //if(freeRemoteMsg) freeRemoteMsg(msg);
+            sendOutputToRemote(msg);
             break;
           }
         }
@@ -269,7 +366,6 @@ namespace flexr
             (*localPort)[tag].recycle();
             break;
           case PortState::REMOTE:
-            // delete[] vs delete: not expect to call each element desctructor
             delete msg;
             break;
           }

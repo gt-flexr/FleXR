@@ -18,6 +18,9 @@
 #include "./flexrinc/utils/cv_utils.h"
 #include "./flexrinc/utils/gl_utils.h"
 #include "./flexrinc/utils/egl_utils.h"
+#include "./flexrinc/utils/serialize_functions.h"
+#include "./flexrinc/utils/deserialize_functions.h"
+#include "./flexrinc/utils/local_copy_functions.h"
 
 
 /* defs */
@@ -45,8 +48,7 @@
 #include "./flexrinc/components/rosbag_reader.h"
 #include "./flexrinc/components/rosbag_frame_reader.h"
 
-#include "./flexrinc/components/rtp_sender.h"
-#include "./flexrinc/components/rtp_receiver.h"
+#include "./flexrinc/components/rtp_port.h"
 
 #include "./flexrinc/components/cv_frame_reader.h"
 #include "./flexrinc/components/logger.h"

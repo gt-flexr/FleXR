@@ -1,5 +1,5 @@
 #include <kernels/source/bag_camera.h>
-#include <utils/msg_sending_functions.h>
+#include <utils/local_copy_functions.h>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <unistd.h>
@@ -11,7 +11,7 @@ namespace flexr
     BagCamera::BagCamera(std::string id): FleXRKernel(id) {
       setName("BagCamera");
       seq = 0;
-      portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, 0, 0);
+      portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy);
     }
     BagCamera::~BagCamera() {}
 

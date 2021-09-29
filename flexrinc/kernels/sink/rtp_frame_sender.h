@@ -9,7 +9,6 @@
 #include "types/cv/types.h"
 #include "types/clock_types.h"
 #include "types/frame.h"
-#include "components/rtp_sender.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -38,7 +37,7 @@ namespace flexr
     class RTPFrameSender : public FleXRKernel
     {
       private:
-        components::RTPSender rtpSender;
+        components::RtpPort rtpPort;
 
         std::string encoderName;
         int width, height;

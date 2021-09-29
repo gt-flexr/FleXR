@@ -9,7 +9,7 @@ namespace flexr
     RTPFrameSender::RTPFrameSender(std::string id, std::string addr, int port, std::string encoderName,
                                    int width, int height, int bitrate, int fps):
       FleXRKernel(id),
-      rtpSender(addr, port),
+      rtpPort(addr, -1, port),
       encoderName(encoderName), width(width), height(height)
     {
       setName("RTPFrameSender");
@@ -102,13 +102,11 @@ namespace flexr
         if(ret == 0) {
           double enct = getTsNow();
           int sentSize = encodingPacket.size;
-          if(rtpSender.sendWithTrackingInfo(encodingPacket.data, encodingPacket.size,
-                                            inFrame->tag, inFrame->seq, inFrame->ts)) {
+          if(rtpPort.send(encodingPacket.data, encodingPacket.size, inFrame->ts)) {
             double et = getTsNow();
             debug_print("encodeTime(%lf), sentSize(%d)", et-st, sentSize);
             if(logger.isSet()) logger.getInstance()->info("encodingTime/rtpSendingTime/KernelExeTime/Sent Size\t{}\t {}\t {}\t {}",
                 enct-st, et-enct, et-st, sentSize);
-
           }
         }
         av_packet_unref(&encodingPacket);

@@ -59,7 +59,7 @@ int main(int argc, char const *argv[])
   objRenderer.setLogger("obj_renderer_logger", "obj_renderer.log");
   objRenderer.activateInPortAsLocal<ObjRendererInFrameType>("in_frame");
   objRenderer.activateInPortAsLocal<ObjRendererInKeyType>("in_key");
-  objRenderer.activateInPortAsRemote<ObjRendererInCtxType>("in_marker_contexts", clientMessagePort);
+  objRenderer.activateInPortAsRemote<ObjRendererInCtxType>("in_marker_contexts", "RTP", clientMessagePort);
   objRenderer.activateOutPortAsLocal<ObjRendererOutFrameType>("out_frame");
 
   NonDisplay nonDisplay("non_display");

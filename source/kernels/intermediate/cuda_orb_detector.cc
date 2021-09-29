@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <opencv2/core.hpp>
 #include <kernels/intermediate/cuda_orb_detector.h>
-#include <utils/msg_sending_functions.h>
 #include <types/types.h>
 
 
@@ -14,11 +13,9 @@ namespace flexr
     CudaORBDetector::CudaORBDetector(std::string id, std::string markerImage): FleXRKernel(id)
     {
       setName("CudaORBDetector");
-      portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
+      portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING);
       portManager.registerOutPortTag("out_detected_markers",
-                                     utils::sendLocalBasicCopy<CudaORBDetectorOutMarkerType>,
-                                     utils::sendRemoteMarkers,
-                                     types::freePrimitiveMsg<CudaORBDetectorOutMarkerType>);
+                                     utils::sendLocalBasicCopy<CudaORBDetectorOutMarkerType>);
 
       orbMarkerTracker.setMarkerFromImage(markerImage);
       registeredMarkers = orbMarkerTracker.getRegisteredObjects();

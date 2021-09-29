@@ -39,7 +39,9 @@ namespace flexr
             if(inPorts[i].connectionType == "local")
               temp->activateInPortAsLocal<kernels::NonDisplayMsgType>(inPorts[i].portName);
             else
-              temp->activateInPortAsRemote<kernels::NonDisplayMsgType>(inPorts[i].portName, inPorts[i].bindingPortNum);
+              temp->activateInPortAsRemote<kernels::NonDisplayMsgType>(inPorts[i].portName,
+                                                                       inPorts[i].protocol,
+                                                                       inPorts[i].bindingPortNum);
           }
           else debug_print("invalid input port_name %s for NonDisplay", inPorts[i].portName.c_str());
         }

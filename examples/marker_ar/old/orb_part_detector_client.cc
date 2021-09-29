@@ -56,7 +56,7 @@ int main(int argc, char const *argv[])
 
   MarkerCtxExtractor markerCtxExtractor("marker_ctx_extractor", width, height);
   markerCtxExtractor.setLogger("marker_ctx_extractor_logger", "marker_ctx_extractor.log");
-  markerCtxExtractor.activateInPortAsRemote<CtxExtractorInMarkerType>("in_detected_markers", clientMessagePort);
+  markerCtxExtractor.activateInPortAsRemote<CtxExtractorInMarkerType>("in_detected_markers", "RTP", clientMessagePort);
   markerCtxExtractor.activateOutPortAsLocal<CtxExtractorOutCtxType>("out_marker_contexts");
 
   ObjectRenderer objRenderer("obj_renderer", width, height);

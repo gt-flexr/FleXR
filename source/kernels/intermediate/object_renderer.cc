@@ -1,6 +1,4 @@
 #include <kernels/intermediate/object_renderer.h>
-#include <utils/msg_receiving_functions.h>
-#include <utils/msg_sending_functions.h>
 #include <GL/gl.h>
 #include <GL/glew.h>
 #include <unistd.h>
@@ -14,16 +12,12 @@ namespace flexr
       FleXRKernel(id), width(width), height(height)
     {
       setName("ObjectRenderer");
-      //portManager.registerInPortTag("in_frame", components::PortDependency::NONBLOCKING, 0);
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
       portManager.registerInPortTag("in_marker_contexts",
-                                    components::PortDependency::NONBLOCKING,
-                                    //components::PortDependency::BLOCKING,
-                                    utils::recvRemotePrimitiveVec<ObjRendererInCtxType>);
+                                    components::PortDependency::NONBLOCKING);
       portManager.registerInPortTag("in_key",
-                                    components::PortDependency::NONBLOCKING,
-                                    utils::recvNonBlockRemotePrimitive<ObjRendererInKeyType>);
-      portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, 0, 0);
+                                    components::PortDependency::NONBLOCKING);
+      portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy);
 
       // 0. Create pbuf as a context
       pbuf = new flexr::egl_types::pbuffer;

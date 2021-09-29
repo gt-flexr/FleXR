@@ -12,11 +12,6 @@
 /// Max detecting marakers for flexr::kernels::ORBDetector
 #define MAX_MARKERS 10
 
-/// RTP payload size for uvgRTP
-#define FLEXR_RTP_PAYLOAD_UNIT_SIZE 1443
-/// Message invoice for tracking RTP messages
-#define FLEXR_RTP_TRACKING_INVOICE (-777777)
-
 /// Tag size of FleXR messages
 #define FLEXR_MSG_TAG_SIZE 32
 

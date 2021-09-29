@@ -66,7 +66,8 @@ namespace flexr
             else if(inPorts[i].connectionType == "remote")
             {
               temp->activateInPortAsRemote<kernels::FrameConverterInMsgType>(inPorts[i].portName,
-                  inPorts[i].bindingPortNum);
+                                                                             inPorts[i].protocol,
+                                                                             inPorts[i].bindingPortNum);
             }
           }
           else debug_print("invalid input port_name %s for FrameConverter", inPorts[i].portName.c_str());
@@ -81,6 +82,7 @@ namespace flexr
               temp->activateOutPortAsLocal<kernels::FrameConverterOutMsgType>(outPorts[i].portName);
             else if(outPorts[i].connectionType == "remote")
               temp->activateOutPortAsRemote<kernels::FrameConverterOutMsgType>(outPorts[i].portName,
+                                                                               outPorts[i].protocol,
                                                                                outPorts[i].connectingAddr,
                                                                                outPorts[i].connectingPortNum);
           }
@@ -95,7 +97,7 @@ namespace flexr
               else if(outPorts[i].connectionType == "remote")
                 temp->duplicateOutPortAsRemote<kernels::FrameConverterOutMsgType>(
                     outPorts[i].duplicatedFrom, outPorts[i].portName,
-                    outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
+                    outPorts[i].protocol, outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
             }
             else debug_print("invalid output port_name %s for FrameConverter", outPorts[i].portName.c_str());
           }

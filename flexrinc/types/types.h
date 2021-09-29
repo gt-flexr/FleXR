@@ -23,7 +23,7 @@ namespace flexr {
       public:
       char     tag[FLEXR_MSG_TAG_SIZE];
       uint32_t seq;
-      double   ts;
+      uint32_t ts;
       uint32_t dataSize;
       T        data;
     };

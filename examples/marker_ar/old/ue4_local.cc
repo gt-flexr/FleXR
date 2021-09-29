@@ -45,18 +45,18 @@ int main()
 
   FrameConverter rgbaConverter("frame_converter", width, height, FrameConverter::Conversion::RGB2RGBA);
   rgbaConverter.activateInPortAsLocal<Message<Frame>>("in_frame");
-  rgbaConverter.activateOutPortAsRemote<Message<Frame>>("out_frame", "127.0.0.1", appFramePort);
+  rgbaConverter.activateOutPortAsRemote<Message<Frame>>("out_frame", "RTP", "127.0.0.1", appFramePort);
 
   Keyboard keyboard("keyboard");
-  keyboard.activateOutPortAsRemote<Message<char>>("out_key", "127.0.0.1", appKeyPort);
+  keyboard.activateOutPortAsRemote<Message<char>>("out_key", "RTP", "127.0.0.1", appKeyPort);
 
   ArUcoCamLocator arucoCamLocator("aruco_cam_locator", cv::aruco::DICT_6X6_250, width, height);
   arucoCamLocator.activateInPortAsLocal<flexr::kernels::ArUcoCamLocatorInFrameType>("in_frame");
-  arucoCamLocator.activateOutPortAsRemote<flexr::kernels::ArUcoCamLocatorOutPoseType>("out_cam_pose", "127.0.0.1", appMarkerPort);
+  arucoCamLocator.activateOutPortAsRemote<flexr::kernels::ArUcoCamLocatorOutPoseType>("out_cam_pose", "RTP", "127.0.0.1", appMarkerPort);
 
 
   FrameConverter rgbConverter("recv_frame_converter", width, height, FrameConverter::Conversion::RGBA2RGB);
-  rgbConverter.activateInPortAsRemote<Message<Frame>>("in_frame", flexrFramePort);
+  rgbConverter.activateInPortAsRemote<Message<Frame>>("in_frame", "RTP", flexrFramePort);
   rgbConverter.activateOutPortAsLocal<Message<Frame>>("out_frame");
 
   CVDisplay display("cv_display");

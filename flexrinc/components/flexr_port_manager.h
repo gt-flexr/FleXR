@@ -47,21 +47,16 @@ namespace flexr
          *  Input port tag for the port map
          * @param pd
          *  Input port dependency of flexr::components::PortDependency
-         * @param recvRemoteFunc
-         *  Optional remote receiving function for the remote port activation
-         * @param allocRemoteMsgFunc
-         *  Optional function for remote msg allication. Need for the complex types requiring more than new operator
-         * @see flexr::utils::recvRemotePrimitive, flexr::utils::recvRemotePrimitiveVec,
-         *      flexr::utils::recvNonBlockRemotePrimitive, flexr::utils::recvNonBlockRemotePrimitiveVec
+         * @param deserializeFunc
+         *  Optional function to deserialize received msg to a specific type (not required for primitive types
          */
-        void registerInPortTag(std::string tag, PortDependency pd,
-                               std::function<void (FleXRPort*, void*)> recvRemoteFunc,
-                               std::function<void (void**, int)> allocRemoteMsgFunc = 0)
+        void registerInPortTag(std::string tag,
+                               PortDependency pd,
+                               std::function<void (uint8_t* &, uint32_t &, void**)> deserializeFunc = 0)
         {
           inPortMap[tag]                 = new FleXRPort(inLocalPorts, tag);
           inPortMap[tag]->dependency     = pd;
-          inPortMap[tag]->recvRemote     = recvRemoteFunc;
-          inPortMap[tag]->allocRemoteMsg = allocRemoteMsgFunc;
+          inPortMap[tag]->deserialize    = deserializeFunc;
         }
 
 
@@ -71,22 +66,16 @@ namespace flexr
          *  Output port tag for the port map
          * @param sendLocalCopyFunc
          *  Function to copy an output message for multiple output ports
-         * @param sendRemoteFunc
-         *  Optional remote sending function for the remote port activation
-         * @param freeRemoteMsgFunc
-         *  Optional function to free a msg after sending it remotely.
-         * @see flexr::utils::sendLocalBasicCopy, flexr::utils::sendRemotePrimitive,
-         *      flexr::utils::sendRemotePrimitiveVec
+         * @param serializeFunc
+         *  Optional function to serialize a specific type to msg (not required for primitive types)
          */
         void registerOutPortTag(std::string tag,
                                 std::function<void (FleXRPort*, void*)> sendLocalCopyFunc,
-                                std::function<void (FleXRPort*, void*)> sendRemoteFunc,
-                                std::function<void (void*)> freeRemoteMsgFunc)
+                                std::function<void (void*, uint8_t* &, uint32_t &)> serializeFunc = 0)
         {
           outPortMap[tag]                = new FleXRPort(outLocalPorts, tag);
           outPortMap[tag]->sendLocalCopy = sendLocalCopyFunc;
-          outPortMap[tag]->sendRemote    = sendRemoteFunc;
-          outPortMap[tag]->freeRemoteMsg = freeRemoteMsgFunc;
+          outPortMap[tag]->serialize     = serializeFunc;
         }
 
 
@@ -102,24 +91,6 @@ namespace flexr
         T* getInput(const std::string tag)
         {
           return inPortMap[tag]->getInput<T>();
-        }
-
-
-        /**
-         * @brief Get an input from a port of the port map with tag and data size
-         * @details For remote inputs, there are cases where to receive data with dynamic allocations. With this
-         * function, the memory of the given size is allocated, and the input is received to the memory.
-         * @param tag
-         *  Tag of the port registered to the port map
-         * @param size
-         *  Size to allocate the memory for remote input
-         * @return Pointer of the input data
-         * @see flexr::components::FleXRPort::getInputWithSize
-         */
-        template <typename T>
-        T* getInputWithSize(const std::string tag, int size)
-        {
-          return inPortMap[tag]->getInputWithSize<T>(size);
         }
 
 
@@ -147,6 +118,7 @@ namespace flexr
         template <typename T>
         void sendOutput(std::string tag, T *msg)
         {
+          // send dup ports
           auto portRange = duplicatedOutPortMap.equal_range(tag);
           for(auto port = portRange.first; port != portRange.second; ++port) {
             switch(outPortMap[port->second]->state) {
@@ -159,8 +131,8 @@ namespace flexr
             }
           }
 
+          // send original port
           outPortMap[tag]->sendOutput(msg);
-          if(outPortMap[tag]->state == PortState::REMOTE) outPortMap[tag]->freeRemoteMsg(msg);
         }
 
 
@@ -199,14 +171,16 @@ namespace flexr
          * @brief Activate the registered input port as remote
          * @param tag
          *  Tag of the port registered to the port map
+         * @param p
+         *  Protocol to use
          * @param portNumber
          *  Port number for receiving input from a remote node
          * @see flexr::components::FleXRPort::activateAsRemoteInput
          */
         template <typename T>
-        void activateInPortAsRemote(const std::string tag, int portNumber)
+        void activateInPortAsRemote(const std::string tag, RemoteProtocol p, int portNumber)
         {
-          inPortMap[tag]->activateAsRemoteInput<T>(portNumber);
+          inPortMap[tag]->activateAsRemoteInput<T>(p, portNumber);
         }
 
 
@@ -227,6 +201,8 @@ namespace flexr
          * @brief Activate the registered output port as remote
          * @param tag
          *  Tag of the port registered to the port map
+         * @param p
+         *  Protocol to use
          * @param addr
          *  IP address of the destination node to send the output message
          * @param portNumber
@@ -234,9 +210,9 @@ namespace flexr
          * @see flexr::components::FleXRPort::activateAsRemoteInput
          */
         template <typename T>
-        void activateOutPortAsRemote(const std::string tag, const std::string addr, int portNumber)
+        void activateOutPortAsRemote(const std::string tag, RemoteProtocol p, const std::string addr, int portNumber)
         {
-          outPortMap[tag]->activateAsRemoteOutput<T>(addr, portNumber);
+          outPortMap[tag]->activateAsRemoteOutput<T>(p, addr, portNumber);
         }
 
 
@@ -254,8 +230,7 @@ namespace flexr
           duplicatedOutPortMap.insert(std::make_pair<std::string, std::string>(originTag.c_str(), newTag.c_str()));
           registerOutPortTag(newTag,
                              outPortMap[originTag]->sendLocalCopy,
-                             outPortMap[originTag]->sendRemote,
-                             outPortMap[originTag]->freeRemoteMsg);
+                             outPortMap[originTag]->serialize);
           activateOutPortAsLocal<T>(newTag);
         }
 
@@ -266,6 +241,8 @@ namespace flexr
          *  Tag of the activated port in the port map
          * @param newTag
          *  Tag of a new duplicated port to register and activate locally
+         * @param p
+         *  Protocol to use
          * @param addr
          *  IP address of the destination node to send the output message
          * @param portNumber
@@ -274,14 +251,13 @@ namespace flexr
          */
         template <typename T>
         void duplicateOutPortAsRemote(const std::string originTag, const std::string newTag,
-                                      const std::string addr, const int portNumber)
+                                      RemoteProtocol p, const std::string addr, const int portNumber)
         {
           duplicatedOutPortMap.insert(std::make_pair<std::string, std::string>(originTag.c_str(), newTag.c_str()));
           registerOutPortTag(newTag,
                              outPortMap[originTag]->sendLocalCopy,
-                             outPortMap[originTag]->sendRemote,
-                             outPortMap[originTag]->freeRemoteMsg);
-          activateOutPortAsRemote<T>(newTag, addr, portNumber);
+                             outPortMap[originTag]->serialize);
+          activateOutPortAsRemote<T>(newTag, p, addr, portNumber);
         }
     };
   }

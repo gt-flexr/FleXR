@@ -1,5 +1,6 @@
 #include <kernels/intermediate/aruco_detector.h>
-#include <utils/msg_sending_functions.h>
+#include <utils/local_copy_functions.h>
+#include <utils/serialize_functions.h>
 
 namespace flexr
 {
@@ -14,8 +15,7 @@ namespace flexr
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
       portManager.registerOutPortTag("out_marker_poses",
                                      utils::sendLocalBasicCopy<ArUcoDetectorOutPosesType>,
-                                     utils::sendRemotePrimitiveVecData<ArUcoDetectorOutPosesType>,
-                                     types::freePrimitiveMsg<ArUcoDetectorOutPosesType>);
+                                     utils::serializeVector<ArUcoDetectorOutPosesType>);
       markerDict = cv::aruco::getPredefinedDictionary(dictName);
 
       camIntrinsic  = cv::Mat(3, 3, CV_64FC1);

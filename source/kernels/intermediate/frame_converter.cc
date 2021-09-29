@@ -1,6 +1,5 @@
 #include <kernels/intermediate/frame_converter.h>
-#include <utils/msg_receiving_functions.h>
-#include <utils/msg_sending_functions.h>
+#include <utils/local_copy_functions.h>
 #include <unistd.h>
 
 namespace flexr
@@ -12,10 +11,8 @@ namespace flexr
     {
       setName("FrameConverter");
       this->width = 0; this->height = 0;
-      portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, utils::recvRemoteFrame,
-                                    types::allocFrameWithBuffer);
-      portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, utils::sendRemoteFrame,
-                                     types::freeFrameMsg);
+      portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING);
+      portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy);
     }
 
 
@@ -73,7 +70,7 @@ namespace flexr
 
     raft::kstatus FrameConverter::run()
     {
-      Message<Frame> *inFrame  = portManager.getInputWithSize<Message<Frame>>("in_frame", inFrameSize);
+      Message<Frame> *inFrame  = portManager.getInput<Message<Frame>>("in_frame");
       inFrame->data.setFrameAttribFromCVMat(inFormat);
       inFrame->dataSize = inFrame->data.dataSize;
       if(conv == Conversion::RGBA2RGB) debug_print("received Data Size: %d/%d", inFrame->dataSize, inFrameSize);

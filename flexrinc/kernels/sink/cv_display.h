@@ -10,7 +10,6 @@
 #include "defs.h"
 #include "types/clock_types.h"
 #include "types/frame.h"
-#include "utils/msg_receiving_functions.h"
 
 namespace flexr
 {

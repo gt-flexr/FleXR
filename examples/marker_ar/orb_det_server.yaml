@@ -9,7 +9,7 @@
   input    :
     - port_name      : in_frame
       connection_type: remote
-      binding_info   : 49991
+      remote_info    : [RTP, 49991]
   output   :
     - port_name      : out_frame
       connection_type: local
@@ -27,7 +27,7 @@
   output    :
     - port_name      : out_detected_markers
       connection_type: remote
-      remote_info    : [127.0.0.1, 49992]
+      remote_info    : [RTP, 127.0.0.1, 49992]
 
 
 - local_connections:

@@ -41,9 +41,10 @@ namespace flexr
             YamlInPort inPort;
             inPort.portName       = node[i]["port_name"].as<std::string>();
             inPort.connectionType = node[i]["connection_type"].as<std::string>();
-            if(inPort.connectionType == std::string("remote") && node[i]["binding_info"].IsDefined())
+            if(inPort.connectionType == std::string("remote") && node[i]["remote_info"].IsDefined())
             {
-              inPort.bindingPortNum = node[i]["binding_info"].as<int>();
+              inPort.protocol       = node[i]["remote_info"][0].as<std::string>();
+              inPort.bindingPortNum = node[i]["remote_info"][1].as<int>();
             }
             inPorts.push_back(inPort);
           }
@@ -64,8 +65,9 @@ namespace flexr
 
             if(outPort.connectionType == std::string("remote") && node[i]["remote_info"].IsDefined())
             {
-              outPort.connectingAddr    = node[i]["remote_info"][0].as<std::string>();
-              outPort.connectingPortNum = node[i]["remote_info"][1].as<int>();
+              outPort.protocol          = node[i]["remote_info"][0].as<std::string>();
+              outPort.connectingAddr    = node[i]["remote_info"][1].as<std::string>();
+              outPort.connectingPortNum = node[i]["remote_info"][2].as<int>();
             }
 
             if(node[i]["duplicated_from"].IsDefined())

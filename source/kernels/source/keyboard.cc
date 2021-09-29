@@ -1,6 +1,6 @@
 #include <kernels/source/keyboard.h>
 #include <utils/getch.h>
-#include <utils/msg_sending_functions.h>
+#include <utils/local_copy_functions.h>
 #include <types/types.h>
 
 namespace flexr
@@ -13,9 +13,7 @@ namespace flexr
       setName("Keyboard");
       seq = 0;
       portManager.registerOutPortTag("out_key",
-                                     utils::sendLocalBasicCopy<KeyboardMsgType>,
-                                     utils::sendRemotePrimitive<KeyboardMsgType>,
-                                     types::freePrimitiveMsg<KeyboardMsgType>);
+                                     utils::sendLocalBasicCopy<KeyboardMsgType>);
       freqManager.setFrequency(frequency);
     }
 

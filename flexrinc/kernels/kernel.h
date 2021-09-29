@@ -22,6 +22,8 @@
 #include "components/logger.h"
 #include "components/frequency_manager.h"
 
+#include "utils/local_copy_functions.h"
+
 namespace flexr
 {
   namespace kernels
@@ -109,14 +111,26 @@ namespace flexr
          * @brief Kernel interface to activate input port as remote
          * @param tag
          *  Tag of activating port
+         * @param protocol
+         *  Protocol to use
          * @param portNumber
          *  Port number to activate
          * @see flexr::components::FleXRPortManager.activateInPortAsRemote
          */
         template <typename T>
-        void activateInPortAsRemote(const std::string tag, int portNumber)
+        void activateInPortAsRemote(const std::string tag, std::string protocol, int portNumber)
         {
-          portManager.activateInPortAsRemote<T>(tag, portNumber);
+          components::RemoteProtocol p = components::RemoteProtocol::TCP;
+          if(protocol == std::string("TCP"))
+          {
+            p = components::RemoteProtocol::TCP;
+          }
+          else if(protocol == std::string("RTP"))
+          {
+            p = components::RemoteProtocol::RTP;
+          }
+
+          portManager.activateInPortAsRemote<T>(tag, p, portNumber);
         }
 
 
@@ -137,6 +151,8 @@ namespace flexr
          * @brief Kernel interface to activate output port as remote
          * @param tag
          *  Tag of activating port
+         * @param protocol
+         *  Protocol to use
          * @param addr
          *  Address of remote node to connect
          * @param portNumber
@@ -144,9 +160,20 @@ namespace flexr
          * @see flexr::components::FleXRPortManager.activateOutPortAsRemote
          */
         template <typename T>
-        void activateOutPortAsRemote(const std::string tag, const std::string addr, int portNumber)
+        void activateOutPortAsRemote(const std::string tag, std::string protocol,
+                                     const std::string addr, int portNumber)
         {
-          portManager.activateOutPortAsRemote<T>(tag, addr, portNumber);
+          components::RemoteProtocol p = components::RemoteProtocol::TCP;
+          if(protocol == std::string("TCP"))
+          {
+            p = components::RemoteProtocol::TCP;
+          }
+          else if(protocol == std::string("RTP"))
+          {
+            p = components::RemoteProtocol::RTP;
+          }
+
+          portManager.activateOutPortAsRemote<T>(tag, p, addr, portNumber);
         }
 
 
@@ -171,6 +198,8 @@ namespace flexr
          *  Tag of activating port
          * @param newTag
          *  Tag of a new port
+         * @param protocol
+         *  Protocol to use
          * @param addr
          *  Address of remote node to connect a new port
          * @param portNumber
@@ -179,9 +208,19 @@ namespace flexr
          */
         template <typename T>
         void duplicateOutPortAsRemote(const std::string originTag, const std::string newTag,
-                                      const std::string addr, int portNumber)
+                                      std::string protocol, const std::string addr, int portNumber)
         {
-          portManager.duplicateOutPortAsRemote<T>(originTag, newTag, addr, portNumber);
+          components::RemoteProtocol p = components::RemoteProtocol::TCP;
+          if(protocol == std::string("TCP"))
+          {
+            p = components::RemoteProtocol::TCP;
+          }
+          else if(protocol == std::string("RTP"))
+          {
+            p = components::RemoteProtocol::RTP;
+          }
+
+          portManager.duplicateOutPortAsRemote<T>(originTag, newTag, p, addr, portNumber);
         }
 
 

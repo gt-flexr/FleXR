@@ -1,6 +1,5 @@
 #include "opencv2/imgproc.hpp"
 #include <kernels/intermediate/orb_detector.h>
-#include <utils/msg_sending_functions.h>
 #include <unistd.h>
 
 namespace flexr
@@ -11,11 +10,9 @@ namespace flexr
     ORBDetector::ORBDetector(std::string id, std::string markerImage): FleXRKernel(id)
     {
       setName("ORBDetector");
-      portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
+      portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING);
       portManager.registerOutPortTag("out_detected_markers",
-                                     utils::sendLocalBasicCopy<ORBDetectorOutMarkerType>,
-                                     utils::sendRemoteMarkers,
-                                     types::freePrimitiveMsg<ORBDetectorOutMarkerType>);
+                                     utils::sendLocalBasicCopy<ORBDetectorOutMarkerType>);
 
       orbMarkerTracker.setMarkerFromImage(markerImage);
       registeredMarkers = orbMarkerTracker.getRegisteredObjects();

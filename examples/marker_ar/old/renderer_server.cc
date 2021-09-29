@@ -36,8 +36,8 @@ int main(int argc, char const *argv[])
 
   flexr::kernels::ObjectRenderer objRenderer("obj_renderer",width, height);
   objRenderer.setLogger("obj_renderer_logger", "obj_renderer.log");
-  objRenderer.activateInPortAsRemote<ObjRendererInKeyType>("in_key", serverMessagePort);
-  objRenderer.activateInPortAsRemote<ObjRendererInCtxType>("in_marker_contexts", serverMessagePort2);
+  objRenderer.activateInPortAsRemote<ObjRendererInKeyType>("in_key", "RTP", serverMessagePort);
+  objRenderer.activateInPortAsRemote<ObjRendererInCtxType>("in_marker_contexts", "RTP", serverMessagePort2);
   objRenderer.activateInPortAsLocal<ObjRendererInFrameType>("in_frame");
   objRenderer.activateOutPortAsLocal<ObjRendererOutFrameType>("out_frame");
 

@@ -1,5 +1,5 @@
 #include <kernels/intermediate/aruco_cam_locator.h>
-#include <utils/msg_sending_functions.h>
+#include <utils/local_copy_functions.h>
 
 namespace flexr
 {
@@ -13,9 +13,7 @@ namespace flexr
       setName("ArUcoCamLocator");
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
       portManager.registerOutPortTag("out_cam_pose",
-                                     utils::sendLocalBasicCopy<ArUcoCamLocatorOutPoseType>,
-                                     utils::sendRemotePrimitive<ArUcoCamLocatorOutPoseType>,
-                                     types::freePrimitiveMsg<ArUcoCamLocatorOutPoseType>);
+                                     utils::sendLocalBasicCopy<ArUcoCamLocatorOutPoseType>);
       markerDict = cv::aruco::getPredefinedDictionary(dictName);
 
       camIntrinsic  = cv::Mat(3, 3, CV_64FC1);

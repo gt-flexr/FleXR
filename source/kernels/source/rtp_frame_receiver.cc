@@ -1,5 +1,6 @@
 #include <kernels/source/rtp_frame_receiver.h>
-#include <utils/msg_sending_functions.h>
+#include <utils/local_copy_functions.h>
+#include <utils/serialize_functions.h>
 #include <libavcodec/avcodec.h>
 #include <opencv2/imgproc.hpp>
 #include <unistd.h>
@@ -10,12 +11,12 @@ namespace flexr
   {
     /* Constructor() */
     RTPFrameReceiver::RTPFrameReceiver(std::string id, int port, std::string decoderName, int width, int height):
-      rtpReceiver("127.0.0.1", port),
+      rtpPort("127.0.0.1", port, -1),
       width(width), height(height), decoderName(decoderName),
       FleXRKernel(id)
     {
       setName("RTPFrameReceiver");
-      portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, 0, 0);
+      portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, utils::serializeEncodedFrame);
 
       // Decoder
       av_register_all();
@@ -67,8 +68,7 @@ namespace flexr
       uint8_t *recvDataBuffer = nullptr;
       uint32_t recvDataSize = 0;
 
-      if(rtpReceiver.receiveDynamicWithTrackingInfo(&recvDataBuffer, recvDataSize,
-                                                    outFrame->tag, outFrame->seq, outFrame->ts))
+      if(rtpPort.receiveMsg(true, recvDataBuffer, recvDataSize, outFrame->ts))
       {
         double st = getTsNow();
         av_packet_from_data(&decodingPacket, recvDataBuffer, recvDataSize);
