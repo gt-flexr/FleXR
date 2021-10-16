@@ -69,6 +69,7 @@ namespace flexr
         else
           socket.recv(msg, zmq::recv_flags::dontwait);
 
+        debug_print("received Msg Size: %ld\n", msg.size());
         if(msg.size() > 0)
         {
           outSize = msg.size();

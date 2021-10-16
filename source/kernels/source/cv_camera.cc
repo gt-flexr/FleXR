@@ -25,10 +25,8 @@ namespace flexr
       CVCameraMsgType *outFrame = portManager.getOutputPlaceholder<CVCameraMsgType>("out_frame");
 
       outFrame->data = frameReader.readFrame();
-      strcpy(outFrame->tag, "cvcam_frame");
-      outFrame->seq = seq++;
-      outFrame->ts  = getTsNow();
-      debug_print("FrameInfo: %s:%d %d", outFrame->tag, outFrame->seq, outFrame->ts);
+      outFrame->setHeader("cvcam_frame", seq++, getTsNow(), outFrame->data.useAsCVMat().total()*outFrame->data.useAsCVMat().elemSize());
+      outFrame->printHeader();
 
       portManager.sendOutput<CVCameraMsgType>("out_frame", outFrame);
 

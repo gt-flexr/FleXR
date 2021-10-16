@@ -23,6 +23,8 @@
 #include "components/frequency_manager.h"
 
 #include "utils/local_copy_functions.h"
+#include "utils/serialize_functions.h"
+#include "utils/deserialize_functions.h"
 
 namespace flexr
 {

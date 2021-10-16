@@ -15,10 +15,22 @@ namespace flexr {
     {
       T* castedMessage = static_cast<T*>(msg);
       T* copiedMessage = port->getOutputPlaceholder<T>();
-      strcpy(copiedMessage->tag, castedMessage->tag);
-      copiedMessage->seq  = castedMessage->seq;
-      copiedMessage->ts   = castedMessage->ts;
+
+      copiedMessage->setHeader(castedMessage->tag, castedMessage->seq, castedMessage->ts, castedMessage->dataSize);
       copiedMessage->data = castedMessage->data;
+
+      port->sendOutput(copiedMessage);
+    }
+
+
+    static void sendLocalPointerMsgCopy(components::FleXRPort *port, void *msg)
+    {
+      types::Message<uint8_t*> *castedMessage = static_cast<types::Message<uint8_t*>*>(msg);
+      types::Message<uint8_t*> *copiedMessage = port->getOutputPlaceholder<types::Message<uint8_t*>>();
+
+      copiedMessage->setHeader(castedMessage->tag, castedMessage->seq, castedMessage->ts, castedMessage->dataSize);
+      copiedMessage->data = new uint8_t[copiedMessage->dataSize];
+      memcpy(copiedMessage->data, castedMessage->data, castedMessage->dataSize);
       port->sendOutput(copiedMessage);
     }
 
@@ -28,9 +40,7 @@ namespace flexr {
       types::Message<types::Frame> *castedFrame = static_cast<types::Message<types::Frame>*>(frame);
       types::Message<types::Frame> *copiedFrame = port->getOutputPlaceholder<types::Message<types::Frame>>();
 
-      strcpy(copiedFrame->tag, castedFrame->tag);
-      copiedFrame->seq  = castedFrame->seq;
-      copiedFrame->ts   = castedFrame->ts;
+      copiedFrame->setHeader(castedFrame->tag, castedFrame->seq, castedFrame->ts, castedFrame->dataSize);
       copiedFrame->data = castedFrame->data.clone();
       port->sendOutput(copiedFrame);
     }

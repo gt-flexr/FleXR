@@ -26,6 +26,20 @@ namespace flexr {
       uint32_t ts;
       uint32_t dataSize;
       T        data;
+
+      void printHeader()
+      {
+        printf("Message Header: %s \n", tag);
+        printf("\tseq: %d, ts: %ld, dataSize %d\n", seq, ts, dataSize);
+      }
+
+      void setHeader(std::string tag, uint32_t seq, uint32_t ts, uint32_t dataSize)
+      {
+        std::strcpy(this->tag, tag.c_str());
+        this->seq      = seq;
+        this->ts       = ts;
+        this->dataSize = dataSize;
+      }
     };
 
 

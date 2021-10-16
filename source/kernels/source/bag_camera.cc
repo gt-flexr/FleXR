@@ -42,18 +42,16 @@ namespace flexr
       BagCameraMsgType *outFrame = portManager.getOutputPlaceholder<BagCameraMsgType>("out_frame");
 
       outFrame->data = bagReader.getNextFrame();
-      strcpy(outFrame->tag, "bagcam_frame");
-      outFrame->seq  = seq++;
-      outFrame->ts   = getTsNow();
+      outFrame->setHeader("bag_frame", seq++, getTsNow(), outFrame->data.useAsCVMat().total()*outFrame->data.useAsCVMat().elemSize());
+      outFrame->printHeader();
 
-      debug_print("FrameInfo: %s:%d %lf", outFrame->tag, outFrame->seq, outFrame->ts);
       portManager.sendOutput<BagCameraMsgType>("out_frame", outFrame);
 
-      freqManager.adjust();
 
       double et = getTsNow();
       if(logger.isSet()) logger.getInstance()->info("{} frame\t start\t{}\t end\t{}\t exe\t{}", seq, st, et, et-st);
 
+      freqManager.adjust();
       return raft::proceed;
     }
   } // namespace kernels

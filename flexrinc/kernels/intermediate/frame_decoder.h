@@ -1,5 +1,5 @@
-#ifndef __FLEXR_RTP_FRAME_RECEIVER__
-#define __FLEXR_RTP_FRAME_RECEIVER__
+#ifndef __FLEXR_FRAME_DECODER__
+#define __FLEXR_FRAME_DECODER__
 
 #include <bits/stdc++.h>
 #include <opencv2/opencv.hpp>
@@ -24,21 +24,21 @@ namespace flexr
 {
   namespace kernels
   {
-    using FrameReceiverMsgType = types::Message<types::Frame>;
+    using DecoderInEncodedFrameType = types::Message<uint8_t*>;
+    using DecoderOutFrameType = types::Message<types::Frame>;
 
 
     /**
-     * @brief Kernel to receive RTP frame stream
+     * @brief Kernel to decode an encoded frame
      *
-     * Port Tag       | Type
-     * ---------------| ----------------------------
-     * out_frame      | @ref flexr::types::Message< @ref flexr::types::Frame>
+     * Port Tag         | Type
+     * -----------------| ----------------------------
+     * in_encoded_frame | @ref flexr::types::Message<uint8_t*>
+     * out_frame        | @ref flexr::types::Message< @ref flexr::types::Frame>
      */
-    class RTPFrameReceiver : public FleXRKernel
+    class FrameDecoder : public FleXRKernel
     {
       private:
-        components::RtpPort rtpPort;
-
         std::string decoderName;
         int width, height;
 
@@ -55,8 +55,6 @@ namespace flexr
          * @brief Initialize RTP frame receiver
          * @param id
          *  Kernel ID
-         * @param port
-         *  Port number to receive the stream
          * @param decoderName
          *  Decoder name to decode received frames
          * @param width
@@ -65,10 +63,10 @@ namespace flexr
          *  Frame height
          * @see flexr::components::RTPReceiver
          */
-        RTPFrameReceiver(std::string id, int port, std::string decoderName, int width, int height);
+        FrameDecoder(std::string id, std::string decoderName, int width, int height);
 
 
-        ~RTPFrameReceiver();
+        ~FrameDecoder();
 
 
         raft::kstatus run() override;

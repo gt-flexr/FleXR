@@ -1,10 +1,10 @@
-#ifndef __FLEXR_YAML_RTP_FRAME_RECEIVER__
-#define __FLEXR_YAML_RTP_FRAME_RECEIVER__
+#ifndef __FLEXR_YAML_FRAME_DECODER__
+#define __FLEXR_YAML_FRAME_DECODER__
 
 #include <bits/stdc++.h>
 #include <yaml-cpp/yaml.h>
 #include "defs.h"
-#include "kernels/source/rtp_frame_receiver.h"
+#include "kernels/intermediate/frame_decoder.h"
 
 #include "yaml/yaml_flexr_kernel.h"
 
@@ -14,7 +14,7 @@ namespace flexr
   {
 
     /**
-     * @brief Yaml RTPFrameReceiver kernel
+     * @brief Yaml FrameDecoder kernel
      *
      * YAML attribute | Details
      * ---------------| ----------------------------
@@ -22,22 +22,22 @@ namespace flexr
      * width          | Frmae width to send
      * height         | Frame height to send
      *
-     * @see flexr::kernels::RTPFrameReceiver
+     * @see flexr::kernels::FrameDecoder
      */
-    class YamlRtpFrameReceiver: public YamlFleXRKernel
+    class YamlFrameDecoder: public YamlFleXRKernel
     {
       public:
         std::string decoder;
         int width, height;
 
-        YamlRtpFrameReceiver();
+        YamlFrameDecoder();
 
         /**
          * @brief Parse RTPFrameReceiver kernel info
          * @param node
          *  YAML node to parse
          */
-        void parseRtpFrameReceiver(const YAML::Node &node);
+        void parseFrameDecoder(const YAML::Node &node);
 
 
         /**
@@ -45,19 +45,19 @@ namespace flexr
          * @param node
          *  YAML node to parse
          */
-        void parseRtpFrameReceiverSpecific(const YAML::Node &node);
+        void parseFrameDecoderSpecific(const YAML::Node &node);
 
 
         /**
          * @brief Print parsed RTPFrameReceiver info
          */
-        void printRtpFrameReceiver();
+        void printFrameDecoder();
 
 
         /**
          * @brief Print parsed RTPFrameReceiver specifics
          */
-        void printRtpFrameReceiverSpecific();
+        void printFrameDecoderSpecific();
 
 
         void* make();

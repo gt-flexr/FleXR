@@ -1,6 +1,4 @@
 #include <kernels/intermediate/aruco_detector.h>
-#include <utils/local_copy_functions.h>
-#include <utils/serialize_functions.h>
 
 namespace flexr
 {
@@ -12,7 +10,7 @@ namespace flexr
         int width, int height): FleXRKernel(id)
     {
       setName("ArUcoDetector");
-      portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, 0);
+      portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, utils::deserializeRawFrame);
       portManager.registerOutPortTag("out_marker_poses",
                                      utils::sendLocalBasicCopy<ArUcoDetectorOutPosesType>,
                                      utils::serializeVector<ArUcoDetectorOutPosesType>);

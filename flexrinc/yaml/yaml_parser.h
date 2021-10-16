@@ -15,9 +15,7 @@
 #include "flexrinc/yaml/kernels/source/yaml_bag_camera.h"
 #include "flexrinc/yaml/kernels/source/yaml_cv_camera.h"
 #include "flexrinc/yaml/kernels/source/yaml_keyboard.h"
-#include "flexrinc/yaml/kernels/source/yaml_rtp_frame_receiver.h"
 
-#include "flexrinc/yaml/kernels/sink/yaml_rtp_frame_sender.h"
 #include "flexrinc/yaml/kernels/sink/yaml_cv_display.h"
 #include "flexrinc/yaml/kernels/sink/yaml_non_display.h"
 
@@ -28,6 +26,8 @@
 #include "flexrinc/yaml/kernels/intermediate/yaml_frame_converter.h"
 #include "flexrinc/yaml/kernels/intermediate/yaml_marker_ctx_extractor.h"
 #include "flexrinc/yaml/kernels/intermediate/yaml_object_renderer.h"
+#include "flexrinc/yaml/kernels/intermediate/yaml_frame_encoder.h"
+#include "flexrinc/yaml/kernels/intermediate/yaml_frame_decoder.h"
 
 namespace flexr
 {
@@ -160,14 +160,15 @@ namespace flexr
           if(kernel->getName() == "BagCamera") delete (flexr::kernels::BagCamera*) kernel;
           if(kernel->getName() == "CVCamera") delete (flexr::kernels::CVCamera*) kernel;
           if(kernel->getName() == "Keyboard") delete (flexr::kernels::Keyboard*) kernel;
-          if(kernel->getName() == "RTPFrameReceiver") delete (flexr::kernels::RTPFrameReceiver*) kernel;
+
 
           // Sink kernels
           if(kernel->getName() == "CVDisplay") delete (flexr::kernels::CVDisplay*) kernel;
           if(kernel->getName() == "NonDisplay") delete (flexr::kernels::NonDisplay*) kernel;
-          if(kernel->getName() == "RTPFrameSender") delete (flexr::kernels::RTPFrameSender*) kernel;
 
           // Intermediate kernels
+          if(kernel->getName() == "FrameDecoder") delete (flexr::kernels::FrameDecoder*) kernel;
+          if(kernel->getName() == "FrameEncoder") delete (flexr::kernels::FrameEncoder*) kernel;
           if(kernel->getName() == "FrameConverter") delete (flexr::kernels::FrameConverter*) kernel;
           if(kernel->getName() == "MarkerCtxExtractor") delete (flexr::kernels::MarkerCtxExtractor*) kernel;
 #ifdef __USE_OPENCV_CUDA__
@@ -183,8 +184,8 @@ namespace flexr
         /**
          * @brief Initialize and instantiate kernels while parsing YAML recipe
          * @see flexr::yaml::YamlBagCamera, flexr::yaml::YamlCvCamera, flexr::yaml::YamlKeyboard,
-         * flexr::yaml::YamlRtpFrameReceiver, flexr::yaml::YamlCvDisplay, flexr::yaml::YamlNonDisplay,
-         * flexr::yaml::YamlRtpFrameSender, flexr::yaml::YamlFrameConverter, flexr::yaml::YamlMarkerCtxExtractor,
+         * flexr::yaml::YamlFrameDecoder, flexr::yaml::YamlCvDisplay, flexr::yaml::YamlNonDisplay,
+         * flexr::yaml::YamlFrameEncoder, flexr::yaml::YamlFrameConverter, flexr::yaml::YamlMarkerCtxExtractor,
          * flexr::yaml::YamlCudaOrbDetector, flexr::yaml::YamlOrbDetector, flexr::yaml::YamlObjectRenderer,
          * flexr::yaml::YamlArUcoDetector, flexr::yaml::YamlArUcoCamLocator
          */
@@ -218,12 +219,12 @@ namespace flexr
                 yamlKeyboard.printKeyboard();
                 temp = (kernels::Keyboard*)yamlKeyboard.make();
               }
-              if(doc[i]["kernel"].as<std::string>() == "RTPFrameReceiver")
+              if(doc[i]["kernel"].as<std::string>() == "FrameDecoder")
               {
-                YamlRtpFrameReceiver yamlRtpFrameReceiver;
-                yamlRtpFrameReceiver.parseRtpFrameReceiver(doc[i]);
-                yamlRtpFrameReceiver.printRtpFrameReceiver();
-                temp = (kernels::RTPFrameReceiver*)yamlRtpFrameReceiver.make();
+                YamlFrameDecoder yamlFrameDecoder;
+                yamlFrameDecoder.parseFrameDecoder(doc[i]);
+                yamlFrameDecoder.printFrameDecoder();
+                temp = (kernels::FrameDecoder*)yamlFrameDecoder.make();
               }
 
               // Sink kernels
@@ -241,12 +242,12 @@ namespace flexr
                 yamlNonDisplay.printNonDisplay();
                 temp = (kernels::CVDisplay*)yamlNonDisplay.make();
               }
-              if(doc[i]["kernel"].as<std::string>() == "RTPFrameSender")
+              if(doc[i]["kernel"].as<std::string>() == "FrameEncoder")
               {
-                YamlRtpFrameSender yamlRtpFrameSender;
-                yamlRtpFrameSender.parseRtpFrameSender(doc[i]);
-                yamlRtpFrameSender.printRtpFrameSender();
-                temp = (kernels::RTPFrameSender*)yamlRtpFrameSender.make();
+                YamlFrameEncoder yamlFrameEncoder;
+                yamlFrameEncoder.parseFrameEncoder(doc[i]);
+                yamlFrameEncoder.printFrameEncoder();
+                temp = (kernels::FrameEncoder*)yamlFrameEncoder.make();
               }
 
               // Intermediate kernels

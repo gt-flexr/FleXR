@@ -72,11 +72,13 @@ namespace flexr
 
           if(protocol == RemoteProtocol::TCP)
           {
+            debug_print("getInputFromRemote TCP");
             received = tcpPort.receiveMsg(isBlocking, data, size, input->ts);
           }
 
           if(protocol == RemoteProtocol::RTP)
           {
+            debug_print("getInputFromRemote RTP");
             received = rtpPort.receiveMsg(isBlocking, data, size, input->ts);
           }
 
@@ -84,6 +86,10 @@ namespace flexr
           {
             deserialize(data, size, (void**)&input); // deserialize need to set output->data properly & free data
             received = true;
+          }
+          if(received == false)
+          {
+            debug_print("Failed to receive");
           }
 
           return received;
@@ -103,7 +109,7 @@ namespace flexr
 
           if(serialize != 0)
           {
-            serialize((void**)&output, data, size); // serialize need to free output->data
+            serialize((void*)output, data, size); // serialize need to free output->data
           }
           else
           {

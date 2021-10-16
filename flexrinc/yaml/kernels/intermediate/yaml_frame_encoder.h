@@ -1,10 +1,10 @@
-#ifndef __FLEXR_YAML_RTP_FRAME_SENDER__
-#define __FLEXR_YAML_RTP_FRAME_SENDER__
+#ifndef __FLEXR_YAML_FRAME_ENCODER__
+#define __FLEXR_YAML_FRAME_ENCODER__
 
 #include <bits/stdc++.h>
 #include <yaml-cpp/yaml.h>
 #include "defs.h"
-#include "kernels/sink/rtp_frame_sender.h"
+#include "kernels/intermediate/frame_encoder.h"
 
 #include "yaml/yaml_flexr_kernel.h"
 
@@ -14,7 +14,7 @@ namespace flexr
   {
 
     /**
-     * @brief Yaml RTPFrameSender kernel
+     * @brief Yaml FrameEncoder kernel
      *
      * YAML attribute | Details
      * ---------------| ----------------------------
@@ -23,42 +23,42 @@ namespace flexr
      * height         | Frame height to send
      * bitrate        | Target bitrate
      *
-     * @see flexr::kernels::RtpFrameSender
+     * @see flexr::kernels::FrameEncoder
      */
-    class YamlRtpFrameSender: public YamlFleXRKernel
+    class YamlFrameEncoder: public YamlFleXRKernel
     {
       public:
         std::string encoder;
         int width, height, bitrate;
 
-        YamlRtpFrameSender();
+        YamlFrameEncoder();
 
         /**
-         * @brief Parse RTPFrameSender kernel info
+         * @brief Parse FrameEncoder kernel info
          * @param node
          *  YAML node to parse
          */
-        void parseRtpFrameSender(const YAML::Node &node);
+        void parseFrameEncoder(const YAML::Node &node);
 
 
         /**
-         * @brief Parse specifics of RTPFrameSender kernel
+         * @brief Parse specifics of FrameEncoder kernel
          * @param node
          *  YAML node to parse
          */
-        void parseRtpFrameSenderSpecific(const YAML::Node &node);
+        void parseFrameEncoderSpecific(const YAML::Node &node);
 
 
         /**
-         * @brief Print parsed RTPFrameSender info
+         * @brief Print parsed FrameEncoder info
          */
-        void printRtpFrameSender();
+        void printFrameEncoder();
 
 
         /**
-         * @brief Print parsed RTPFrameSender specifics
+         * @brief Print parsed FrameEncoder specifics
          */
-        void printRtpFrameSenderSpecific();
+        void printFrameEncoderSpecific();
 
 
         void* make();

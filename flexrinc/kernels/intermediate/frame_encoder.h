@@ -1,5 +1,5 @@
-#ifndef __FLEXR_RTP_FRAME_SENDER__
-#define __FLEXR_RTP_FRAME_SENDER__
+#ifndef __FLEXR_FRAME_ENCODER__
+#define __FLEXR_FRAME_ENCODER__
 
 #include <bits/stdc++.h>
 #include <raft>
@@ -24,21 +24,21 @@ namespace flexr
   namespace kernels
   {
 
-    using FrameSenderMsgType = types::Message<types::Frame>;
+    using EncoderInFrameType = types::Message<types::Frame>;
+    using EncoderOutEncodedFrameType = types::Message<uint8_t*>;
 
 
     /**
-     * @brief Kernel to send RTP frame stream
+     * @brief Kernel to encode a raw frame
      *
-     * Port Tag       | Type
-     * ---------------| ----------------------------
-     * in_frame       | @ref flexr::types::Message<@ref flexr::types::Frame>
+     * Port Tag          | Type
+     * ------------------| ----------------------------
+     * in_frame          | @ref flexr::types::Message<@ref flexr::types::Frame>
+     * out_encoded_frame | encoded frame @ref flexr::types::Message<uint8_t*>
      */
-    class RTPFrameSender : public FleXRKernel
+    class FrameEncoder : public FleXRKernel
     {
       private:
-        components::RtpPort rtpPort;
-
         std::string encoderName;
         int width, height;
 
@@ -53,10 +53,6 @@ namespace flexr
          * @brief Initialize RTP frame sender
          * @param id
          *  Kernel ID
-         * @param adder
-         *  IP address of remote node to send the stream
-         * @param port
-         *  Port number of remote node to send the stream
          * @param encoderName
          *  Encoder name to encode sending frames
          * @param width
@@ -67,20 +63,13 @@ namespace flexr
          *  Target FPS of encoding w.r.t. bitrates
          * @see flexr::components::RTPSender
          */
-        RTPFrameSender(std::string id, std::string addr, int port, std::string encoderName, int width, int height,
-                       int bitrate, int fps=60);
+        FrameEncoder(std::string id, std::string encoderName, int width, int height, int bitrate, int fps=60);
 
 
-        ~RTPFrameSender();
+        ~FrameEncoder();
 
 
         raft::kstatus run() override;
-
-
-        void activateInPortAsRemote(const std::string tag, int portNumber)
-        {
-          debug_print("not allow remote port activation.");
-        }
     };
 
   } // namespace kernels
