@@ -8,7 +8,6 @@ target_include_directories(flexr_intermediate_kernel PUBLIC
 target_compile_options(flexr_intermediate_kernel PUBLIC ${FLEXR_CXX_FLAGS})
 target_link_libraries(flexr_intermediate_kernel ${FLEXR_LINKER_FLAGS})
 target_link_libraries(flexr_intermediate_kernel ${FLEXR_LINKER_LIBS})
-target_link_libraries(flexr_intermediate_kernel flexr_type)
 target_link_libraries(flexr_intermediate_kernel flexr_component)
 
 install(TARGETS flexr_intermediate_kernel ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)

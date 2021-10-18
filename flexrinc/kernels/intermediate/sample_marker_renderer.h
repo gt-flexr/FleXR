@@ -1,5 +1,5 @@
-#ifndef __FLEXR_ARUCO_DETECTOR__
-#define __FLEXR_ARUCO_DETECTOR__
+#ifndef __FLEXR_SAMPLE_MARKER_RENDERER__
+#define __FLEXR_SAMPLE_MARKER_RENDERER__
 
 #include <bits/stdc++.h>
 #include <raft>
@@ -19,25 +19,27 @@ namespace flexr
 {
   namespace kernels
   {
+
     using namespace flexr::types;
-    using ArUcoDetectorInFrameType = Message<Frame>;
-    using ArUcoDetectorOutPoseType = Message<ObjectPose>;
+    using SamMarRendFrame     = Message<Frame>;
+    using SamMarRendInKey     = Message<char>;
+    using SamMarRendInCamPose = Message<ObjectPose>;
 
 
     /**
-     * @brief Kernel to detect ArUco markers
+     * @brief Kernel to get the camera pose from a detected ArUco marker
      *
      * Port Tag             | Type
      * ---------------------| ----------------------------
      * in_frame             | @ref flexr::types::Message<@ref flexr::types::Frame>
-     * out_marker_pose      | @ref flexr::types::Message<@ref flexr::types::ObjectPose>
+     * out_cam_pose         | @ref flexr::types::Message<@ref flexr::types::ObjectPose>
     */
-    class ArUcoDetector : public FleXRKernel
+    class SampleMarkerRenderer : public FleXRKernel
     {
       private:
+        int width, height;
         cv::Mat camIntrinsic, camDistCoeffs;
-        cv::Ptr<cv::aruco::Dictionary> markerDict;
-
+        SamMarRendFrame cachedFrame;
 
       public:
       /**
@@ -51,9 +53,7 @@ namespace flexr
        * @param height
        *  Frame height
        */
-        ArUcoDetector(std::string id, cv::aruco::PREDEFINED_DICTIONARY_NAME dictName = cv::aruco::DICT_6X6_250,
-                      int width = 1920, int height = 1080);
-
+        SampleMarkerRenderer(std::string id, int width = 1920, int height = 1080);
 
         raft::kstatus run() override;
     };

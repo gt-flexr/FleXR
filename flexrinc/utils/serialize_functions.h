@@ -3,7 +3,6 @@
 
 #include <zmq.hpp>
 #include "defs.h"
-#include "types/cv/types.h"
 #include "types/frame.h"
 #include "types/types.h"
 #include "components/flexr_port.h"

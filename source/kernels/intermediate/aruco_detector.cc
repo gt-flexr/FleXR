@@ -11,9 +11,8 @@ namespace flexr
     {
       setName("ArUcoDetector");
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, utils::deserializeRawFrame);
-      portManager.registerOutPortTag("out_marker_poses",
-                                     utils::sendLocalBasicCopy<ArUcoDetectorOutPosesType>,
-                                     utils::serializeVector<ArUcoDetectorOutPosesType>);
+      portManager.registerOutPortTag("out_marker_pose",
+                                     utils::sendLocalBasicCopy<ArUcoDetectorOutPoseType>);
       markerDict = cv::aruco::getPredefinedDictionary(dictName);
 
       camIntrinsic  = cv::Mat(3, 3, CV_64FC1);
@@ -33,7 +32,7 @@ namespace flexr
     raft::kstatus ArUcoDetector::run()
     {
       ArUcoDetectorInFrameType *inFrame = portManager.getInput<ArUcoDetectorInFrameType>("in_frame");
-      ArUcoDetectorOutPosesType *outMarkerPoses = portManager.getOutputPlaceholder<ArUcoDetectorOutPosesType>("out_marker_poses");
+      ArUcoDetectorOutPoseType *outMarkerPose = portManager.getOutputPlaceholder<ArUcoDetectorOutPoseType>("out_marker_pose");
 
       std::vector<int> ids;
       std::vector<std::vector<cv::Point2f>> corners;
@@ -47,39 +46,26 @@ namespace flexr
         std::vector<cv::Vec3d> rvecs, tvecs;
         cv::aruco::estimatePoseSingleMarkers(corners, 0.05, camIntrinsic, camDistCoeffs, rvecs, tvecs);
 
-        outMarkerPoses->data.resize(MAX_MARKERS);
-        for(int i = 0; i < MAX_MARKERS; i++)
-        {
-          cv::Mat R;
-          cv::Rodrigues(rvecs[i], R);
-          double roll  = atan2(R.at<double>(2, 1), R.at<double>(2, 2)) * (180/PI);
-          double pitch = asin(R.at<double>(2, 0)) * (180/PI);
-          double yaw   = atan2(-R.at<double>(1, 0), R.at<double>(0, 0)) * (180/PI);
+        cv::Mat R;
+        cv::Rodrigues(rvecs[0], R);
 
-          if(i == 0)
-          {
-            debug_print("Marker Rotation: %f / %f / %f", roll, pitch, yaw);
-            /*
-            cv::Mat mtxR, mtxQ, Qx, Qy, Qz;
-            cv::RQDecomp3x3(Rt, mtxR, mtxQ, Qx, Qy, Qz);
-            std::cout << Qx << std::endl;
-            std::cout << Qy << std::endl;
-            std::cout << Qz << std::endl << std::endl;
-            */
-          }
+        double roll  = atan2(R.at<double>(2, 1), R.at<double>(2, 2)) * (180/PI);
+        double pitch = asin(R.at<double>(2, 0)) * (180/PI);
+        double yaw   = atan2(-R.at<double>(1, 0), R.at<double>(0, 0)) * (180/PI);
 
-          outMarkerPoses->data[i].rx = roll;
-          outMarkerPoses->data[i].ry = pitch;
-          outMarkerPoses->data[i].rz = yaw;
+        debug_print("Marker Rotation: %f / %f / %f", roll, pitch, yaw);
 
-          outMarkerPoses->data[i].tx = tvecs[i][0];
-          outMarkerPoses->data[i].ty = tvecs[i][1];
-          outMarkerPoses->data[i].tz = tvecs[i][2];
-        }
+        outMarkerPose->data.rx = roll;
+        outMarkerPose->data.ry = pitch;
+        outMarkerPose->data.rz = yaw;
+
+        outMarkerPose->data.tx = tvecs[0][0];
+        outMarkerPose->data.ty = tvecs[0][1];
+        outMarkerPose->data.tz = tvecs[0][2];
       }
       et = getTsMs();
 
-      portManager.sendOutput("out_marker_poses", outMarkerPoses);
+      portManager.sendOutput("out_marker_pose", outMarkerPose);
       inFrame->data.release();
       portManager.freeInput("in_frame", inFrame);
 

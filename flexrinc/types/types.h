@@ -8,15 +8,6 @@
 // TODO: integrate all the types into this file
 namespace flexr {
   namespace types {
-    typedef struct RTPTrackingInfo {
-      int32_t invoice; // for sanity check
-      uint32_t dataSize;
-      char tag[FLEXR_MSG_TAG_SIZE];
-      uint32_t seq;
-      double ts;
-    } RTPTrackingInfo;
-
-
     template <class T>
     class Message
     {
@@ -48,6 +39,7 @@ namespace flexr {
       public:
       float rx, ry, rz;
       float tx, ty, tz;
+      bool  vaild;
     };
 
 

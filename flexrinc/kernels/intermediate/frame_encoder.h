@@ -6,7 +6,6 @@
 
 #include "defs.h"
 #include "kernels/kernel.h"
-#include "types/cv/types.h"
 #include "types/clock_types.h"
 #include "types/frame.h"
 

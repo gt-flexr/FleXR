@@ -2,6 +2,8 @@
 #define __FLEXR_KEYBOARD__
 
 #include <bits/stdc++.h>
+#include <unistd.h>
+#include <termios.h>
 #include <raft>
 #include "defs.h"
 #include "types/types.h"
@@ -26,6 +28,8 @@ namespace flexr
     {
     private:
       uint32_t seq;
+
+      char getch();
 
     public:
       /**

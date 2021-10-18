@@ -22,10 +22,9 @@
 #include "flexrinc/yaml/kernels/intermediate/yaml_aruco_cam_locator.h"
 #include "flexrinc/yaml/kernels/intermediate/yaml_aruco_detector.h"
 #include "flexrinc/yaml/kernels/intermediate/yaml_cuda_orb_detector.h"
-#include "flexrinc/yaml/kernels/intermediate/yaml_orb_detector.h"
+#include "flexrinc/yaml/kernels/intermediate/yaml_orb_cam_locator.h"
+#include "flexrinc/yaml/kernels/intermediate/yaml_sample_marker_renderer.h"
 #include "flexrinc/yaml/kernels/intermediate/yaml_frame_converter.h"
-#include "flexrinc/yaml/kernels/intermediate/yaml_marker_ctx_extractor.h"
-#include "flexrinc/yaml/kernels/intermediate/yaml_object_renderer.h"
 #include "flexrinc/yaml/kernels/intermediate/yaml_frame_encoder.h"
 #include "flexrinc/yaml/kernels/intermediate/yaml_frame_decoder.h"
 
@@ -170,14 +169,14 @@ namespace flexr
           if(kernel->getName() == "FrameDecoder") delete (flexr::kernels::FrameDecoder*) kernel;
           if(kernel->getName() == "FrameEncoder") delete (flexr::kernels::FrameEncoder*) kernel;
           if(kernel->getName() == "FrameConverter") delete (flexr::kernels::FrameConverter*) kernel;
-          if(kernel->getName() == "MarkerCtxExtractor") delete (flexr::kernels::MarkerCtxExtractor*) kernel;
 #ifdef __USE_OPENCV_CUDA__
           if(kernel->getName() == "CudaORBDetector") delete (flexr::kernels::CudaORBDetector*) kernel;
 #endif
-          if(kernel->getName() == "ORBDetector") delete (flexr::kernels::ORBDetector*) kernel;
-          if(kernel->getName() == "ObjectRenderer") delete (flexr::kernels::ObjectRenderer*) kernel;
+          if(kernel->getName() == "OrbCamLocator") delete (flexr::kernels::OrbCamLocator*) kernel;
           if(kernel->getName() == "ArUcoDetector") delete (flexr::kernels::ArUcoDetector*) kernel;
           if(kernel->getName() == "ArUcoCamLocator") delete (flexr::kernels::ArUcoCamLocator*) kernel;
+
+          if(kernel->getName() == "SampleMarkerRenderer") delete (flexr::kernels::SampleMarkerRenderer*) kernel;
         }
 
 
@@ -186,7 +185,7 @@ namespace flexr
          * @see flexr::yaml::YamlBagCamera, flexr::yaml::YamlCvCamera, flexr::yaml::YamlKeyboard,
          * flexr::yaml::YamlFrameDecoder, flexr::yaml::YamlCvDisplay, flexr::yaml::YamlNonDisplay,
          * flexr::yaml::YamlFrameEncoder, flexr::yaml::YamlFrameConverter, flexr::yaml::YamlMarkerCtxExtractor,
-         * flexr::yaml::YamlCudaOrbDetector, flexr::yaml::YamlOrbDetector, flexr::yaml::YamlObjectRenderer,
+         * flexr::yaml::YamlCudaOrbDetector, flexr::yaml::YamlOrbCamLocator
          * flexr::yaml::YamlArUcoDetector, flexr::yaml::YamlArUcoCamLocator
          */
         void initKernels()
@@ -258,13 +257,6 @@ namespace flexr
                 yamlFrameConverter.printFrameConverter();
                 temp = (kernels::FrameConverter*)yamlFrameConverter.make();
               }
-              if(doc[i]["kernel"].as<std::string>() == "MarkerCtxExtractor")
-              {
-                YamlMarkerCtxExtractor yamlMarkerCtxExtractor;
-                yamlMarkerCtxExtractor.parseMarkerCtxExtractor(doc[i]);
-                yamlMarkerCtxExtractor.printMarkerCtxExtractor();
-                temp = (kernels::MarkerCtxExtractor*)yamlMarkerCtxExtractor.make();
-              }
 #ifdef __USE_OPENCV_CUDA__
               if(doc[i]["kernel"].as<std::string>() == "CudaORBDetector")
               {
@@ -274,19 +266,12 @@ namespace flexr
                 temp = (kernels::CudaORBDetector*)yamlCudaOrbDetector.make();
               }
 #endif
-              if(doc[i]["kernel"].as<std::string>() == "ORBDetector")
+              if(doc[i]["kernel"].as<std::string>() == "OrbCamLocator")
               {
-                YamlOrbDetector yamlOrbDetector;
-                yamlOrbDetector.parseOrbDetector(doc[i]);
-                yamlOrbDetector.printOrbDetector();
-                temp = (kernels::ORBDetector*)yamlOrbDetector.make();
-              }
-              if(doc[i]["kernel"].as<std::string>() == "ObjectRenderer")
-              {
-                YamlObjectRenderer yamlObjectRenderer;
-                yamlObjectRenderer.parseObjectRenderer(doc[i]);
-                yamlObjectRenderer.printObjectRenderer();
-                temp = (kernels::ObjectRenderer*)yamlObjectRenderer.make();
+                YamlOrbCamLocator yamlOrbCamLocator;
+                yamlOrbCamLocator.parseOrbCamLocator(doc[i]);
+                yamlOrbCamLocator.printOrbCamLocator();
+                temp = (kernels::OrbCamLocator*)yamlOrbCamLocator.make();
               }
               if(doc[i]["kernel"].as<std::string>() == "ArUcoDetector")
               {
@@ -301,6 +286,14 @@ namespace flexr
                 yamlArUcoCamLocator.parseArUcoCamLocator(doc[i]);
                 yamlArUcoCamLocator.printArUcoCamLocator();
                 temp = (kernels::ArUcoCamLocator*)yamlArUcoCamLocator.make();
+              }
+              if(doc[i]["kernel"].as<std::string>() == "SampleMarkerRenderer")
+              {
+                YamlArUcoCamLocator yamlArUcoCamLocator;
+                YamlSampleMarkerRenderer yamlSampleMarkerRenderer;
+                yamlSampleMarkerRenderer.parseSampleMarkerRenderer(doc[i]);
+                yamlSampleMarkerRenderer.printSampleMarkerRenderer();
+                temp = (kernels::SampleMarkerRenderer*)yamlSampleMarkerRenderer.make();
               }
 
               if(temp != nullptr)

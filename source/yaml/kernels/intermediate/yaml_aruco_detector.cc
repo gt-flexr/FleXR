@@ -76,12 +76,12 @@ namespace flexr
         for(int i = 0; i < outPorts.size(); i++)
         {
           // Kernel specified ports
-          if(outPorts[i].portName == "out_marker_poses")
+          if(outPorts[i].portName == "out_marker_pose")
           {
             if(outPorts[i].connectionType == "local")
-              temp->activateOutPortAsLocal<kernels::ArUcoDetectorOutPosesType>(outPorts[i].portName);
+              temp->activateOutPortAsLocal<kernels::ArUcoDetectorOutPoseType>(outPorts[i].portName);
             else if(outPorts[i].connectionType == "remote")
-              temp->activateOutPortAsRemote<kernels::ArUcoDetectorOutPosesType>(outPorts[i].portName,
+              temp->activateOutPortAsRemote<kernels::ArUcoDetectorOutPoseType>(outPorts[i].portName,
                                                                                 outPorts[i].protocol,
                                                                                 outPorts[i].connectingAddr,
                                                                                 outPorts[i].connectingPortNum);
@@ -89,13 +89,13 @@ namespace flexr
           else
           {
             // Duplicated ports (non-specified)
-            if(outPorts[i].duplicatedFrom == "out_frame")
+            if(outPorts[i].duplicatedFrom == "out_marker_pose")
             {
               if(outPorts[i].connectionType == "local")
-                temp->duplicateOutPortAsLocal<kernels::ArUcoDetectorOutPosesType>(outPorts[i].duplicatedFrom,
+                temp->duplicateOutPortAsLocal<kernels::ArUcoDetectorOutPoseType>(outPorts[i].duplicatedFrom,
                                                                                  outPorts[i].portName);
               else if(outPorts[i].connectionType == "remote")
-                temp->duplicateOutPortAsRemote<kernels::ArUcoDetectorOutPosesType>(
+                temp->duplicateOutPortAsRemote<kernels::ArUcoDetectorOutPoseType>(
                     outPorts[i].duplicatedFrom, outPorts[i].portName,
                     outPorts[i].protocol, outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
             }

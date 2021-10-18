@@ -2,7 +2,6 @@
 #define __FLEXR_UTILS_DESERIALIZE_FUNCS__
 
 #include "defs.h"
-#include "types/cv/types.h"
 #include "types/types.h"
 #include "types/frame.h"
 #include "components/flexr_port.h"
