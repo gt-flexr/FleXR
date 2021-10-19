@@ -5,24 +5,13 @@ file(GLOB_RECURSE EXAMPLE_SRCS
      )
 
 list(APPEND EXAMPLE_SRCS
-  marker_ar/old/orb_serialized.cc
-  marker_ar/old/orb_local.cc
-  marker_ar/old/orb_full_client.cc
-  marker_ar/old/orb_part_detector_client.cc
-  marker_ar/old/orb_part_perception_client.cc
-  marker_ar/old/renderer_client.cc
-  marker_ar/old/renderer_server.cc
-  marker_ar/old/ue4_local.cc
+
 )
 
 
 if(${USE_OPENCV_CUDA})
 list(APPEND EXAMPLE_SRCS
-  marker_ar/old/orb_serialized_cuda.cc
-  marker_ar/old/orb_local_cuda.cc
-  marker_ar/old/orb_full_server.cc
-  marker_ar/old/orb_part_detector_server.cc
-  marker_ar/old/orb_part_perception_server.cc
+
 )
 endif(${USE_OPENCV_CUDA})
 
@@ -33,6 +22,6 @@ foreach(EXAMPLE_SRC ${EXAMPLE_SRCS})
 
   add_executable(${EXAMPLE_NAME} ${EXAMPLE_SRC})
   target_link_libraries(${EXAMPLE_NAME} flexr_kernel)
-  target_link_libraries(${EXAMPLE_NAME} flexr_yaml_kernel)
+  target_link_libraries(${EXAMPLE_NAME} flexr_kernel_yaml)
 endforeach(EXAMPLE_SRC ${EXAMPLE_SRCS})
 

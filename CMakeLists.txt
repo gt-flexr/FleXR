@@ -21,22 +21,19 @@ endif()
 
 # Build options
 build_option(DEBUG "Set Debug/Release" ON)
-build_option(PROFILE "Set kernel profiling" ON)
 
 flexr_option(USE_FFMPEG_NVCODEC "Use nvcodec with ffmpeg" OFF)
 flexr_option(USE_OPENCV_CUDA "Use cuda-accelerated functions of OpenCV" OFF)
 
 # Source codes & headers
-configure_file(config/root_directory.h.in config/root_directory.h)
+#configure_file(config/root_directory.h.in config/root_directory.h)
 
-# FLEXR compile info
+# FLEXR core build flags & options
 set(FLEXR_CXX_FLAGS "")
 set(FLEXR_LINKER_FLAGS "")
 set(FLEXR_LINKER_LIBS "")
 
 # Include cmake modules
-include_directories("flexrinc")
-include(cmake/modules/OpenGL.cmake)
 include(cmake/modules/OpenCV.cmake)
 include(cmake/modules/RaftLib.cmake)
 include(cmake/modules/LibZMQ.cmake)
@@ -45,6 +42,7 @@ include(cmake/modules/Spdlog.cmake)
 include(cmake/modules/yaml-cpp.cmake)
 include(cmake/modules/uvgRTP.cmake)
 include(cmake/modules/rosbag.cmake)
+include(cmake/modules/OpenGL.cmake)
 
 message(STATUS "[FLEXR COMPILE INFO]")
 
@@ -52,10 +50,15 @@ message("\t FLEXR_CXX_FLAGS: ${FLEXR_CXX_FLAGS}")
 message("\t FLEXR_LINKER_FLAGS: ${FLEXR_LINKER_FLAGS}")
 message("\t FLEXR_LINKER_LIBS: ${FLEXR_LINKER_LIBS}")
 
-add_subdirectory(third-party)
-add_subdirectory(flexrinc)
-add_subdirectory(source)
+add_subdirectory(flexr_third_party)
+add_subdirectory(flexr_core)
+
+# TODO Need to separete kernel compile processes from core
+add_subdirectory(flexr_kernels)
+
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
 add_subdirectory(examples)
+add_subdirectory(tests)
 
 # Install
 string(REPLACE ";" " " FLEXR_CXX_FLAGS "${FLEXR_CXX_FLAGS}")
@@ -63,7 +66,7 @@ string(REPLACE ";" " " FLEXR_LINKER_FLAGS "${FLEXR_LINKER_FLAGS}")
 string(REPLACE ";" " " FLEXR_LINKER_LIBS "${FLEXR_LINKER_LIBS}")
 
 set(FLEXR_HEADER flexr)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/${FLEXR_HEADER} DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+install(FILES ${CMAKE_SOURCE_DIR}/${FLEXR_HEADER} DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
 
 if(NOT WIN32)
   if(NOT DEFINED ENV{PKG_CONFIG_PATH})

@@ -9,85 +9,14 @@
 #include <bits/stdc++.h>
 #include <raft>
 #include <yaml-cpp/yaml.h>
+#include <catch2/catch_test_macros.hpp>
 
 
 /* Utils */
-#include "./flexrinc/utils/cxxopts.hpp"
-#include "./flexrinc/utils/serialize_functions.h"
-#include "./flexrinc/utils/deserialize_functions.h"
-#include "./flexrinc/utils/local_copy_functions.h"
+#include "./flexr_third_party/include/cxxopts.hpp"
 
-
-/* defs */
-#include "./flexrinc/defs.h"
-
-
-/* Types */
-#include "./flexrinc/types/frame.h"
-#include "./flexrinc/types/clock_types.h"
-
-/* Components */
-#include "./flexrinc/components/rosbag_reader.h"
-#include "./flexrinc/components/rosbag_frame_reader.h"
-
-#include "./flexrinc/components/rtp_port.h"
-
-#include "./flexrinc/components/cv_frame_reader.h"
-#include "./flexrinc/components/logger.h"
-#include "./flexrinc/components/frequency_manager.h"
-
-#include "./flexrinc/components/zmq_port.h"
-#include "./flexrinc/components/flexr_port.h"
-#include "./flexrinc/components/flexr_port_manager.h"
-
-
-/* Kernels
- *   - 3 Types: Source, Intermediate, Sink
- *   - Source      : output ports only
- *   - Intermediate: input and output ports
- *   - Sink        : input ports only
- */
-#include "./flexrinc/kernels/kernel.h"
-
-#include "./flexrinc/kernels/source/bag_camera.h"
-#include "./flexrinc/kernels/source/cv_camera.h"
-#include "./flexrinc/kernels/source/keyboard.h"
-
-#include "./flexrinc/kernels/sink/cv_display.h"
-#include "./flexrinc/kernels/sink/non_display.h"
-
-#include "./flexrinc/kernels/intermediate/frame_encoder.h"
-#include "./flexrinc/kernels/intermediate/frame_decoder.h"
-//#include "./flexrinc/kernels/intermediate/cuda_orb_detector.h" // TODO
-#include "./flexrinc/kernels/intermediate/orb_cam_locator.h"
-#include "./flexrinc/kernels/intermediate/frame_converter.h"
-#include "./flexrinc/kernels/intermediate/aruco_detector.h"
-#include "./flexrinc/kernels/intermediate/aruco_cam_locator.h"
-
-
-/*
- * Yaml Kernels
- */
-#include "./flexrinc/yaml/yaml_parser.h"
-#include "./flexrinc/yaml/yaml_flexr_kernel.h"
-#include "./flexrinc/yaml/yaml_ports.h"
-#include "./flexrinc/yaml/yaml_local_connection.h"
-
-#include "./flexrinc/yaml/kernels/source/yaml_bag_camera.h"
-#include "./flexrinc/yaml/kernels/source/yaml_cv_camera.h"
-#include "./flexrinc/yaml/kernels/source/yaml_keyboard.h"
-
-#include "./flexrinc/yaml/kernels/sink/yaml_cv_display.h"
-#include "./flexrinc/yaml/kernels/sink/yaml_non_display.h"
-
-#include "./flexrinc/yaml/kernels/intermediate/yaml_orb_cam_locator.h"
-//#include "./flexrinc/yaml/kernels/intermediate/yaml_cuda_orb_detector.h" // TODO
-#include "./flexrinc/yaml/kernels/intermediate/yaml_frame_converter.h"
-#include "./flexrinc/yaml/kernels/intermediate/yaml_aruco_detector.h"
-#include "./flexrinc/yaml/kernels/intermediate/yaml_aruco_cam_locator.h"
-#include "./flexrinc/yaml/kernels/intermediate/yaml_frame_encoder.h"
-#include "./flexrinc/yaml/kernels/intermediate/yaml_frame_decoder.h"
-
+#include "./flexr_core/include/core.h"
+#include "./flexr_kernels/include/kernels.h"
 
 #endif
 

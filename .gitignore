@@ -41,3 +41,4 @@ resources/*
 
 compile_commands.json
 .clangd/
+bin/
