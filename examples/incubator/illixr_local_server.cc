@@ -1,12 +1,10 @@
 
-#include "types/cv/orb_marker_tracker.h"
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <raft>
 #include <bits/stdc++.h>
 #include <cv.hpp>
 #include "kernels/perceptions/kimera/kimera_vio.h"
-#include <mxre>
 #include "types/kimera/types.h"
 #include "kernels/sinks/illixr_appsink.h"
 #include "kernels/sources/illixr_appsource.h"

@@ -12,7 +12,6 @@
 #include "types/clock_types.h"
 #include "types/cv/types.h"
 #include "types/kimera/types.h"
-#include "utils/cv_utils.h"
 #include "kernels/kernel.h"
 
 namespace mxre
