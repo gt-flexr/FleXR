@@ -71,10 +71,12 @@
 #include "./flexrinc/kernels/source/cv_camera.h"
 #include "./flexrinc/kernels/source/keyboard.h"
 #include "./flexrinc/kernels/source/rtp_frame_receiver.h"
+#include "./flexrinc/kernels/source/vulkan_renderer.h"
 
 #include "./flexrinc/kernels/sink/cv_display.h"
 #include "./flexrinc/kernels/sink/non_display.h"
 #include "./flexrinc/kernels/sink/rtp_frame_sender.h"
+#include "./flexrinc/kernels/sink/image_sink.h"
 
 #include "./flexrinc/kernels/intermediate/cuda_orb_detector.h"
 #include "./flexrinc/kernels/intermediate/marker_ctx_extractor.h"
