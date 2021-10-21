@@ -11,10 +11,5 @@ macro(build_option variable desc value)
       add_definitions(-D__DEBUG__=0)
     endif()
   endif()
-
-  # PROFILE: ON OFF
-  if(${variable} STREQUAL PROFILE AND ${value})
-    add_definitions(-D__PROFILE__=1)
-  endif()
 endmacro()
 

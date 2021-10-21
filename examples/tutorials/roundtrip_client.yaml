@@ -6,16 +6,16 @@
     - frames_to_cache: 400
       start_index    : 400
       bag_path       :
-      bag_topic      :
+      bag_topic      : /camera/image_raw
   output   :
     - port_name      : out_frame
       connection_type: local
 
 
-- kernel   : RTPFrameSender
-  id       : rtp_frame_sender
+- kernel   : FrameEncoder
+  id       : frameEncoder1
   frequency: 60
-  logger   : [client_rtp_frame_sender, client_rtp_frame_sender.log]
+  logger   : [client_frame_encoder, client_frame_encoder.log]
   others   :
     - encoder : h264_nvenc
       width   : 1920
@@ -25,23 +25,23 @@
     - port_name: in_frame
       connection_type: local
   output   :
-    - port_name      : out_frame
+    - port_name      : out_encoded_frame
       connection_type: remote
-      remote_info    : [127.0.0.1, 49991]
+      remote_info    : [RTP, 127.0.0.1, 49991]
 
 
-- kernel   : RTPFrameReceiver
-  id       : rtp_frame_receiver
+- kernel   : FrameDecoder
+  id       : frameDecoder1
   frequency: 60
-  logger   : [client_rtp_frame_receiver, client_rtp_frame_receiver.log]
+  logger   : [client_frame_decoder, client_frame_decoder.log]
   others   :
     - decoder: h264_cuvid
       width  : 1920
       height : 1080
   input    :
-    - port_name      : in_frame
+    - port_name      : in_encoded_frame
       connection_type: remote
-      binding_info   : 49992
+      remote_info    : [RTP, 49992]
   output   :
     - port_name      : out_frame
       connection_type: local
@@ -59,10 +59,10 @@
 - local_connections:
   - send_kernel   : bag_camera
     send_port_name: out_frame
-    recv_kernel   : rtp_frame_sender
+    recv_kernel   : frameEncoder1
     recv_port_name: in_frame
     queue_size    : 1
-  - send_kernel   : rtp_frame_receiver
+  - send_kernel   : frameDecoder1
     send_port_name: out_frame
     recv_kernel   : cv_display
     recv_port_name: in_frame
