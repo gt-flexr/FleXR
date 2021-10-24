@@ -1,15 +1,13 @@
 #include "kernels/source/renderer.h"
 
 #include <array>
-#include <dlfcn.h>
+#include <algorithm>
+#include <dlfcn.h> // For dlopen
 
 #include <VkBootstrap.h>
 
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
-
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb_image_write.h>
 
 #define ASSERT_THROW(status, ...) \
 if (!(status)) { \
@@ -28,7 +26,8 @@ if (!(status)) { \
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 Renderer::Renderer(int width, int height)
-  : m_extent {width, height, 1}
+  : m_extent {static_cast<unsigned>(width), static_cast<unsigned>(height), 1}
+  , m_frame  {width, height, 4, std::vector<char>(width * height * 4)}
 {
   if (const auto handle = dlopen("/usr/lib64/librenderdoc.so", RTLD_NOW | RTLD_NOLOAD))
   {
@@ -265,7 +264,7 @@ auto Renderer::SubmitWork(vk::CommandBuffer commandBuffer) -> void
   m_device.destroyFence(fence);
 }
 
-auto Renderer::Tick() -> void
+auto Renderer::Render() -> void
 {
   const auto commandBuffers = m_device.allocateCommandBuffers({
     m_commandPool, vk::CommandBufferLevel::ePrimary, 2});
@@ -333,7 +332,7 @@ auto Renderer::Tick() -> void
   m_device.waitIdle();
 
   char* data {nullptr};
-  vmaMapMemory(m_allocator, m_copyImage.allocation, (void**)&data);
-  stbi_write_bmp("result.bmp", m_extent.width, m_extent.height, 4, data);
+  vmaMapMemory(m_allocator, m_copyImage.allocation, reinterpret_cast<void**>(&data));
+  std::memcpy(m_frame.data.data(), data, m_frame.data.size());
   vmaUnmapMemory(m_allocator, m_copyImage.allocation);
 }

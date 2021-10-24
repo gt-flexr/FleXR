@@ -14,6 +14,14 @@ struct Image
   VmaAllocation allocation;
 };
 
+struct RenderFrame
+{
+  int width    {0};
+  int height   {0};
+  int channels {0};
+  std::vector<char> data;
+};
+
 class Renderer
 {
 public:
@@ -21,7 +29,9 @@ public:
 
   ~Renderer();
 
-  auto Tick() -> void;
+  auto Render() -> void;
+
+  auto GetRenderFrame() const { return m_frame; }
 
   auto SubmitWork(vk::CommandBuffer commandBuffer) -> void;
 
@@ -42,4 +52,6 @@ private:
 
   Image               m_framebufferImage;
   Image               m_copyImage;
+
+  RenderFrame         m_frame;
 };
