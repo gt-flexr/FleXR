@@ -10,6 +10,7 @@ target_link_libraries(flexr_sink_kernel ${FLEXR_LINKER_FLAGS})
 target_link_libraries(flexr_sink_kernel ${FLEXR_LINKER_LIBS})
 target_link_libraries(flexr_sink_kernel flexr_type)
 target_link_libraries(flexr_sink_kernel flexr_component)
+target_link_libraries(flexr_sink_kernel stb)
 
 install(TARGETS flexr_sink_kernel ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 

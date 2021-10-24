@@ -36,6 +36,13 @@ namespace flexr {
       float tx, ty, tz;
     };
 
+    struct Image
+    {
+      int width    {0};
+      int height   {0};
+      int channels {0};
+      std::vector<char> data;
+    };
 
     template <typename T>
     void freePrimitiveMsg(void *msg)

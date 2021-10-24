@@ -8,7 +8,7 @@
 
 namespace flexr::kernels
 {
-using VulkanRendererMsgType = types::Message<std::string>;
+using VulkanRendererMsgType = types::Message<types::Image>;
 
 class VulkanRenderer : public FleXRKernel
 {

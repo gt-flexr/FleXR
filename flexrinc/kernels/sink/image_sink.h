@@ -6,7 +6,7 @@
 
 namespace flexr::kernels
 {
-using ImageSinkMsgType = types::Message<std::string>;
+using ImageSinkMsgType = types::Message<types::Image>;
 
 class ImageSink : public FleXRKernel
 {
