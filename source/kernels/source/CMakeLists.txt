@@ -37,14 +37,13 @@ target_sources(vulkan_renderer
     vulkan_renderer.cc)
 
 target_link_libraries(vulkan_renderer
-  PUBLIC # Accessible publicly via renderer.h
+  PUBLIC # NOTE: Needed as these are pulbicly included in renderer.h
     #Vulkan-Headers # TODO: Causes linker issues with non-vulkan examples
     vma
     renderdoc_app
   PRIVATE
     dl
     vk-bootstrap
-    stb
     ${FLEXR_LINKER_FLAGS}
     ${FLEXR_LINKER_LIBS}
     flexr_component)
