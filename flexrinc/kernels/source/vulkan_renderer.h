@@ -1,9 +1,10 @@
-#ifndef __FLEXR_VULKAN_RENDERER__
-#define __FLEXR_VULKAN_RENDERER__
+#pragma once
 
 #include <string>
+#include <optional>
 
 #include "kernels/kernel.h"
+#include "renderer.h"
 
 namespace flexr::kernels
 {
@@ -17,8 +18,7 @@ public:
   auto run() -> raft::kstatus override;
 
 private:
+  std::optional<Renderer> renderer;
 };
 
 } // namespace flexr::kernels
-
-#endif

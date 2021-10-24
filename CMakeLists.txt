@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project(FLEXR CXX)
-set(CMAKE_CXX_COMPILER g++)
+#set(CMAKE_CXX_COMPILER g++) # This interferes with Vulkan.cmake
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_BUILD_TYPE Debug)
@@ -45,6 +45,7 @@ include(cmake/modules/Spdlog.cmake)
 include(cmake/modules/yaml-cpp.cmake)
 include(cmake/modules/uvgRTP.cmake)
 include(cmake/modules/rosbag.cmake)
+include(cmake/modules/Vulkan.cmake)
 
 message(STATUS "[FLEXR COMPILE INFO]")
 

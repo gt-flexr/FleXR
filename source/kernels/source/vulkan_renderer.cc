@@ -1,5 +1,5 @@
-#include <kernels/source/vulkan_renderer.h>
-#include <utils/msg_sending_functions.h>
+#include "kernels/source/vulkan_renderer.h"
+#include "utils/msg_sending_functions.h"
 
 namespace flexr::kernels
 {
@@ -10,10 +10,14 @@ VulkanRenderer::VulkanRenderer(const std::string& id)
   setName("VulkanRenderer");
   portManager.registerOutPortTag(
     "out", flexr::utils::sendLocalBasicCopy<VulkanRendererMsgType>, nullptr, nullptr);
+
+  renderer.emplace(256, 256);
 }
 
 auto VulkanRenderer::run() -> raft::kstatus
 {
+  renderer->Tick();
+
   auto output = portManager.getOutputPlaceholder<VulkanRendererMsgType>("out");
   using namespace std::string_literals;
   output->data = "Rendered frame"s;

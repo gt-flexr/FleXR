@@ -1,5 +1,4 @@
-#ifndef __FLEXR_IMAGE_SINK__
-#define __FLEXR_IMAGE_SINK__
+#pragma once
 
 #include <string>
 
@@ -20,5 +19,3 @@ private:
 };
 
 } // namespace flexr::kernels
-
-#endif

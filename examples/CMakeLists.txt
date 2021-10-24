@@ -1,8 +1,8 @@
-file(GLOB_RECURSE EXAMPLE_SRCS
-     runner.cc
-     tutorials/*.cc
-     tests/*.cc
-     )
+###############################################################################
+# examples
+###############################################################################
+
+file(GLOB_RECURSE EXAMPLE_SRCS runner.cc tutorials/*.cc tests/*.cc) # NOTE: Avoid GLOB in modern CMake
 
 list(APPEND EXAMPLE_SRCS
   marker_ar/old/orb_serialized.cc
@@ -15,7 +15,6 @@ list(APPEND EXAMPLE_SRCS
   marker_ar/old/ue4_local.cc
 )
 
-
 if(${USE_OPENCV_CUDA})
 list(APPEND EXAMPLE_SRCS
   marker_ar/old/orb_serialized_cuda.cc
@@ -26,13 +25,13 @@ list(APPEND EXAMPLE_SRCS
 )
 endif(${USE_OPENCV_CUDA})
 
-
 foreach(EXAMPLE_SRC ${EXAMPLE_SRCS})
   get_filename_component (NAME_WITHOUT_EXTENSION ${EXAMPLE_SRC} NAME_WE)
   set(EXAMPLE_NAME "${NAME_WITHOUT_EXTENSION}")
 
   add_executable(${EXAMPLE_NAME} ${EXAMPLE_SRC})
+  target_compile_features(${EXAMPLE_NAME} PRIVATE cxx_std_17)
   target_link_libraries(${EXAMPLE_NAME} flexr_kernel)
   target_link_libraries(${EXAMPLE_NAME} flexr_yaml_kernel)
+  target_link_libraries(${EXAMPLE_NAME} vulkan_renderer) # TODO: Avoid linking vulkan libraries to non-vulkan examples
 endforeach(EXAMPLE_SRC ${EXAMPLE_SRCS})
-
