@@ -6,6 +6,7 @@
 
 #include <VkBootstrap.h>
 
+#define VMA_ASSERT(expr) assert(expr)
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
 
@@ -22,6 +23,7 @@ if (!(status)) { \
   fprintf(stderr, "\n"); \
 } while (0)
 #endif
+
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -50,6 +52,7 @@ Renderer::Renderer(int width, int height)
     .set_engine_name("VulkanRenderer")
     .set_headless(true)
     .require_api_version(1, 2)
+    .enable_extension("VK_KHR_get_physical_device_properties2")
     .request_validation_layers()
     .use_default_debug_messenger()
     .build();
@@ -64,6 +67,7 @@ Renderer::Renderer(int width, int height)
   const auto physicalDeviceStatus = physicalDeviceSelector
     .set_minimum_version(1, 2)
     .add_required_extension("VK_KHR_get_memory_requirements2")
+    .add_required_extension("VK_KHR_bind_memory2")
     .select();
   ASSERT_THROW(physicalDeviceStatus,
     "Failed to select vulkan physical device! %s", physicalDeviceStatus.error().message().c_str());
@@ -94,32 +98,35 @@ Renderer::Renderer(int width, int height)
   VULKAN_HPP_DEFAULT_DISPATCHER.init(m_device);
 
   VmaAllocatorCreateInfo allocatorCI;
-  allocatorCI.vulkanApiVersion = VK_API_VERSION_1_2;
+  allocatorCI.vulkanApiVersion = VK_MAKE_VERSION(1, 2, 0);
   allocatorCI.physicalDevice   = m_physicalDevice;
   allocatorCI.device           = m_device;
   allocatorCI.instance         = m_instance;
 
 #define SET_FN(name) name = reinterpret_cast<PFN_##name>(VULKAN_HPP_DEFAULT_DISPATCHER.name)
   VmaVulkanFunctions fn;
-  fn.SET_FN(vkAllocateMemory);
-  fn.SET_FN(vkBindBufferMemory);
-  fn.SET_FN(vkBindImageMemory);
-  fn.SET_FN(vkCmdCopyBuffer);
-  fn.SET_FN(vkCreateBuffer);
-  fn.SET_FN(vkCreateImage);
-  fn.SET_FN(vkDestroyBuffer);
-  fn.SET_FN(vkDestroyImage);
-  fn.SET_FN(vkFlushMappedMemoryRanges);
-  fn.SET_FN(vkFreeMemory);
-  fn.SET_FN(vkGetBufferMemoryRequirements);
-  fn.SET_FN(vkGetImageMemoryRequirements);
-  fn.SET_FN(vkGetPhysicalDeviceMemoryProperties);
   fn.SET_FN(vkGetPhysicalDeviceProperties);
-  fn.SET_FN(vkInvalidateMappedMemoryRanges);
+  fn.SET_FN(vkGetPhysicalDeviceMemoryProperties);
+  fn.SET_FN(vkAllocateMemory);
+  fn.SET_FN(vkFreeMemory);
   fn.SET_FN(vkMapMemory);
   fn.SET_FN(vkUnmapMemory);
+  fn.SET_FN(vkFlushMappedMemoryRanges);
+  fn.SET_FN(vkInvalidateMappedMemoryRanges);
+  fn.SET_FN(vkBindBufferMemory);
+  fn.SET_FN(vkBindImageMemory);
+  fn.SET_FN(vkGetBufferMemoryRequirements);
+  fn.SET_FN(vkGetImageMemoryRequirements);
+  fn.SET_FN(vkCreateBuffer);
+  fn.SET_FN(vkDestroyBuffer);
+  fn.SET_FN(vkCreateImage);
+  fn.SET_FN(vkDestroyImage);
+  fn.SET_FN(vkCmdCopyBuffer);
   fn.SET_FN(vkGetBufferMemoryRequirements2KHR);
   fn.SET_FN(vkGetImageMemoryRequirements2KHR);
+  fn.SET_FN(vkBindBufferMemory2KHR);
+  fn.SET_FN(vkBindImageMemory2KHR);
+  fn.SET_FN(vkGetPhysicalDeviceMemoryProperties2KHR);
   allocatorCI.pVulkanFunctions = &fn;
 #undef SET_FN
 
