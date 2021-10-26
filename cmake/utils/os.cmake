@@ -1,0 +1,11 @@
+macro(util_print_os)
+  if (UNIX)
+    message(STATUS "Print OS: UNIX")
+    if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+      message("\t ${CMAKE_SYSTEM_NAME}")
+    elseif (${CMAKE_SYSTEM_NAME} STREQUAL "OS X")
+      message("\t ${CMAKE_SYSTEM_NAME}")
+    endif ()
+  endif()
+endmacro()
+
