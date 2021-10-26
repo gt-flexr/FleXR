@@ -1,3 +1,5 @@
+#ifdef __FLEXR_KERNEL_ARUCO_CAM_LOCATOR__
+
 #include <flexr_kernels/include/kernels.h>
 
 namespace flexr
@@ -114,4 +116,6 @@ namespace flexr
 
   }
 }
+
+#endif
 

@@ -1,5 +1,6 @@
-#ifndef __FLEXR_KERNEL_YAML_BAG_CAMERA__
-#define __FLEXR_KERNEL_YAML_BAG_CAMERA__
+#pragma once
+
+#ifdef __FLEXR_KERNEL_BAG_CAMERA__
 
 #include <bits/stdc++.h>
 #include <yaml-cpp/yaml.h>

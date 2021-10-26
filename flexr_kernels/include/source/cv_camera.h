@@ -1,5 +1,6 @@
-#ifndef __FLEXR_KERNEL_CV_CAMERA__
-#define __FLEXR_KERNEL_CV_CAMERA__
+#pragma once
+
+#ifdef __FLEXR_KERNEL_CV_CAMERA__
 
 #include <bits/stdc++.h>
 #include <opencv2/opencv.hpp>

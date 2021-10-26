@@ -1,3 +1,5 @@
+#ifdef __FLEXR_KERNEL_CV_CAMERA__
+
 #include <flexr_core/include/core.h>
 #include <flexr_kernels/include/kernels.h>
 
@@ -39,4 +41,6 @@ namespace flexr
 
   } // namespace device
 } // namespace flexr
+
+#endif
 

@@ -1,3 +1,5 @@
+#ifdef __FLEXR_KERNEL_FRAME_CONVERTER__
+
 #include <flexr_kernels/include/kernels.h>
 
 namespace flexr
@@ -114,4 +116,6 @@ namespace flexr
 
   }
 }
+
+#endif
 

@@ -1,5 +1,6 @@
-#ifndef __FLEXR_KERNEL_KEYBOARD__
-#define __FLEXR_KERNEL_KEYBOARD__
+#pragma once
+
+#ifdef __FLEXR_KERNEL_KEYBOARD__
 
 #include <bits/stdc++.h>
 #include <unistd.h>

@@ -1,3 +1,5 @@
+#ifdef __FLEXR_KERNEL_ORB_CAM_LOCATOR__
+
 #include <flexr_kernels/include/kernels.h>
 
 namespace flexr
@@ -23,7 +25,7 @@ namespace flexr
     {
       specificSet       = true;
       YAML::Node others = node["others"][0];
-      markerPath       = others["marker_image"].as<std::string>();
+      markerPath        = others["marker_image"].as<std::string>();
       width             = others["width"].as<int>();
       height            = others["height"].as<int>();
     }
@@ -39,7 +41,7 @@ namespace flexr
     void YamlOrbCamLocator::printOrbCamLocatorSpecific()
     {
       std::cout << "Others --------" << std::endl;
-      std::cout << "\tMarker Pat: " << markerPath << std::endl;
+      std::cout << "\tMarker Path: " << markerPath << std::endl;
       std::cout << "\tFrame Resolution: " << width << "x" << height << std::endl;
     }
 
@@ -111,4 +113,6 @@ namespace flexr
 
   }
 }
+
+#endif
 

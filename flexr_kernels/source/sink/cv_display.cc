@@ -1,3 +1,5 @@
+#ifdef __FLEXR_KERNEL_CV_DISPLAY__
+
 #include <flexr_core/include/core.h>
 #include <flexr_kernels/include/kernels.h>
 
@@ -37,4 +39,6 @@ namespace flexr
 
   } // namespace kernels
 } // namespace flexr
+
+#endif
 

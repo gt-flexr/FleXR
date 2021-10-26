@@ -3,11 +3,9 @@ libdir=@CMAKE_INSTALL_PREFIX@/lib
 includedir=@CMAKE_INSTALL_PREFIX@/include
 
 Name: FleXR
-URL: https://github.com/jheo4/flexr
 Description: Flexibly Edge-assisted XR
+URL: https://github.com/jheo4/flexr
 Version: 1.0
-Requires: raftlib glew glm libavcodec libavutil libswresample libswscale opencv yaml-cpp libzmq spdlog uvgrtp
-Conflicts:
-Libs:  -L${libdir} -lflexr @FLEXR_LINKER_FLAGS@ @FLEXR_THIRD_PARTIES@
-Libs.private: raftlib glew glm libavcodec libavutil libswresample libswscale opencv yaml-cpp libzmq spdlog uvgrtp
-Cflags:  -std=c++14 -I${includedir} -I${includedir}/flexrinc @FLEXR_CXX_FLAGS@
+Cflags:  -std=c++14 -I${includedir} -I${includedir}/flexrinc @FLEXR_CORE_CXX_FLAGS@ @FLEXR_KERNEL_CXX_FLAGS@
+Libs:  -L${libdir} -lflexr @FLEXR_CORE_LINKER_FLAGS@ @FLEXR_KERNEL_LINKER_FLAGS@
+Requires:

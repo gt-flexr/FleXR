@@ -1,3 +1,5 @@
+#ifdef __FLEXR_KERNEL_KEYBOARD__
+
 #include <flexr_kernels/include/kernels.h>
 
 namespace flexr
@@ -72,4 +74,6 @@ namespace flexr
 
   }
 }
+
+#endif
 

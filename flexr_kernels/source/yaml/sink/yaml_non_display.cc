@@ -1,3 +1,5 @@
+#ifdef __FLEXR_KERNEL_NON_DISPLAY__
+
 #include <flexr_kernels/include/kernels.h>
 
 namespace flexr
@@ -57,4 +59,6 @@ namespace flexr
 
   }
 }
+
+#endif
 

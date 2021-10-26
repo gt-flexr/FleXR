@@ -1,5 +1,6 @@
-#ifndef __FLEXR_KERNEL_YAML_ARUCO_CAM_LOCATOR__
-#define __FLEXR_KERNEL_YAML_ARUCO_CAM_LOCATOR__
+#pragma once
+
+#ifdef __FLEXR_KERNEL_ARUCO_CAM_LOCATOR__
 
 #include <bits/stdc++.h>
 #include <yaml-cpp/yaml.h>
@@ -56,5 +57,6 @@ namespace flexr
     };
   }
 }
+
 #endif
 

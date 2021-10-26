@@ -1,3 +1,5 @@
+#ifdef __FLEXR_KERNEL_ORB_CAM_LOCATOR__
+
 #include <flexr_core/include/core.h>
 #include <flexr_kernels/include/kernels.h>
 
@@ -139,19 +141,17 @@ namespace flexr
           outCamPose->data.rx = rx;
           outCamPose->data.ry = ry;
           outCamPose->data.rz = rz;
-          outCamPose->data.vaild = true;
           double et = getTsNow();
           if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}", st, et, et-st);
+          portManager.sendOutput("out_cam_pose", outCamPose);
         }
         else
         {
-          outCamPose->data.vaild = false;
           debug_print("detection percentage (%f) is less than threshold (%f)",
                      (float)matchingMarkerKps.size()/(float)markerKps.size(), detectionThresh);
         }
       }
 
-      portManager.sendOutput("out_cam_pose", outCamPose);
       inFrame->data.release();
       portManager.freeInput("in_frame", inFrame);
 
@@ -160,4 +160,6 @@ namespace flexr
 
   } // namespace kernels
 } // namespace flexr
+
+#endif
 

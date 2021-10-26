@@ -1,5 +1,6 @@
-#ifndef __FLEXR_KERNEL_YAML_FRAME_ENCODER__
-#define __FLEXR_KERNEL_YAML_FRAME_ENCODER__
+#pragma once
+
+#ifdef __FLEXR_KERNEL_FRAME_ENCODER__
 
 #include <bits/stdc++.h>
 #include <yaml-cpp/yaml.h>
@@ -64,5 +65,6 @@ namespace flexr
     };
   }
 }
+
 #endif
 

@@ -1,3 +1,5 @@
+#ifdef __FLEXR_KERNEL_SAMPLE_MARKER_RENDERER__
+
 #include <flexr_kernels/include/kernels.h>
 
 namespace flexr
@@ -137,4 +139,6 @@ namespace flexr
 
   }
 }
+
+#endif
 
