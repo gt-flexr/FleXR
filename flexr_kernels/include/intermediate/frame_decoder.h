@@ -1,9 +1,8 @@
-#ifndef __FLEXR_KERNEL_FRAME_DECODER__
-#define __FLEXR_KERNEL_FRAME_DECODER__
+#pragma once
 
-#include <bits/stdc++.h>
+#ifdef __FLEXR_KERNEL_FRAME_DECODER__
+
 #include <opencv2/opencv.hpp>
-#include <raft>
 
 #include "flexr_core/include/core.h"
 

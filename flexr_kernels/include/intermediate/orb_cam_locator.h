@@ -1,5 +1,6 @@
-#ifndef __FLEXR_KERNEL_OBJ_DETECTOR__
-#define __FLEXR_KERNEL_OBJ_DETECTOR__
+#pragma once
+
+#ifdef __FLEXR_KERNEL_ORB_CAM_LOCATOR__
 
 #include <bits/stdc++.h>
 

@@ -1,8 +1,6 @@
-#ifndef __FLEXR_KERNEL_FRAME_CONVERTER__
-#define __FLEXR_KERNEL_FRAME_CONVERTER__
+#pragma once
 
-#include <bits/stdc++.h>
-#include <raft>
+#ifdef __FLEXR_KERNEL_FRAME_CONVERTER__
 
 #include <opencv2/opencv.hpp>
 

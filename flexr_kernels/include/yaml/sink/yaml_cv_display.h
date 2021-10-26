@@ -1,5 +1,6 @@
-#ifndef __FLEXR_KERNEL_YAML_CV_DISPLAY__
-#define __FLEXR_KERNEL_YAML_CV_DISPLAY__
+#pragma once
+
+#ifdef __FLEXR_KERNEL_CV_DISPLAY__
 
 #include <bits/stdc++.h>
 #include <yaml-cpp/yaml.h>

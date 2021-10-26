@@ -1,5 +1,6 @@
-#ifndef __FLEXR_KERNEL_NON_DISPLAY__
-#define __FLEXR_KERNEL_NON_DISPLAY__
+#pragma once
+
+#ifdef __FLEXR_KERNEL_NON_DISPLAY__
 
 #include <bits/stdc++.h>
 #include <opencv2/opencv.hpp>

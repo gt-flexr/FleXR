@@ -1,5 +1,6 @@
-#ifndef __FLEXR_KERNEL_YAML_FRAME_CONVERTER__
-#define __FLEXR_KERNEL_YAML_FRAME_CONVERTER__
+#pragma once
+
+#ifdef __FLEXR_KERNEL_FRAME_CONVERTER__
 
 #include <bits/stdc++.h>
 #include <yaml-cpp/yaml.h>
@@ -56,5 +57,6 @@ namespace flexr
     };
   }
 }
+
 #endif
 

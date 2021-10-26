@@ -1,8 +1,6 @@
-#ifndef __FLEXR_KERNEL_FRAME_ENCODER__
-#define __FLEXR_KERNEL_FRAME_ENCODER__
+#pragma once
 
-#include <bits/stdc++.h>
-#include <raft>
+#ifdef __FLEXR_KERNEL_FRAME_ENCODER__
 
 #include "flexr_core/include/core.h"
 

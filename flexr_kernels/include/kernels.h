@@ -3,11 +3,11 @@
 
 #include "flexr_kernels/include/intermediate/aruco_cam_locator.h"
 #include "flexr_kernels/include/intermediate/aruco_detector.h"
-#include "flexr_kernels/include/intermediate/cuda_orb_detector.h"
 #include "flexr_kernels/include/intermediate/frame_converter.h"
 #include "flexr_kernels/include/intermediate/frame_decoder.h"
 #include "flexr_kernels/include/intermediate/frame_encoder.h"
 #include "flexr_kernels/include/intermediate/orb_cam_locator.h"
+#include "flexr_kernels/include/intermediate/cuda_orb_cam_locator.h"
 #include "flexr_kernels/include/intermediate/sample_marker_renderer.h"
 
 #include "flexr_kernels/include/sink/cv_display.h"
@@ -22,11 +22,11 @@
 
 #include "flexr_kernels/include/yaml/intermediate/yaml_aruco_cam_locator.h"
 #include "flexr_kernels/include/yaml/intermediate/yaml_aruco_detector.h"
-#include "flexr_kernels/include/yaml/intermediate/yaml_cuda_orb_detector.h"
 #include "flexr_kernels/include/yaml/intermediate/yaml_frame_converter.h"
 #include "flexr_kernels/include/yaml/intermediate/yaml_frame_decoder.h"
 #include "flexr_kernels/include/yaml/intermediate/yaml_frame_encoder.h"
 #include "flexr_kernels/include/yaml/intermediate/yaml_orb_cam_locator.h"
+#include "flexr_kernels/include/yaml/intermediate/yaml_cuda_orb_cam_locator.h"
 #include "flexr_kernels/include/yaml/intermediate/yaml_sample_marker_renderer.h"
 
 #include "flexr_kernels/include/yaml/sink/yaml_cv_display.h"

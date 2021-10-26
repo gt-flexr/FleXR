@@ -1,5 +1,6 @@
-#ifndef __FLEXR_KERNEL_YAML_FRAME_DECODER__
-#define __FLEXR_KERNEL_YAML_FRAME_DECODER__
+#pragma once
+
+#ifdef __FLEXR_KERNEL_FRAME_DECODER__
 
 #include <bits/stdc++.h>
 #include <yaml-cpp/yaml.h>

@@ -1,4 +1,4 @@
-#ifdef __FLEXR_KERNEL_FRAME_CONVERTER__
+#ifdef __FLEXR_KERNEL_CUDA_ORB_CAM_LOCATOR__
 
 #include <flexr_kernels/include/kernels.h>
 
@@ -7,55 +7,52 @@ namespace flexr
   namespace yaml
   {
 
-    YamlFrameConverter::YamlFrameConverter(): YamlFleXRKernel()
+    YamlCudaOrbCamLocator::YamlCudaOrbCamLocator(): YamlFleXRKernel()
     {
+      markerPath = "";
       width = height = 0;
-      conversionType = "";
     }
 
 
-    void YamlFrameConverter::parseFrameConverter(const YAML::Node &node)
+    void YamlCudaOrbCamLocator::parseCudaOrbCamLocator(const YAML::Node &node)
     {
       parseBase(node);
-      parseFrameConverterSpecific(node);
+      parseCudaOrbCamLocatorSpecific(node);
     }
 
 
-    void YamlFrameConverter::parseFrameConverterSpecific(const YAML::Node &node)
+    void YamlCudaOrbCamLocator::parseCudaOrbCamLocatorSpecific(const YAML::Node &node)
     {
       specificSet       = true;
       YAML::Node others = node["others"][0];
+      markerPath        = others["marker_image"].as<std::string>();
       width             = others["width"].as<int>();
       height            = others["height"].as<int>();
-      conversionType    = others["conversion_type"].as<std::string>();
     }
 
 
-    void YamlFrameConverter::printFrameConverter()
+    void YamlCudaOrbCamLocator::printCudaOrbCamLocator()
     {
       printBase();
-      printFrameConverterSpecific();
+      printCudaOrbCamLocatorSpecific();
     }
 
 
-    void YamlFrameConverter::printFrameConverterSpecific()
+    void YamlCudaOrbCamLocator::printCudaOrbCamLocatorSpecific()
     {
       std::cout << "Others --------" << std::endl;
+      std::cout << "\tMarker Path: " << markerPath << std::endl;
       std::cout << "\tFrame Resolution: " << width << "x" << height << std::endl;
-      std::cout << "\tConversion Type: " << conversionType << std::endl;
     }
 
 
-    void* YamlFrameConverter::make()
+    void* YamlCudaOrbCamLocator::make()
     {
       if(baseSet && specificSet)
       {
-        kernels::FrameConverter *temp = new kernels::FrameConverter(id);
-
+        kernels::CudaOrbCamLocator *temp = new kernels::CudaOrbCamLocator(id, markerPath, width, height);
         temp->setFrequency(frequency);
         temp->setLogger(loggerId, loggerFileName);
-        temp->setConversion(conversionType);
-        temp->setResolution(width, height);
 
         for(int i = 0; i < inPorts.size(); i++)
         {
@@ -63,27 +60,27 @@ namespace flexr
           {
             if(inPorts[i].connectionType == "local")
             {
-              temp->activateInPortAsLocal<kernels::FrameConverterInMsgType>(inPorts[i].portName);
+              temp->activateInPortAsLocal<kernels::CudaOrbCamLocatorInFrame>(inPorts[i].portName);
             }
             else if(inPorts[i].connectionType == "remote")
             {
-              temp->activateInPortAsRemote<kernels::FrameConverterInMsgType>(inPorts[i].portName,
-                                                                             inPorts[i].protocol,
-                                                                             inPorts[i].bindingPortNum);
+              temp->activateInPortAsRemote<kernels::CudaOrbCamLocatorInFrame>(inPorts[i].portName,
+                                                                              inPorts[i].protocol,
+                                                                              inPorts[i].bindingPortNum);
             }
           }
-          else debug_print("invalid input port_name %s for FrameConverter", inPorts[i].portName.c_str());
+          else debug_print("invalid input port_name %s for CudaOrbCamLocator", inPorts[i].portName.c_str());
         }
 
         for(int i = 0; i < outPorts.size(); i++)
         {
           // Kernel specified ports
-          if(outPorts[i].portName == "out_frame")
+          if(outPorts[i].portName == "out_cam_pose")
           {
             if(outPorts[i].connectionType == "local")
-              temp->activateOutPortAsLocal<kernels::FrameConverterOutMsgType>(outPorts[i].portName);
+              temp->activateOutPortAsLocal<kernels::CudaOrbCamLocatorOutPose>(outPorts[i].portName);
             else if(outPorts[i].connectionType == "remote")
-              temp->activateOutPortAsRemote<kernels::FrameConverterOutMsgType>(outPorts[i].portName,
+              temp->activateOutPortAsRemote<kernels::CudaOrbCamLocatorOutPose>(outPorts[i].portName,
                                                                                outPorts[i].protocol,
                                                                                outPorts[i].connectingAddr,
                                                                                outPorts[i].connectingPortNum);
@@ -91,17 +88,17 @@ namespace flexr
           else
           {
             // Duplicated ports (non-specified)
-            if(outPorts[i].duplicatedFrom == "out_frame")
+            if(outPorts[i].duplicatedFrom == "out_cam_pose")
             {
               if(outPorts[i].connectionType == "local")
-                temp->duplicateOutPortAsLocal<kernels::FrameConverterOutMsgType>(outPorts[i].duplicatedFrom,
+                temp->duplicateOutPortAsLocal<kernels::CudaOrbCamLocatorOutPose>(outPorts[i].duplicatedFrom,
                                                                                  outPorts[i].portName);
               else if(outPorts[i].connectionType == "remote")
-                temp->duplicateOutPortAsRemote<kernels::FrameConverterOutMsgType>(
+                temp->duplicateOutPortAsRemote<kernels::CudaOrbCamLocatorOutPose>(
                     outPorts[i].duplicatedFrom, outPorts[i].portName,
                     outPorts[i].protocol, outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
             }
-            else debug_print("invalid output port_name %s for FrameConverter", outPorts[i].portName.c_str());
+            else debug_print("invalid output port_name %s for CudaOrbCamLocator", outPorts[i].portName.c_str());
           }
         }
         return temp;

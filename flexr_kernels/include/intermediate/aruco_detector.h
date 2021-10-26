@@ -1,8 +1,6 @@
-#ifndef __FLEXR_KERNEL_ARUCO_DETECTOR__
-#define __FLEXR_KERNEL_ARUCO_DETECTOR__
+#pragma once
 
-#include <bits/stdc++.h>
-#include <raft>
+#ifdef __FLEXR_KERNEL_ARUCO_DETECTOR__
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/aruco.hpp>

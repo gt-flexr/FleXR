@@ -1,3 +1,5 @@
+#ifdef __FLEXR_KERNEL_BAG_CAMERA__
+
 #include <flexr_core/include/core.h>
 #include <flexr_kernels/include/kernels.h>
 
@@ -53,4 +55,6 @@ namespace flexr
     }
   } // namespace kernels
 } // namespace flexr
+
+#endif
 

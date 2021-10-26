@@ -1,8 +1,6 @@
-#ifndef __FLEXR_KERNEL_SAMPLE_MARKER_RENDERER__
-#define __FLEXR_KERNEL_SAMPLE_MARKER_RENDERER__
+#pragma once
 
-#include <bits/stdc++.h>
-#include <raft>
+#ifdef __FLEXR_KERNEL_SAMPLE_MARKER_RENDERER__
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/aruco.hpp>

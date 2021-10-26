@@ -1,4 +1,4 @@
-#ifdef __FLEXR_KERNEL_ORB_CAM_LOCATOR__
+#ifdef __FLEXR_KERNEL_CUDA_ORB_CAM_LOCATOR__
 
 #include <flexr_core/include/core.h>
 #include <flexr_kernels/include/kernels.h>
@@ -7,13 +7,14 @@ namespace flexr
 {
   namespace kernels
   {
-    /* Constructor */
-    OrbCamLocator::OrbCamLocator(std::string id, std::string markerPath, int camWidth, int camHeight): FleXRKernel(id)
+    CudaOrbCamLocator::CudaOrbCamLocator(std::string id, std::string markerPath, int camWidth, int camHeight): FleXRKernel(id)
     {
-      setName("OrbCamLocator");
+      setName("CudaOrbCamLocator");
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, utils::deserializeRawFrame);
-      portManager.registerOutPortTag("out_cam_pose", utils::sendLocalBasicCopy<OrbCamLocatorOutPose>);
+      portManager.registerOutPortTag("out_cam_pose",
+                                     utils::sendLocalBasicCopy<CudaOrbCamLocatorOutPose>);
 
+      // Object Detection Parameters
       knnMatchRatio = 0.95f;
       knnParam = 3;
       ransacThresh = 5.0f;
@@ -35,8 +36,8 @@ namespace flexr
       camIntrinsic = tempIntrinsic.clone();
       camDistCoeffs = tempDistCoeffs.clone();
 
-      detector = cv::ORB::create(1000);
-      matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
+      detector = cv::cuda::ORB::create(1000);
+      matcher = cv::cuda::DescriptorMatcher::createBFMatcher(cv::NORM_HAMMING);
       // matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
 
       // Register a marker to track
@@ -59,64 +60,72 @@ namespace flexr
       markerCorner2D.push_back(cv::Point2f(0,             roiRect.height));
 
       cv::Mat markerImgGray = markerImg;
+      cv::Ptr<cv::Feature2D> tempDetector = cv::ORB::create(1000);
       cv::cvtColor(markerImgGray, markerImgGray, cv::COLOR_RGB2GRAY);
-      detector->detectAndCompute(markerImgGray, cv::noArray(), markerKps, markerDesc);
+      tempDetector->detectAndCompute(markerImgGray, cv::noArray(), markerKps, markerDesc);
     }
 
 
-    raft::kstatus OrbCamLocator::run()
-    {
-      OrbCamLocatorInFrame *inFrame = portManager.getInput<OrbCamLocatorInFrame>("in_frame");
-      OrbCamLocatorOutPose *outCamPose = portManager.getOutputPlaceholder<OrbCamLocatorOutPose>("out_cam_pose");
+    raft::kstatus CudaOrbCamLocator::run() {
+      CudaOrbCamLocatorInFrame *inFrame = portManager.getInput<CudaOrbCamLocatorInFrame>("in_frame");
+      CudaOrbCamLocatorOutPose *outCamPose = \
+                                portManager.getOutputPlaceholder<CudaOrbCamLocatorOutPose>("out_cam_pose");
 
-      outCamPose->setHeader(inFrame->tag, inFrame->seq, inFrame->ts, sizeof(OrbCamLocatorOutPose));
+      outCamPose->setHeader(inFrame->tag, inFrame->seq, inFrame->ts, sizeof(CudaOrbCamLocatorOutPose));
 
       double st = getTsNow();
       std::vector<cv::KeyPoint> frameKps;
-      cv::Mat frameDesc;
 
-      // 0. prepare gary frame
+      // 1. prepare gary frame
       cv::Mat grayFrame = inFrame->data.useAsCVMat();
       cv::cvtColor(grayFrame, grayFrame, cv::COLOR_RGB2GRAY);
+      cuFrame.upload(grayFrame);
 
-      // 1. figure out frame keypoints and descriptors to detect objects in the frame
-      detector->detectAndCompute(grayFrame, cv::noArray(), frameKps, frameDesc);
+      // 2. run CUDA ORB & convert the GPU result into CPU; cpu kps & gpu desc are ready
+      detector->detectAndComputeAsync(cuFrame, cv::noArray(), cuKp, cuDesc, false, stream);
+      stream.waitForCompletion();
+      detector->convert(cuKp, frameKps);
 
-      // 2. use the matcher to find correspondence
-      std::vector<std::vector<cv::DMatch>> knnMatches;
-      std::vector<cv::KeyPoint> matchingMarkerKps, markerKpsInFrame;
+      // 3. multi-obj detection
+      cv::cuda::GpuMat cuObjDesc;
+      std::vector<std::vector<cv::DMatch>> matches;
+      std::vector<cv::KeyPoint> objMatch, frameMatch;
       cv::Mat homography;
       cv::Mat inlierMask;
       std::vector<cv::KeyPoint> objInlier, frameInlier;
-      std::vector<cv::DMatch> closeMatches;
+      std::vector<cv::DMatch> inlierMatches;
 
-      // 2.1. get all the matches between object and frame kps based on desc
-      matcher->knnMatch(markerDesc, frameDesc, knnMatches, knnParam);
+      // 3-1. upload each objDesc into cuDesc
+      cuObjDesc.upload(markerDesc);
 
-      // 2.2. add close-enough matches by distance (filtered matches)
-      for (unsigned i = 0; i < knnMatches.size(); i++)
+      // 3-2. find matched descs for finding matching kps
+      matcher->knnMatchAsync(cuObjDesc, cuDesc, cuMatches, knnParam, cv::noArray(), stream);
+      stream.waitForCompletion();
+      matcher->knnMatchConvert(cuMatches, matches);
+
+      // 3-3. with matched descs, find corresponding keypoints
+      for(unsigned i = 0; i < matches.size(); i++)
       {
-        if (knnMatches[i][0].distance < knnMatchRatio * knnMatches[i][1].distance) // 1st and 2nd diff distance check
+        if(matches[i][0].distance < knnMatchRatio * matches[i][1].distance)
         {
-          matchingMarkerKps.push_back(markerKps[knnMatches[i][0].queryIdx]);
-          markerKpsInFrame.push_back(frameKps[knnMatches[i][0].trainIdx]);
+          objMatch.push_back(markerKps[matches[i][0].queryIdx]);
+          frameMatch.push_back(frameKps[matches[i][0].trainIdx]);
         }
       }
 
       debug_print("markerKps (%ld), frameKps (%ld), matchingKps (%ld)",
-                  markerKps.size(), frameKps.size(), matchingMarkerKps.size());
+                  markerKps.size(), frameKps.size(), objMatch.size());
 
-      // 3. get the homography from the matches
-      if (markerKpsInFrame.size() >= 4)
+      // 4. Find the homography with matched kps (at least 4kps for planar obj)
+      if(objMatch.size() >= 4)
       {
-        homography = findHomography(cv_utils::convertKpsToPts(matchingMarkerKps),
-                                    cv_utils::convertKpsToPts(markerKpsInFrame),
+        homography = findHomography(flexr::cv_utils::convertKpsToPts(objMatch),
+                                    flexr::cv_utils::convertKpsToPts(frameMatch),
                                     cv::RANSAC, ransacThresh, inlierMask);
 
-        // 3.1. check matching keypoints with detectionThresh percentage
-        if(!homography.empty() && matchingMarkerKps.size() > markerKps.size()*detectionThresh)
+        // 5. handle the detected object
+        if(!homography.empty() && objMatch.size() > markerKps.size()*detectionThresh)
         {
-          // 3.2. get the translation and rotation
           std::vector<cv::Point2f> markerCornersInFrame(4);
           perspectiveTransform(markerCorner2D, markerCornersInFrame, homography);
 
@@ -148,7 +157,7 @@ namespace flexr
         else
         {
           debug_print("detection percentage (%f) is less than threshold (%f)",
-                     (float)matchingMarkerKps.size()/(float)markerKps.size(), detectionThresh);
+                     (float)objMatch.size()/(float)markerKps.size(), detectionThresh);
         }
       }
 
@@ -158,7 +167,7 @@ namespace flexr
       return raft::proceed;
     }
 
-  } // namespace kernels
+  } // namespace ctx_understanding
 } // namespace flexr
 
 #endif

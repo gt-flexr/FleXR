@@ -1,11 +1,6 @@
-#ifndef __FLEXR__
-#define __FLEXR__
+#pragma once
 
-#ifndef STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
-#endif
-
-/* FLEXR Dependencies */
+/* Dependencies */
 #include <bits/stdc++.h>
 #include <raft>
 #include <yaml-cpp/yaml.h>
@@ -15,8 +10,7 @@
 /* Utils */
 #include "./flexr_third_party/include/cxxopts.hpp"
 
+/* FleXR Core & Kernels */
 #include "./flexr_core/include/core.h"
 #include "./flexr_kernels/include/kernels.h"
-
-#endif
 

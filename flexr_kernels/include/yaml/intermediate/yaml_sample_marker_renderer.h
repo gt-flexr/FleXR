@@ -1,5 +1,6 @@
-#ifndef __FLEXR_KERNEL_YAML_SAMPLE_MARKER_RENDERER__
-#define __FLEXR_KERNEL_YAML_SAMPLE_MARKER_RENDERER__
+#pragma once
+
+#ifdef __FLEXR_KERNEL_SAMPLE_MARKER_RENDERER__
 
 #include <bits/stdc++.h>
 #include <yaml-cpp/yaml.h>
@@ -55,5 +56,6 @@ namespace flexr
     };
   }
 }
+
 #endif
 

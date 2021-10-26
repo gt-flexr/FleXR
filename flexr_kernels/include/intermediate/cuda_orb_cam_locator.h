@@ -1,6 +1,6 @@
-#ifdef __USE_OPENCV_CUDA__
-#ifndef __FLEXR_KERNEL_CUDA_OBJ_DETECTOR__
-#define __FLEXR_KERNEL_CUDA_OBJ_DETECTOR__
+#pragma once
+
+#ifdef __FLEXR_KERNEL_CUDA_ORB_CAM_LOCATOR__
 
 #include <bits/stdc++.h>
 #include <opencv2/core/cvstd.hpp>
@@ -17,8 +17,9 @@ namespace flexr
 {
   namespace kernels
   {
-    using CudaORBDetectorInFrameType = types::Message<types::Frame>;
-    using CudaORBDetectorOutMarkerType = types::Message<std::vector<cv_types::DetectedMarker>>;
+    using namespace flexr::types;
+    using CudaOrbCamLocatorInFrame = Message<types::Frame>;
+    using CudaOrbCamLocatorOutPose = Message<ObjectPose>;
 
 
     /**
@@ -27,13 +28,11 @@ namespace flexr
      * Port Tag             | Type
      * ---------------------| ----------------------------
      * in_frame             | @ref flexr::types::Message<@ref flexr::types::Frame>
-     * out_detected_markers | @ref flexr::types::Message<std::vector<@ref flexr::cv_types::DetectedMarker>>
+     * out_cam_pose         | @ref flexr::types::Message<@ref flexr::types::ObjectPose>
      */
-    class CudaORBDetector : public FleXRKernel
+    class CudaOrbCamLocator : public FleXRKernel
     {
       private:
-        components::OrbMarkerTracker orbMarkerTracker;
-        std::vector<flexr::cv_types::MarkerInfo> registeredMarkers;
         cv::Ptr<cv::cuda::ORB> detector;
         cv::Ptr<cv::cuda::DescriptorMatcher> matcher;
 
@@ -42,34 +41,39 @@ namespace flexr
         cv::cuda::GpuMat cuKp, cuDesc;
         cv::cuda::GpuMat cuMatches;
 
+        std::vector<cv::KeyPoint> markerKps;
+        cv::Mat                   markerDesc;
+        std::vector<cv::Point3f>  markerCorner3D;
+        std::vector<cv::Point2f>  markerCorner2D;
+
         double knnMatchRatio;
         int knnParam;
-        double ransacThresh;
+        double ransacThresh, detectionThresh;
         int minInlierThresh;
-        int numKps;
 
+        cv::Mat camIntrinsic;
+        cv::Mat camDistCoeffs;
+        int width, height;
 
       public:
         /**
          * @brief Initialize kernel with registered marker info
          * @param id
          *  Kernel ID
-         * @param markerImage
+         * @param markerPath
          *  Marker image file to set it as a marker
+         * @param camWidth
+         *  Camera frame width
+         * @param camHeight
+         *  Camera frame height
          */
-        CudaORBDetector(std::string id, std::string markerImage);
-
+        CudaOrbCamLocator(std::string id, std::string markerPath, int camWidth=1920, int camHeight=1080);
 
         raft::kstatus run() override;
-
-
-        bool logic(CudaORBDetectorInFrameType   *inFrame,
-                   CudaORBDetectorOutMarkerType *outDetectedMarkers);
     };
 
   }   // namespace kernels
 } // namespace flexr
 
-#endif
 #endif
 
