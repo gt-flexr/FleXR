@@ -17,16 +17,17 @@ struct Context
   vk::Instance        instance;
   vk::PhysicalDevice  physicalDevice;
   vk::Device          device;
-  vk::Queue           queue;
+  vk::Queue           queue; // TODO: Have separate queues for graphics, compute, and transfers
 
   VmaAllocator        allocator;
 };
 
 struct Image
 {
-  vk::Image image;
-  std::optional<vk::ImageView> view;
   VmaAllocation allocation;
+  vk::Image     image;
+
+  std::optional<vk::ImageView> view;
 };
 
 class ImageBuilder
@@ -40,11 +41,14 @@ public:
   auto Build(const Context& context) const -> Image;
 
 private:
+
   vk::ImageCreateInfo imageCI;
   VmaMemoryUsage      usage;
 };
 
 auto CreateContext() -> Context;
+
+auto SubmitWork(const Context& context, vk::CommandBuffer cmdBuf, bool block=true) -> void;
 
 // TODO: Add destruction methods
 //auto DestroyContext(Context&& context) -> void;
@@ -73,20 +77,17 @@ public:
 
   auto GetRenderFrame() const { return m_frame; }
 
-  auto SubmitWork(vk::CommandBuffer commandBuffer) -> void;
-
 private:
   RENDERDOC_API_1_4_2* m_renderdoc {nullptr};
 
-  vk::Extent3D        m_extent;
-  vk::CommandPool     m_commandPool;
-  vk::RenderPass      m_renderPass;
-  vk::Framebuffer     m_framebuffer;
+  vk::Extent3D    m_extent;
+  vk::CommandPool m_commandPool;
+  vk::RenderPass  m_renderPass;
+  vk::Framebuffer m_framebuffer;
 
-  vku::Context        m_context;
+  vku::Context    m_context;
+  vku::Image      m_framebufferImage;
+  vku::Image      m_copyImage;
 
-  vku::Image          m_framebufferImage;
-  vku::Image          m_copyImage;
-
-  RenderFrame         m_frame;
+  RenderFrame     m_frame;
 };

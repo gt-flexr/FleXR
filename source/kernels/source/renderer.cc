@@ -191,10 +191,26 @@ auto ImageBuilder::Build(const Context& context) const -> Image
     imageViewCI.format   = imageCI.format; // TODO: Support aliased formats
     imageViewCI.subresourceRange = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}; // TODO: Parameterize
     const auto view = context.device.createImageView(imageViewCI);
-    return {image, view, allocation};
+    return {allocation, image, view};
   }
 
-  return {image, std::nullopt, allocation};
+  return {allocation, image, std::nullopt};
+}
+
+auto SubmitWork(const Context& context, vk::CommandBuffer cmdBuf, bool block) -> void
+{
+  vk::SubmitInfo submitInfo;
+  submitInfo.commandBufferCount = 1;
+  submitInfo.pCommandBuffers    = &cmdBuf;
+
+  const auto fence = context.device.createFence({});
+  context.queue.submit(submitInfo, fence);
+  const auto status = context.device.waitForFences(
+    fence, true, std::numeric_limits<uint64_t>::max());
+  ASSERT_THROW(status == vk::Result::eSuccess, "Failed to wait for vulkan fence!");
+  context.device.destroyFence(fence);
+
+  if (block) context.device.waitIdle();
 }
 
 } // namespace vulkan_utils
@@ -289,18 +305,6 @@ Renderer::~Renderer()
   if (m_renderdoc) m_renderdoc->EndFrameCapture(nullptr, nullptr);
 }
 
-auto Renderer::SubmitWork(vk::CommandBuffer commandBuffer) -> void
-{
-  vk::SubmitInfo submitInfo;
-  submitInfo.commandBufferCount = 1;
-  submitInfo.pCommandBuffers    = &commandBuffer;
-  const auto fence = m_context.device.createFence({});
-  m_context.queue.submit(submitInfo, fence);
-  const auto status = m_context.device.waitForFences(fence, true, std::numeric_limits<uint64_t>::max());
-  ASSERT_THROW(status == vk::Result::eSuccess, "Failed to wait for vulkan fence!");
-  m_context.device.destroyFence(fence);
-}
-
 auto Renderer::Render() -> void
 {
   const auto commandBuffers = m_context.device.allocateCommandBuffers({
@@ -330,8 +334,7 @@ auto Renderer::Render() -> void
   commandBuffers[0].endRenderPass();
   commandBuffers[0].end();
 
-  SubmitWork(commandBuffers[0]);
-  m_context.device.waitIdle();
+  vku::SubmitWork(m_context, commandBuffers[0]);
 
   std::array<vk::ImageCopy, 1> regions;
   regions[0].srcSubresource = {vk::ImageAspectFlagBits::eColor, 0, 0, 1};
@@ -365,8 +368,7 @@ auto Renderer::Render() -> void
     vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, barriers[1]);
   commandBuffers[1].end();
 
-  SubmitWork(commandBuffers[1]);
-  m_context.device.waitIdle();
+  vku::SubmitWork(m_context, commandBuffers[1]);
 
   char* data {nullptr};
   vmaMapMemory(m_context.allocator, m_copyImage.allocation, reinterpret_cast<void**>(&data));
