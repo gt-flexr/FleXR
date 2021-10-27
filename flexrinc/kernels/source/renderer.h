@@ -7,6 +7,27 @@
 
 #include <renderdoc_app.h>
 
+namespace vulkan_utils
+{
+
+struct Context
+{
+  vk::Instance        instance;
+  vk::PhysicalDevice  physicalDevice;
+  vk::Device          device;
+  vk::Queue           queue;
+
+  VmaAllocator        allocator;
+};
+
+auto CreateContext() -> Context;
+
+//auto DestroyContext(vku::Context&& context) -> void; // TODO
+
+} // namespace vulkan_utils
+
+namespace vku = vulkan_utils;
+
 struct Image
 {
   vk::Image     image;
@@ -38,17 +59,12 @@ public:
 private:
   RENDERDOC_API_1_4_2* m_renderdoc {nullptr};
 
-  VmaAllocator        m_allocator;
-
   vk::Extent3D        m_extent;
-  vk::DynamicLoader   m_dl;
-  vk::Instance        m_instance;
-  vk::PhysicalDevice  m_physicalDevice;
-  vk::Device          m_device;
-  vk::Queue           m_queue;
   vk::CommandPool     m_commandPool;
   vk::RenderPass      m_renderPass;
   vk::Framebuffer     m_framebuffer;
+
+  vku::Context        m_context;
 
   Image               m_framebufferImage;
   Image               m_copyImage;

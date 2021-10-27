@@ -27,23 +27,13 @@ if (!(status)) { \
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
-Renderer::Renderer(int width, int height)
-  : m_extent {static_cast<unsigned>(width), static_cast<unsigned>(height), 1}
-  , m_frame  {width, height, 4, std::vector<char>(width * height * 4)}
+namespace vulkan_utils
 {
-  if (const auto handle = dlopen("/usr/lib64/librenderdoc.so", RTLD_NOW | RTLD_NOLOAD))
-  {
-    const auto RENDERDOC_GetAPI = reinterpret_cast<pRENDERDOC_GetAPI>(
-      dlsym(handle, "RENDERDOC_GetAPI"));
-    const auto status = RENDERDOC_GetAPI(
-      eRENDERDOC_API_Version_1_4_2, reinterpret_cast<void**>(&m_renderdoc));
-    ASSERT_THROW(status == 1, "Failed to setup renderdoc app API");
-    debug_print("Using renderdoc app API");
-  }
 
-  if (m_renderdoc) m_renderdoc->StartFrameCapture(nullptr, nullptr);
-
-  const auto vkGetInstanceProcAddr = m_dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+auto CreateContext() -> Context
+{
+  vk::DynamicLoader dl;
+  const auto vkGetInstanceProcAddr = dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
   VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
   vkb::InstanceBuilder instanceBuilder;
@@ -60,8 +50,8 @@ Renderer::Renderer(int width, int height)
     "Failed to create vulkan instance! %s", instanceStatus.error().message().c_str());
 
   const auto vkbInstance = instanceStatus.value();
-  m_instance = vkbInstance.instance;
-  VULKAN_HPP_DEFAULT_DISPATCHER.init(m_instance);
+  const auto instance = vkbInstance.instance;
+  VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
 
   vkb::PhysicalDeviceSelector physicalDeviceSelector {vkbInstance};
   const auto physicalDeviceStatus = physicalDeviceSelector
@@ -72,9 +62,9 @@ Renderer::Renderer(int width, int height)
   ASSERT_THROW(physicalDeviceStatus,
     "Failed to select vulkan physical device! %s", physicalDeviceStatus.error().message().c_str());
   const auto vkbPhysicalDevice = physicalDeviceStatus.value();
-  m_physicalDevice = vk::PhysicalDevice {vkbPhysicalDevice.physical_device};
+  const auto physicalDevice = vk::PhysicalDevice {vkbPhysicalDevice.physical_device};
 
-  const auto physicalDeviceProps = m_physicalDevice.getProperties();
+  const auto physicalDeviceProps = physicalDevice.getProperties();
   const std::string deviceName = physicalDeviceProps.deviceName;
   debug_print(
     "\nVulkan physical device:\n"
@@ -94,14 +84,14 @@ Renderer::Renderer(int width, int height)
   ASSERT_THROW(deviceStatus,
     "Failed to create Vulkan device! %s", deviceStatus.error().message().c_str());
   const auto vkbDevice = deviceStatus.value();
-  m_device = vk::Device {vkbDevice.device};
-  VULKAN_HPP_DEFAULT_DISPATCHER.init(m_device);
+  const auto device = vk::Device {vkbDevice.device};
+  VULKAN_HPP_DEFAULT_DISPATCHER.init(device);
 
   VmaAllocatorCreateInfo allocatorCI;
   allocatorCI.vulkanApiVersion = VK_MAKE_VERSION(1, 2, 0);
-  allocatorCI.physicalDevice   = m_physicalDevice;
-  allocatorCI.device           = m_device;
-  allocatorCI.instance         = m_instance;
+  allocatorCI.physicalDevice   = physicalDevice;
+  allocatorCI.device           = device;
+  allocatorCI.instance         = instance;
 
 #define SET_FN(name) name = reinterpret_cast<PFN_##name>(VULKAN_HPP_DEFAULT_DISPATCHER.name)
   VmaVulkanFunctions fn;
@@ -130,16 +120,42 @@ Renderer::Renderer(int width, int height)
   allocatorCI.pVulkanFunctions = &fn;
 #undef SET_FN
 
-  const auto allocatorStatus = vmaCreateAllocator(&allocatorCI, &m_allocator);
-  ASSERT_THROW(allocatorStatus == VK_SUCCESS, "Failed to create vulkan allocator! %d", allocatorStatus);
+  VmaAllocator allocator {};
+  const auto allocatorStatus = vmaCreateAllocator(&allocatorCI, &allocator);
+  ASSERT_THROW(allocatorStatus == VK_SUCCESS,
+    "Failed to create vulkan allocator! %d", allocatorStatus);
 
   const auto queueStatus = vkbDevice.get_queue(vkb::QueueType::graphics);
   ASSERT_THROW(queueStatus,
     "Failed to get vulkan queue! %s", queueStatus.error().message().c_str());
-  m_queue = vk::Queue {queueStatus.value()};
+  const auto queue = vk::Queue {queueStatus.value()};
 
-  const auto queueFamilyIndex = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
-  m_commandPool = m_device.createCommandPool({{}, queueFamilyIndex});
+  return {instance, physicalDevice, device, queue, allocator};
+}
+
+} // namespace vulkan_utils
+
+Renderer::Renderer(int width, int height)
+  : m_extent {static_cast<unsigned>(width), static_cast<unsigned>(height), 1}
+  , m_frame  {width, height, 4, std::vector<char>(width * height * 4)}
+{
+  if (const auto handle = dlopen("/usr/lib64/librenderdoc.so", RTLD_NOW | RTLD_NOLOAD))
+  {
+    const auto RENDERDOC_GetAPI = reinterpret_cast<pRENDERDOC_GetAPI>(
+      dlsym(handle, "RENDERDOC_GetAPI"));
+    const auto status = RENDERDOC_GetAPI(
+      eRENDERDOC_API_Version_1_4_2, reinterpret_cast<void**>(&m_renderdoc));
+    ASSERT_THROW(status == 1, "Failed to setup renderdoc app API");
+    debug_print("Using renderdoc app API");
+  }
+
+  if (m_renderdoc) m_renderdoc->StartFrameCapture(nullptr, nullptr);
+
+  m_context = vku::CreateContext();
+
+//   const auto queueFamilyIndex = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
+  const auto queueFamilyIndex = 0; // TODO: Get queue index from context
+  m_commandPool = m_context.device.createCommandPool({{}, queueFamilyIndex});
 
   // Framebuffer image
   {
@@ -154,12 +170,12 @@ Renderer::Renderer(int width, int height)
   imageCI.tiling        = vk::ImageTiling::eOptimal;
   imageCI.usage         = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc;
 
-  VmaAllocationCreateInfo allocationCI;
+  VmaAllocationCreateInfo allocationCI {};
   allocationCI.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
   VkImage image;
   const auto imageStatus = vmaCreateImage(
-    m_allocator,
+    m_context.allocator,
     reinterpret_cast<const VkImageCreateInfo*>(&imageCI),
     &allocationCI,
     &image,
@@ -173,10 +189,11 @@ Renderer::Renderer(int width, int height)
   imageViewCI.viewType = vk::ImageViewType::e2D;
   imageViewCI.format   = vk::Format::eR8G8B8A8Unorm;
   imageViewCI.subresourceRange = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1};
-  m_framebufferImage.view = m_device.createImageView(imageViewCI);
+  m_framebufferImage.view = m_context.device.createImageView(imageViewCI);
   }
 
   // Read back
+  {
   vk::ImageCreateInfo imageCI;
   imageCI.imageType     = vk::ImageType::e2D;
   imageCI.format        = vk::Format::eR8G8B8A8Unorm;
@@ -188,12 +205,12 @@ Renderer::Renderer(int width, int height)
   imageCI.tiling        = vk::ImageTiling::eLinear;
   imageCI.usage         = vk::ImageUsageFlagBits::eTransferDst;
 
-  VmaAllocationCreateInfo allocationCI;
+  VmaAllocationCreateInfo allocationCI {};
   allocationCI.usage = VMA_MEMORY_USAGE_GPU_TO_CPU;
 
   VkImage image;
   const auto imageStatus = vmaCreateImage(
-    m_allocator,
+    m_context.allocator,
     reinterpret_cast<const VkImageCreateInfo*>(&imageCI),
     &allocationCI,
     &image,
@@ -201,6 +218,7 @@ Renderer::Renderer(int width, int height)
     nullptr);
   ASSERT_THROW(imageStatus == VK_SUCCESS, "Failed to create vulkan image! %d", imageStatus);
   m_copyImage.image = vk::Image {image};
+  }
 
   // Renderpass
   std::array<vk::AttachmentDescription, 1> attachments;
@@ -237,7 +255,7 @@ Renderer::Renderer(int width, int height)
   renderPassCI.pAttachments    = attachments.data();
   renderPassCI.subpassCount    = subpasses.size();
   renderPassCI.pSubpasses      = subpasses.data();
-  m_renderPass = m_device.createRenderPass(renderPassCI);
+  m_renderPass = m_context.device.createRenderPass(renderPassCI);
 
   std::array<vk::ImageView, 1> imageViews;
   imageViews[0] = m_framebufferImage.view;
@@ -249,7 +267,7 @@ Renderer::Renderer(int width, int height)
   framebufferCI.width           = m_extent.width;
   framebufferCI.height          = m_extent.height;
   framebufferCI.layers          = 1;;
-  m_framebuffer = m_device.createFramebuffer(framebufferCI);
+  m_framebuffer = m_context.device.createFramebuffer(framebufferCI);
 
   debug_print("Initialized vulkan");
 }
@@ -264,16 +282,16 @@ auto Renderer::SubmitWork(vk::CommandBuffer commandBuffer) -> void
   vk::SubmitInfo submitInfo;
   submitInfo.commandBufferCount = 1;
   submitInfo.pCommandBuffers    = &commandBuffer;
-  const auto fence = m_device.createFence({});
-  m_queue.submit(submitInfo, fence);
-  const auto status = m_device.waitForFences(fence, true, std::numeric_limits<uint64_t>::max());
+  const auto fence = m_context.device.createFence({});
+  m_context.queue.submit(submitInfo, fence);
+  const auto status = m_context.device.waitForFences(fence, true, std::numeric_limits<uint64_t>::max());
   ASSERT_THROW(status == vk::Result::eSuccess, "Failed to wait for vulkan fence!");
-  m_device.destroyFence(fence);
+  m_context.device.destroyFence(fence);
 }
 
 auto Renderer::Render() -> void
 {
-  const auto commandBuffers = m_device.allocateCommandBuffers({
+  const auto commandBuffers = m_context.device.allocateCommandBuffers({
     m_commandPool, vk::CommandBufferLevel::ePrimary, 2});
 
   std::array<vk::ClearValue, 1> clearValues;
@@ -301,7 +319,7 @@ auto Renderer::Render() -> void
   commandBuffers[0].end();
 
   SubmitWork(commandBuffers[0]);
-  m_device.waitIdle();
+  m_context.device.waitIdle();
 
   std::array<vk::ImageCopy, 1> regions;
   regions[0].srcSubresource = {vk::ImageAspectFlagBits::eColor, 0, 0, 1};
@@ -336,10 +354,10 @@ auto Renderer::Render() -> void
   commandBuffers[1].end();
 
   SubmitWork(commandBuffers[1]);
-  m_device.waitIdle();
+  m_context.device.waitIdle();
 
   char* data {nullptr};
-  vmaMapMemory(m_allocator, m_copyImage.allocation, reinterpret_cast<void**>(&data));
+  vmaMapMemory(m_context.allocator, m_copyImage.allocation, reinterpret_cast<void**>(&data));
   std::memcpy(m_frame.data.data(), data, m_frame.data.size());
-  vmaUnmapMemory(m_allocator, m_copyImage.allocation);
+  vmaUnmapMemory(m_context.allocator, m_copyImage.allocation);
 }
