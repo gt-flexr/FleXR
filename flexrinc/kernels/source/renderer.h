@@ -1,3 +1,5 @@
+#include <optional>
+
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #include <vulkan/vulkan.hpp>
 
@@ -20,20 +22,37 @@ struct Context
   VmaAllocator        allocator;
 };
 
+struct Image
+{
+  vk::Image image;
+  std::optional<vk::ImageView> view;
+  VmaAllocation allocation;
+};
+
+class ImageBuilder
+{
+public:
+  ImageBuilder(vk::Extent3D extent, vk::Format, VmaMemoryUsage usage);
+
+  auto SetUsage(vk::ImageUsageFlags usage) -> ImageBuilder&;
+  auto SetTiling(vk::ImageTiling tiling)   -> ImageBuilder&;
+
+  auto Build(const Context& context) const -> Image;
+
+private:
+  vk::ImageCreateInfo imageCI;
+  VmaMemoryUsage      usage;
+};
+
 auto CreateContext() -> Context;
 
-//auto DestroyContext(vku::Context&& context) -> void; // TODO
+// TODO: Add destruction methods
+//auto DestroyContext(Context&& context) -> void;
+// auto DestroyImage(Image&& image) -> void;
 
 } // namespace vulkan_utils
 
 namespace vku = vulkan_utils;
-
-struct Image
-{
-  vk::Image     image;
-  vk::ImageView view;
-  VmaAllocation allocation;
-};
 
 struct RenderFrame
 {
@@ -66,8 +85,8 @@ private:
 
   vku::Context        m_context;
 
-  Image               m_framebufferImage;
-  Image               m_copyImage;
+  vku::Image          m_framebufferImage;
+  vku::Image          m_copyImage;
 
   RenderFrame         m_frame;
 };

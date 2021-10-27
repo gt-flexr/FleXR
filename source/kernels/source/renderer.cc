@@ -24,7 +24,6 @@ if (!(status)) { \
 } while (0)
 #endif
 
-
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace vulkan_utils
@@ -133,6 +132,71 @@ auto CreateContext() -> Context
   return {instance, physicalDevice, device, queue, allocator};
 }
 
+ImageBuilder::ImageBuilder(vk::Extent3D extent, vk::Format format, VmaMemoryUsage usage)
+  : usage {usage}
+{
+  imageCI.imageType     = vk::ImageType::e2D;
+  imageCI.format        = format;
+  imageCI.extent        = extent;
+  imageCI.arrayLayers   = 1;
+  imageCI.mipLevels     = 1;
+  imageCI.initialLayout = vk::ImageLayout::eUndefined;
+  imageCI.samples       = vk::SampleCountFlagBits::e1;
+  imageCI.tiling        = vk::ImageTiling::eOptimal;
+  imageCI.usage         = vk::ImageUsageFlagBits::eColorAttachment;
+}
+
+auto ImageBuilder::SetUsage(vk::ImageUsageFlags usage) -> ImageBuilder&
+{
+  imageCI.usage = usage;
+  return *this;
+}
+
+auto ImageBuilder::SetTiling(vk::ImageTiling tiling) -> ImageBuilder&
+{
+  imageCI.tiling = tiling;
+  return *this;
+}
+
+auto ImageBuilder::Build(const Context& context) const -> Image
+{
+  VmaAllocationCreateInfo allocationCI {};
+  allocationCI.usage = VMA_MEMORY_USAGE_GPU_TO_CPU;
+
+  VkImage vkImage;
+  VmaAllocation allocation {};
+  const auto imageStatus = vmaCreateImage(
+    context.allocator,
+    reinterpret_cast<const VkImageCreateInfo*>(&imageCI),
+    &allocationCI,
+    &vkImage,
+    &allocation,
+    nullptr);
+  ASSERT_THROW(imageStatus == VK_SUCCESS, "Failed to create vulkan image! %d", imageStatus);
+  const auto image = vk::Image {vkImage};
+
+  constexpr auto validImageViewUsageFlags =
+    vk::ImageUsageFlagBits::eSampled                |
+    vk::ImageUsageFlagBits::eStorage                |
+    vk::ImageUsageFlagBits::eColorAttachment        |
+    vk::ImageUsageFlagBits::eDepthStencilAttachment |
+    vk::ImageUsageFlagBits::eInputAttachment        |
+    vk::ImageUsageFlagBits::eTransientAttachment;
+
+  if (imageCI.usage & validImageViewUsageFlags)
+  {
+    vk::ImageViewCreateInfo imageViewCI;
+    imageViewCI.image    = image;
+    imageViewCI.viewType = vk::ImageViewType::e2D;
+    imageViewCI.format   = imageCI.format; // TODO: Support aliased formats
+    imageViewCI.subresourceRange = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}; // TODO: Parameterize
+    const auto view = context.device.createImageView(imageViewCI);
+    return {image, view, allocation};
+  }
+
+  return {image, std::nullopt, allocation};
+}
+
 } // namespace vulkan_utils
 
 Renderer::Renderer(int width, int height)
@@ -157,68 +221,16 @@ Renderer::Renderer(int width, int height)
   const auto queueFamilyIndex = 0; // TODO: Get queue index from context
   m_commandPool = m_context.device.createCommandPool({{}, queueFamilyIndex});
 
-  // Framebuffer image
-  {
-  vk::ImageCreateInfo imageCI;
-  imageCI.imageType     = vk::ImageType::e2D;
-  imageCI.format        = vk::Format::eR8G8B8A8Unorm;
-  imageCI.extent        = m_extent;
-  imageCI.arrayLayers   = 1;
-  imageCI.mipLevels     = 1;
-  imageCI.initialLayout = vk::ImageLayout::eUndefined;
-  imageCI.samples       = vk::SampleCountFlagBits::e1;
-  imageCI.tiling        = vk::ImageTiling::eOptimal;
-  imageCI.usage         = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc;
+  m_framebufferImage = vku::ImageBuilder(
+    m_extent, vk::Format::eR8G8B8A8Unorm, VMA_MEMORY_USAGE_GPU_ONLY)
+    .SetUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc)
+    .Build(m_context);
 
-  VmaAllocationCreateInfo allocationCI {};
-  allocationCI.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-
-  VkImage image;
-  const auto imageStatus = vmaCreateImage(
-    m_context.allocator,
-    reinterpret_cast<const VkImageCreateInfo*>(&imageCI),
-    &allocationCI,
-    &image,
-    &m_framebufferImage.allocation,
-    nullptr);
-  ASSERT_THROW(imageStatus == VK_SUCCESS, "Failed to create vulkan image! %d", imageStatus);
-  m_framebufferImage.image = vk::Image {image};
-
-  vk::ImageViewCreateInfo imageViewCI;
-  imageViewCI.image    = m_framebufferImage.image;
-  imageViewCI.viewType = vk::ImageViewType::e2D;
-  imageViewCI.format   = vk::Format::eR8G8B8A8Unorm;
-  imageViewCI.subresourceRange = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1};
-  m_framebufferImage.view = m_context.device.createImageView(imageViewCI);
-  }
-
-  // Read back
-  {
-  vk::ImageCreateInfo imageCI;
-  imageCI.imageType     = vk::ImageType::e2D;
-  imageCI.format        = vk::Format::eR8G8B8A8Unorm;
-  imageCI.extent        = m_extent;
-  imageCI.arrayLayers   = 1;
-  imageCI.mipLevels     = 1;
-  imageCI.initialLayout = vk::ImageLayout::eUndefined;
-  imageCI.samples       = vk::SampleCountFlagBits::e1;
-  imageCI.tiling        = vk::ImageTiling::eLinear;
-  imageCI.usage         = vk::ImageUsageFlagBits::eTransferDst;
-
-  VmaAllocationCreateInfo allocationCI {};
-  allocationCI.usage = VMA_MEMORY_USAGE_GPU_TO_CPU;
-
-  VkImage image;
-  const auto imageStatus = vmaCreateImage(
-    m_context.allocator,
-    reinterpret_cast<const VkImageCreateInfo*>(&imageCI),
-    &allocationCI,
-    &image,
-    &m_copyImage.allocation,
-    nullptr);
-  ASSERT_THROW(imageStatus == VK_SUCCESS, "Failed to create vulkan image! %d", imageStatus);
-  m_copyImage.image = vk::Image {image};
-  }
+  m_copyImage = vku::ImageBuilder(
+    m_extent, vk::Format::eR8G8B8A8Unorm, VMA_MEMORY_USAGE_GPU_TO_CPU)
+    .SetUsage(vk::ImageUsageFlagBits::eTransferDst)
+    .SetTiling(vk::ImageTiling::eLinear)
+    .Build(m_context);
 
   // Renderpass
   std::array<vk::AttachmentDescription, 1> attachments;
@@ -258,7 +270,7 @@ Renderer::Renderer(int width, int height)
   m_renderPass = m_context.device.createRenderPass(renderPassCI);
 
   std::array<vk::ImageView, 1> imageViews;
-  imageViews[0] = m_framebufferImage.view;
+  imageViews[0] = m_framebufferImage.view.value();
 
   vk::FramebufferCreateInfo framebufferCI;
   framebufferCI.renderPass      = m_renderPass;
