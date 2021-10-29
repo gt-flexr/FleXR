@@ -39,7 +39,10 @@ struct Buffer : Resource
 
 struct Image : Resource
 {
-  vk::Image image;
+  vk::Format          format;
+  vk::ImageUsageFlags usage;
+  vk::ImageLayout     initialLayout;
+  vk::Image           image;
   std::optional<vk::ImageView> view;
 };
 
@@ -70,6 +73,10 @@ auto CreateShaderModule(
   const Context&                context,
   const std::filesystem::path&  path) -> vk::ShaderModule;
 
+auto CreateAttachmentDescription(
+  const Image& image,
+  vk::ImageLayout finalLayout = vk::ImageLayout::eGeneral) -> vk::AttachmentDescription;
+
 auto SubmitWork(
   const Context&    context,
   vk::CommandBuffer cmdBuf,
@@ -83,7 +90,7 @@ auto SubmitWork(
 template <typename T>
 inline auto SizeInBytes(T&& container)
 {
-  return std::forward<T>(container).size() * sizeof(std::forward<T>(container))[0];
+  return std::forward<T>(container).size() * sizeof(std::forward<T>(container)[0]);
 }
 
 template <typename Src, typename Dst>
@@ -132,18 +139,19 @@ public:
 private:
   RENDERDOC_API_1_4_2* m_renderdoc {nullptr};
 
-  vk::Extent3D    m_extent;
-  vk::CommandPool m_commandPool;
-  vk::RenderPass  m_renderPass;
-  vk::Framebuffer m_framebuffer;
-  vk::DescriptorSet m_descSet;
-  vk::PipelineLayout m_pipelineLayout;
-  vk::Pipeline m_pipeline;
+  vk::Extent3D        m_extent;
+  vk::CommandPool     m_commandPool;
+  vk::RenderPass      m_renderPass;
+  vk::Framebuffer     m_framebuffer;
+  vk::DescriptorSet   m_descSet;
+  vk::PipelineLayout  m_pipelineLayout;
+  vk::Pipeline        m_pipeline;
 
-  vku::Context    m_context;
-  vku::Buffer     m_vertexStorageBuffer;
-  vku::Image      m_framebufferImage;
-  vku::Image      m_copyImage;
+  vku::Context        m_context;
+  vku::Buffer         m_vertexStorageBuffer;
+  vku::Image          m_colorImage;
+  vku::Image          m_depthImage;
+  vku::Image          m_copyImage;
 
-  RenderFrame     m_frame;
+  RenderFrame         m_frame;
 };

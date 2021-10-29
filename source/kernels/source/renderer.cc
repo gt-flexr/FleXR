@@ -188,16 +188,19 @@ auto ImageBuilder::Build(const Context& context) const -> Image
 
   if (imageCI.usage & validImageViewUsageFlags)
   {
+    const auto aspect = imageCI.usage == vk::ImageUsageFlagBits::eDepthStencilAttachment ?
+      vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
+
     vk::ImageViewCreateInfo imageViewCI;
     imageViewCI.image    = image;
     imageViewCI.viewType = vk::ImageViewType::e2D;
     imageViewCI.format   = imageCI.format; // TODO: Support aliased formats
-    imageViewCI.subresourceRange = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}; // TODO: Parameterize
+    imageViewCI.subresourceRange = {aspect, 0, 1, 0, 1};
     const auto view = context.device.createImageView(imageViewCI);
-    return {allocation, image, view};
+    return {allocation, imageCI.format, imageCI.usage, imageCI.initialLayout, image, view};
   }
 
-  return {allocation, image, std::nullopt};
+  return {allocation, imageCI.format, imageCI.usage, imageCI.initialLayout, image, std::nullopt};
 }
 
 auto CreateBuffer(
@@ -241,6 +244,22 @@ auto CreateShaderModule(
   return context.device.createShaderModule(shaderModuleCI);
 }
 
+auto CreateAttachmentDescription(
+  const Image& image,
+  vk::ImageLayout finalLayout) -> vk::AttachmentDescription
+{
+  const auto isDepthAttachment = image.usage == vk::ImageUsageFlagBits::eDepthStencilAttachment;
+
+  vk::AttachmentDescription desc;
+  desc.format        = image.format;
+  desc.samples       = vk::SampleCountFlagBits::e1;
+  desc.loadOp        = vk::AttachmentLoadOp::eClear; // TODO: eLoad for textures
+  desc.storeOp       = isDepthAttachment ? vk::AttachmentStoreOp::eDontCare : vk::AttachmentStoreOp::eStore;
+  desc.initialLayout = image.initialLayout;
+  desc.finalLayout   = isDepthAttachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal : finalLayout;
+  return desc;
+}
+
 auto SubmitWork(const Context& context, vk::CommandBuffer cmdBuf, bool block) -> void
 {
   vk::SubmitInfo submitInfo;
@@ -282,7 +301,11 @@ Renderer::Renderer(int width, int height)
   m_commandPool = m_context.device.createCommandPool({{}, queueFamilyIndex});
 
   struct Vertex { float x {0}, y {0}, z {0}; };
-  constexpr std::array<Vertex, 3> vertices {{{-1, -1, 0}, {1, -1, 0}, {0, 1, 0}}};
+  constexpr std::array<Vertex, 6> vertices
+  {{
+    {-1, -1, 1}, {+1, -1, 1}, {+1, +1, 1},
+    {+1, +1, 1}, {-1, +1, 1}, {-1, -1, 1},
+  }};
 
   /////////////////////////////////////////////////////////////////////////////
   // Buffers
@@ -300,9 +323,14 @@ Renderer::Renderer(int width, int height)
   // Images
   /////////////////////////////////////////////////////////////////////////////
 
-  m_framebufferImage = vku::ImageBuilder(
+  m_colorImage = vku::ImageBuilder(
     m_extent, vk::Format::eR8G8B8A8Unorm, VMA_MEMORY_USAGE_GPU_ONLY)
     .SetUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc)
+    .Build(m_context);
+
+  m_depthImage = vku::ImageBuilder(
+    m_extent, vk::Format::eD32Sfloat, VMA_MEMORY_USAGE_GPU_ONLY)
+    .SetUsage(vk::ImageUsageFlagBits::eDepthStencilAttachment)
     .Build(m_context);
 
   m_copyImage = vku::ImageBuilder(
@@ -315,20 +343,20 @@ Renderer::Renderer(int width, int height)
   // Render Pass
   /////////////////////////////////////////////////////////////////////////////
 
-  std::array<vk::AttachmentDescription, 1> attachments;
-  attachments[0].format        = vk::Format::eR8G8B8A8Unorm;
-  attachments[0].samples       = vk::SampleCountFlagBits::e1;
-  attachments[0].loadOp        = vk::AttachmentLoadOp::eClear;
-  attachments[0].storeOp       = vk::AttachmentStoreOp::eStore;
-  attachments[0].initialLayout = vk::ImageLayout::eUndefined;
-  attachments[0].finalLayout   = vk::ImageLayout::eTransferSrcOptimal;
+  const std::array<vk::AttachmentDescription, 2> attachments
+  {
+    CreateAttachmentDescription(m_colorImage, vk::ImageLayout::eTransferSrcOptimal),
+    CreateAttachmentDescription(m_depthImage),
+  };
 
   const vk::AttachmentReference colorAttachmentRef {0, vk::ImageLayout::eColorAttachmentOptimal};
+  const vk::AttachmentReference depthAttachmentRef {1, vk::ImageLayout::eDepthStencilAttachmentOptimal};
 
   std::array<vk::SubpassDescription, 1> subpasses;
-  subpasses[0].pipelineBindPoint    = vk::PipelineBindPoint::eGraphics;
-  subpasses[0].colorAttachmentCount = 1;
-  subpasses[0].pColorAttachments    = &colorAttachmentRef;
+  subpasses[0].pipelineBindPoint        = vk::PipelineBindPoint::eGraphics;
+  subpasses[0].colorAttachmentCount     = 1;
+  subpasses[0].pColorAttachments        = &colorAttachmentRef;
+  subpasses[0].pDepthStencilAttachment  = &depthAttachmentRef;
 
   /*
   // TODO: Add subpass dependency
@@ -355,8 +383,11 @@ Renderer::Renderer(int width, int height)
   // Framebuffer
   /////////////////////////////////////////////////////////////////////////////
 
-  std::array<vk::ImageView, 1> imageViews;
-  imageViews[0] = m_framebufferImage.view.value();
+  const std::array<vk::ImageView, 2> imageViews
+  {
+    m_colorImage.view.value(),
+    m_depthImage.view.value(),
+  };
 
   vk::FramebufferCreateInfo framebufferCI;
   framebufferCI.renderPass      = m_renderPass;
@@ -460,6 +491,11 @@ Renderer::Renderer(int width, int height)
   vk::PipelineMultisampleStateCreateInfo multisampleState;
   multisampleState.rasterizationSamples = vk::SampleCountFlagBits::e1;
 
+  vk::PipelineDepthStencilStateCreateInfo depthStencilState;
+  depthStencilState.depthTestEnable  = true;
+  depthStencilState.depthWriteEnable = true;
+  depthStencilState.depthCompareOp   = vk::CompareOp::eAlways;
+
   vk::PipelineColorBlendAttachmentState blendAttachmentState;
   blendAttachmentState.colorWriteMask =
     vk::ColorComponentFlagBits::eR |
@@ -479,6 +515,7 @@ Renderer::Renderer(int width, int height)
   pipelineCI.pViewportState       = &viewportState;
   pipelineCI.pRasterizationState  = &rasterizationState;
   pipelineCI.pMultisampleState    = &multisampleState;
+  pipelineCI.pDepthStencilState   = &depthStencilState;
   pipelineCI.pColorBlendState     = &colorBlendState;
   pipelineCI.layout               = m_pipelineLayout;
   pipelineCI.renderPass           = m_renderPass;
@@ -504,8 +541,9 @@ auto Renderer::Render() -> void
   const auto commandBuffers = m_context.device.allocateCommandBuffers({
     m_commandPool, vk::CommandBufferLevel::ePrimary, 2});
 
-  std::array<vk::ClearValue, 1> clearValues;
-  clearValues[0].color = std::array<float, 4> {{1, 0, 1, 1}};
+  std::array<vk::ClearValue, 2> clearValues;
+  clearValues[0].color = std::array<float, 4> {{0.25, 0.5, 1, 1}};
+  clearValues[1].depthStencil = {{1.0F, 1}};
 
   vk::RenderPassBeginInfo renderPassBI;
   renderPassBI.renderPass      = m_renderPass;
@@ -514,20 +552,11 @@ auto Renderer::Render() -> void
   renderPassBI.clearValueCount = clearValues.size();
   renderPassBI.pClearValues    = clearValues.data();
 
-  std::array<vk::ClearAttachment, 1> clearAttachments;
-  clearAttachments[0].aspectMask = vk::ImageAspectFlagBits::eColor;
-  clearAttachments[0].colorAttachment = 0;
-  clearAttachments[0].clearValue = vk::ClearColorValue {std::array<float, 4> {{0.25, 0.5, 1, 1}}};
-
-  std::array<vk::ClearRect, 1> clearRects;
-  clearRects[0] = vk::ClearRect {{{0, 0}, {m_extent.width, m_extent.height}}, 0, 1};
-
   commandBuffers[0].begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
   commandBuffers[0].beginRenderPass(renderPassBI, vk::SubpassContents::eInline);
   commandBuffers[0].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline);
   commandBuffers[0].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 0, m_descSet, {});
-  commandBuffers[0].clearAttachments(clearAttachments, clearRects);
-  commandBuffers[0].draw(3, 1, 0, 0);
+  commandBuffers[0].draw(6, 1, 0, 0);
   commandBuffers[0].endRenderPass();
   commandBuffers[0].end();
 
@@ -562,8 +591,8 @@ auto Renderer::Render() -> void
   commandBuffers[1].pipelineBarrier(
     vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, barriers[0]);
   commandBuffers[1].copyImage(
-    m_framebufferImage.image, vk::ImageLayout::eTransferSrcOptimal,
-    m_copyImage.image,        vk::ImageLayout::eTransferDstOptimal,
+    m_colorImage.image, vk::ImageLayout::eTransferSrcOptimal,
+    m_copyImage.image,  vk::ImageLayout::eTransferDstOptimal,
     regions);
   commandBuffers[1].pipelineBarrier(
     vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, barriers[1]);
