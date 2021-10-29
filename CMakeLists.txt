@@ -57,6 +57,7 @@ add_subdirectory(third-party)
 add_subdirectory(flexrinc)
 add_subdirectory(source)
 add_subdirectory(examples)
+add_subdirectory(shaders)
 
 # Install
 string(REPLACE ";" " " FLEXR_CXX_FLAGS "${FLEXR_CXX_FLAGS}")

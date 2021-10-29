@@ -1,4 +1,6 @@
+#include <filesystem>
 #include <optional>
+#include <type_traits>
 
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #include <vulkan/vulkan.hpp>
@@ -22,11 +24,22 @@ struct Context
   VmaAllocator        allocator;
 };
 
-struct Image
+struct Resource
 {
   VmaAllocation allocation;
-  vk::Image     image;
+};
 
+template <typename T>
+inline constexpr auto is_resource_v = std::is_base_of_v<Resource, T>;
+
+struct Buffer : Resource
+{
+  vk::Buffer buffer;
+};
+
+struct Image : Resource
+{
+  vk::Image image;
   std::optional<vk::ImageView> view;
 };
 
@@ -48,11 +61,50 @@ private:
 
 auto CreateContext() -> Context;
 
-auto SubmitWork(const Context& context, vk::CommandBuffer cmdBuf, bool block=true) -> void;
+auto CreateBuffer(
+  const Context& context,
+  vk::DeviceSize size,
+  VmaMemoryUsage usage) -> Buffer;
+
+auto CreateShaderModule(
+  const Context&                context,
+  const std::filesystem::path&  path) -> vk::ShaderModule;
+
+auto SubmitWork(
+  const Context&    context,
+  vk::CommandBuffer cmdBuf,
+  bool              block=true) -> void;
 
 // TODO: Add destruction methods
 //auto DestroyContext(Context&& context) -> void;
+// auto DestroyBuffer(Buffer&& buffer) -> void;
 // auto DestroyImage(Image&& image) -> void;
+
+template <typename T>
+inline auto SizeInBytes(T&& container)
+{
+  return std::forward<T>(container).size() * sizeof(std::forward<T>(container))[0];
+}
+
+template <typename Src, typename Dst>
+auto CopyBuffer(const Context& context, Src&& container, const Dst& object)
+  -> std::enable_if_t<is_resource_v<Dst>>
+{
+  char* data {nullptr};
+  vmaMapMemory(context.allocator, object.allocation, reinterpret_cast<void**>(&data));
+  std::memcpy(data, std::forward<Src>(container).data(), SizeInBytes(std::forward<Src>(container)));
+  vmaUnmapMemory(context.allocator, object.allocation);
+}
+
+template <typename Src, typename Dst>
+auto CopyBuffer(const Context& context, const Src& object, Dst&& container)
+  -> std::enable_if_t<is_resource_v<Src>>
+{
+  char* data {nullptr};
+  vmaMapMemory(context.allocator, object.allocation, reinterpret_cast<void**>(&data));
+  std::memcpy(std::forward<Dst>(container).data(), data, SizeInBytes(std::forward<Dst>(container)));
+  vmaUnmapMemory(context.allocator, object.allocation);
+}
 
 } // namespace vulkan_utils
 
@@ -84,8 +136,12 @@ private:
   vk::CommandPool m_commandPool;
   vk::RenderPass  m_renderPass;
   vk::Framebuffer m_framebuffer;
+  vk::DescriptorSet m_descSet;
+  vk::PipelineLayout m_pipelineLayout;
+  vk::Pipeline m_pipeline;
 
   vku::Context    m_context;
+  vku::Buffer     m_vertexStorageBuffer;
   vku::Image      m_framebufferImage;
   vku::Image      m_copyImage;
 

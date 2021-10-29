@@ -5,9 +5,13 @@ project(vulkan_debug)
 
 set(ROOT_DIR "..")
 
+include(../shaders/CMakeLists.txt)
+
 include(${ROOT_DIR}/cmake/modules/Vulkan.cmake)
 
 add_executable(vulkan_debug)
+
+add_dependencies(vulkan_debug shaders)
 
 target_compile_features(vulkan_debug PRIVATE cxx_std_17)
 

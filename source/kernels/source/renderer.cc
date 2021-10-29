@@ -3,6 +3,8 @@
 #include <array>
 #include <algorithm>
 #include <dlfcn.h> // For dlopen
+#include <fstream>
+#include <vector>
 
 #include <VkBootstrap.h>
 
@@ -57,6 +59,7 @@ auto CreateContext() -> Context
     .set_minimum_version(1, 2)
     .add_required_extension("VK_KHR_get_memory_requirements2")
     .add_required_extension("VK_KHR_bind_memory2")
+    .add_required_extension("VK_KHR_maintenance1")
     .select();
   ASSERT_THROW(physicalDeviceStatus,
     "Failed to select vulkan physical device! %s", physicalDeviceStatus.error().message().c_str());
@@ -197,6 +200,47 @@ auto ImageBuilder::Build(const Context& context) const -> Image
   return {allocation, image, std::nullopt};
 }
 
+auto CreateBuffer(
+  const Context&        context,
+  vk::DeviceSize        size,
+  vk::BufferUsageFlags  usage,
+  VmaMemoryUsage        memoryUsage) -> Buffer
+{
+  vk::BufferCreateInfo bufferCI;
+  bufferCI.size  = size;
+  bufferCI.usage = usage;
+
+  VmaAllocationCreateInfo allocationCI {};
+  allocationCI.usage = memoryUsage;
+
+  VkBuffer buffer;
+  VmaAllocation allocation {};
+  const auto bufferStatus = vmaCreateBuffer(
+    context.allocator,
+    reinterpret_cast<const VkBufferCreateInfo*>(&bufferCI),
+    &allocationCI,
+    &buffer,
+    &allocation,
+    nullptr);
+  ASSERT_THROW(bufferStatus == VK_SUCCESS, "Failed to create vulkan buffer! %d", bufferStatus);
+
+  return {allocation, buffer};
+}
+
+auto CreateShaderModule(
+  const Context& context,
+  const std::filesystem::path& path) -> vk::ShaderModule
+{
+  std::basic_ifstream<char> file {path, std::ios::binary};
+  ASSERT_THROW(file.is_open(), "Failed to open SPIRV shader! %s", path.c_str());
+  const std::vector<char> data {std::istreambuf_iterator<char> {file}, {}};
+
+  vk::ShaderModuleCreateInfo shaderModuleCI;
+  shaderModuleCI.codeSize = data.size();
+  shaderModuleCI.pCode    = reinterpret_cast<const uint32_t*>(data.data());
+  return context.device.createShaderModule(shaderModuleCI);
+}
+
 auto SubmitWork(const Context& context, vk::CommandBuffer cmdBuf, bool block) -> void
 {
   vk::SubmitInfo submitInfo;
@@ -237,6 +281,25 @@ Renderer::Renderer(int width, int height)
   const auto queueFamilyIndex = 0; // TODO: Get queue index from context
   m_commandPool = m_context.device.createCommandPool({{}, queueFamilyIndex});
 
+  struct Vertex { float x {0}, y {0}, z {0}; };
+  constexpr std::array<Vertex, 3> vertices {{{-1, -1, 0}, {1, -1, 0}, {0, 1, 0}}};
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Buffers
+  /////////////////////////////////////////////////////////////////////////////
+
+  m_vertexStorageBuffer = vku::CreateBuffer(
+    m_context,
+    vku::SizeInBytes(vertices),
+    vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst,
+    VMA_MEMORY_USAGE_CPU_TO_GPU);
+
+  vku::CopyBuffer(m_context, vertices, m_vertexStorageBuffer);
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Images
+  /////////////////////////////////////////////////////////////////////////////
+
   m_framebufferImage = vku::ImageBuilder(
     m_extent, vk::Format::eR8G8B8A8Unorm, VMA_MEMORY_USAGE_GPU_ONLY)
     .SetUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc)
@@ -248,7 +311,10 @@ Renderer::Renderer(int width, int height)
     .SetTiling(vk::ImageTiling::eLinear)
     .Build(m_context);
 
-  // Renderpass
+  /////////////////////////////////////////////////////////////////////////////
+  // Render Pass
+  /////////////////////////////////////////////////////////////////////////////
+
   std::array<vk::AttachmentDescription, 1> attachments;
   attachments[0].format        = vk::Format::eR8G8B8A8Unorm;
   attachments[0].samples       = vk::SampleCountFlagBits::e1;
@@ -285,6 +351,10 @@ Renderer::Renderer(int width, int height)
   renderPassCI.pSubpasses      = subpasses.data();
   m_renderPass = m_context.device.createRenderPass(renderPassCI);
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Framebuffer
+  /////////////////////////////////////////////////////////////////////////////
+
   std::array<vk::ImageView, 1> imageViews;
   imageViews[0] = m_framebufferImage.view.value();
 
@@ -294,8 +364,128 @@ Renderer::Renderer(int width, int height)
   framebufferCI.pAttachments    = imageViews.data();
   framebufferCI.width           = m_extent.width;
   framebufferCI.height          = m_extent.height;
-  framebufferCI.layers          = 1;;
+  framebufferCI.layers          = 1;
   m_framebuffer = m_context.device.createFramebuffer(framebufferCI);
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Descriptor Sets
+  /////////////////////////////////////////////////////////////////////////////
+
+  std::array<vk::DescriptorSetLayoutBinding, 1> bindings;
+  bindings[0].binding         = 0;
+  bindings[0].descriptorType  = vk::DescriptorType::eStorageBuffer;
+  bindings[0].descriptorCount = 1;
+  bindings[0].stageFlags      = vk::ShaderStageFlagBits::eAllGraphics;
+
+  vk::DescriptorSetLayoutCreateInfo descSetLayoutCI;
+  descSetLayoutCI.bindingCount  = bindings.size();
+  descSetLayoutCI.pBindings     = bindings.data();
+  const auto descSetLayout = m_context.device.createDescriptorSetLayout(descSetLayoutCI);
+
+  std::array<vk::DescriptorPoolSize, 1> descPoolSize;
+  descPoolSize[0].type            = vk::DescriptorType::eStorageBuffer;
+  descPoolSize[0].descriptorCount = 1;
+
+  vk::DescriptorPoolCreateInfo descPoolCI;
+  descPoolCI.maxSets        = 1;
+  descPoolCI.poolSizeCount  = descPoolSize.size();
+  descPoolCI.pPoolSizes     = descPoolSize.data();
+  const auto descPool = m_context.device.createDescriptorPool(descPoolCI);
+
+  vk::DescriptorSetAllocateInfo descSetAI;
+  descSetAI.descriptorPool      = descPool;
+  descSetAI.descriptorSetCount  = 1;
+  descSetAI.pSetLayouts         = &descSetLayout;
+  m_descSet = m_context.device.allocateDescriptorSets(descSetAI)[0];
+
+  vk::DescriptorBufferInfo descBI;
+  descBI.buffer = m_vertexStorageBuffer.buffer;
+  descBI.offset = 0;
+  descBI.range  = VK_WHOLE_SIZE;
+
+  vk::WriteDescriptorSet writeDescSet;
+  writeDescSet.dstSet           = m_descSet;
+  writeDescSet.dstBinding       = 0;
+  writeDescSet.descriptorCount  = 1;
+  writeDescSet.descriptorType   = vk::DescriptorType::eStorageBuffer;
+  writeDescSet.pBufferInfo      = &descBI;
+  m_context.device.updateDescriptorSets(writeDescSet, {});
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Graphics Pipeline
+  /////////////////////////////////////////////////////////////////////////////
+
+  vk::PipelineLayoutCreateInfo pipelineLayoutCI;
+  pipelineLayoutCI.setLayoutCount = 1;
+  pipelineLayoutCI.pSetLayouts    = &descSetLayout;
+  m_pipelineLayout = m_context.device.createPipelineLayout(pipelineLayoutCI);
+
+  std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStages;
+  shaderStages[0].stage  = vk::ShaderStageFlagBits::eVertex;
+  shaderStages[0].pName  = "main";
+  shaderStages[0].module = vku::CreateShaderModule(m_context, "default.vert.spv");
+  shaderStages[1].stage  = vk::ShaderStageFlagBits::eFragment;
+  shaderStages[1].pName  = "main";
+  shaderStages[1].module = vku::CreateShaderModule(m_context, "default.frag.spv");
+
+  vk::PipelineVertexInputStateCreateInfo vertexInputState; // Empty for manual vertex attribute fetch in shader
+
+  vk::PipelineInputAssemblyStateCreateInfo inputAssemblyState;
+  inputAssemblyState.topology = vk::PrimitiveTopology::eTriangleList;
+
+  vk::PipelineRasterizationStateCreateInfo rasterizationState;
+  rasterizationState.polygonMode  = vk::PolygonMode::eFill;
+  rasterizationState.cullMode     = vk::CullModeFlagBits::eBack;
+  rasterizationState.frontFace    = vk::FrontFace::eCounterClockwise;
+  rasterizationState.lineWidth    = 1;
+
+  vk::Viewport viewport;
+  viewport.x        = 0;
+  viewport.y        = m_extent.height;
+  viewport.width    = m_extent.width;
+  viewport.height   = -static_cast<float>(m_extent.height);
+  viewport.minDepth = 0;
+  viewport.maxDepth = 1;
+
+  vk::Rect2D scissor;
+  scissor.offset = vk::Offset2D {0, 0};
+  scissor.extent = vk::Extent2D {m_extent.width, m_extent.height};
+
+  vk::PipelineViewportStateCreateInfo viewportState;
+  viewportState.viewportCount = 1;
+  viewportState.pViewports    = &viewport;
+  viewportState.scissorCount  = 1;
+  viewportState.pScissors     = &scissor;
+
+  vk::PipelineMultisampleStateCreateInfo multisampleState;
+  multisampleState.rasterizationSamples = vk::SampleCountFlagBits::e1;
+
+  vk::PipelineColorBlendAttachmentState blendAttachmentState;
+  blendAttachmentState.colorWriteMask =
+    vk::ColorComponentFlagBits::eR |
+    vk::ColorComponentFlagBits::eG |
+    vk::ColorComponentFlagBits::eB |
+    vk::ColorComponentFlagBits::eA;
+
+  vk::PipelineColorBlendStateCreateInfo colorBlendState;
+  colorBlendState.attachmentCount = 1;
+  colorBlendState.pAttachments    = &blendAttachmentState;
+
+  vk::GraphicsPipelineCreateInfo pipelineCI;
+  pipelineCI.stageCount           = static_cast<uint32_t>(shaderStages.size());
+  pipelineCI.pStages              = shaderStages.data();
+  pipelineCI.pVertexInputState    = &vertexInputState;
+  pipelineCI.pInputAssemblyState  = &inputAssemblyState;
+  pipelineCI.pViewportState       = &viewportState;
+  pipelineCI.pRasterizationState  = &rasterizationState;
+  pipelineCI.pMultisampleState    = &multisampleState;
+  pipelineCI.pColorBlendState     = &colorBlendState;
+  pipelineCI.layout               = m_pipelineLayout;
+  pipelineCI.renderPass           = m_renderPass;
+  const auto pipelineStatus = m_context.device.createGraphicsPipeline(nullptr, pipelineCI);
+  ASSERT_THROW(pipelineStatus.result == vk::Result::eSuccess,
+    "Failed to create vulkan graphics pipeline!");
+  m_pipeline = pipelineStatus.value;
 
   debug_print("Initialized vulkan");
 }
@@ -307,6 +497,10 @@ Renderer::~Renderer()
 
 auto Renderer::Render() -> void
 {
+  /////////////////////////////////////////////////////////////////////////////
+  // Render
+  /////////////////////////////////////////////////////////////////////////////
+
   const auto commandBuffers = m_context.device.allocateCommandBuffers({
     m_commandPool, vk::CommandBufferLevel::ePrimary, 2});
 
@@ -330,11 +524,18 @@ auto Renderer::Render() -> void
 
   commandBuffers[0].begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
   commandBuffers[0].beginRenderPass(renderPassBI, vk::SubpassContents::eInline);
+  commandBuffers[0].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline);
+  commandBuffers[0].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 0, m_descSet, {});
   commandBuffers[0].clearAttachments(clearAttachments, clearRects);
+  commandBuffers[0].draw(3, 1, 0, 0);
   commandBuffers[0].endRenderPass();
   commandBuffers[0].end();
 
   vku::SubmitWork(m_context, commandBuffers[0]);
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Readback
+  /////////////////////////////////////////////////////////////////////////////
 
   std::array<vk::ImageCopy, 1> regions;
   regions[0].srcSubresource = {vk::ImageAspectFlagBits::eColor, 0, 0, 1};
@@ -370,8 +571,5 @@ auto Renderer::Render() -> void
 
   vku::SubmitWork(m_context, commandBuffers[1]);
 
-  char* data {nullptr};
-  vmaMapMemory(m_context.allocator, m_copyImage.allocation, reinterpret_cast<void**>(&data));
-  std::memcpy(m_frame.data.data(), data, m_frame.data.size());
-  vmaUnmapMemory(m_context.allocator, m_copyImage.allocation);
+  vku::CopyBuffer(m_context, m_copyImage, m_frame.data);
 }
