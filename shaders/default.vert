@@ -2,15 +2,17 @@
 
 struct Vertex
 {
-  float px;
-  float py;
-  float pz;
+  float px, py, pz;
+  float nx, ny, nz;
 };
 
 layout(std430, set=0, binding=0) readonly buffer VerticesBuffer
 {
   Vertex vertices[];
 };
+
+layout(location = 0) out vec3 out_position;
+layout(location = 1) out vec3 out_normal;
 
 out gl_PerVertex
 {
@@ -41,6 +43,9 @@ void main()
 {
   const Vertex vertex = vertices[gl_VertexIndex];
   const vec3 position = vec3(vertex.px, vertex.py, vertex.pz);
-  const mat3 modelMat = rotZ10Mat * rotY10Mat * rotX10Mat * scaleMat;
+  const vec3 normal   = vec3(vertex.nx, vertex.ny, vertex.nz);
+  const mat3 modelMat = rotZ10Mat * rotY10Mat * rotX10Mat;// * scaleMat;
   gl_Position = vec4(modelMat * position, 1);
+  out_position = modelMat * position;
+  out_normal   = normal;
 }

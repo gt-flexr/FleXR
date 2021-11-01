@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <dlfcn.h> // For dlopen
 #include <fstream>
+#include <iostream> // TODO: Remove this
 #include <vector>
 
 #include <VkBootstrap.h>
@@ -70,7 +71,7 @@ auto CreateContext() -> Context
   const std::string deviceName = physicalDeviceProps.deviceName;
   debug_print(
     "\nVulkan physical device:\n"
-    "- name:   %s\n"
+    "- Name:   %s\n"
     "- API:    %d.%d.%d\n"
     "- Driver: %d.%d.%d",
     deviceName.c_str(),
@@ -127,12 +128,15 @@ auto CreateContext() -> Context
   ASSERT_THROW(allocatorStatus == VK_SUCCESS,
     "Failed to create vulkan allocator! %d", allocatorStatus);
 
-  const auto queueStatus = vkbDevice.get_queue(vkb::QueueType::graphics);
+  const auto queueType = vkb::QueueType::graphics;
+  const auto queueStatus = vkbDevice.get_queue(queueType);
   ASSERT_THROW(queueStatus,
     "Failed to get vulkan queue! %s", queueStatus.error().message().c_str());
   const auto queue = vk::Queue {queueStatus.value()};
 
-  return {instance, physicalDevice, device, queue, allocator};
+  const auto queueFamilyIndex = vkbDevice.get_queue_index(queueType).value();
+
+  return {instance, physicalDevice, device, queue, queueFamilyIndex, allocator};
 }
 
 ImageBuilder::ImageBuilder(vk::Extent3D extent, vk::Format format, VmaMemoryUsage usage)
@@ -276,9 +280,93 @@ auto SubmitWork(const Context& context, vk::CommandBuffer cmdBuf, bool block) ->
   if (block) context.device.waitIdle();
 }
 
+auto CalculateDataTypeSize(const fx::gltf::Accessor& accessor) -> uint32_t
+{
+  const auto elementSize = [&]()
+  {
+    switch (accessor.componentType)
+    {
+      case fx::gltf::Accessor::ComponentType::Byte:
+      case fx::gltf::Accessor::ComponentType::UnsignedByte:
+        return 1;
+      case fx::gltf::Accessor::ComponentType::Short:
+      case fx::gltf::Accessor::ComponentType::UnsignedShort:
+        return 2;
+      case fx::gltf::Accessor::ComponentType::Float:
+      case fx::gltf::Accessor::ComponentType::UnsignedInt:
+        return 4;
+    }
+    return 0; // Only to suppress compiler warning
+  }();
+
+  switch (accessor.type)
+  {
+    case fx::gltf::Accessor::Type::Scalar:
+      return 1 * elementSize;
+    case fx::gltf::Accessor::Type::Vec2:
+      return 2 * elementSize;
+    case fx::gltf::Accessor::Type::Vec3:
+      return 3 * elementSize;
+    case fx::gltf::Accessor::Type::Vec4:
+      return 4 * elementSize;
+    case fx::gltf::Accessor::Type::Mat2:
+      return 4 * elementSize;
+    case fx::gltf::Accessor::Type::Mat3:
+      return 9 * elementSize;
+    case fx::gltf::Accessor::Type::Mat4:
+      return 16 * elementSize;
+  }
+  return 0; // Only to suppress compiler warning
+}
+
+auto LoadScene(const std::filesystem::path& path) -> Scene
+{
+  Scene scene;
+  const auto gltfScene = fx::gltf::LoadFromText(path);
+  for (const auto& gltfMesh : gltfScene.meshes)
+  {
+    debug_print("Loading mesh... %s", gltfMesh.name.c_str());
+
+    // TODO: Verfiy that each mesh has exactly one primitive
+    const auto& primitive = gltfMesh.primitives[0];
+
+    // TODO: Verify that attributes are of expected data types
+    // TODO: Support more attribute types
+    const auto indexBuffer    = vku::GetGLTFBuffer<uint16_t, 1>(gltfScene, primitive.indices);
+    const auto positionBuffer = vku::GetGLTFBuffer<float,    3>(gltfScene, primitive.attributes.at("POSITION"));
+    const auto normalBuffer   = vku::GetGLTFBuffer<float,    3>(gltfScene, primitive.attributes.at("NORMAL"));
+
+    Mesh mesh;
+    mesh.indexBuffer = {indexBuffer.data, indexBuffer.data + indexBuffer.count};
+
+    // Interleave attributes into single vertex buffer
+    const auto numVertices = positionBuffer.count;
+    mesh.vertexBuffer.reserve(numVertices);
+    for (auto i = 0; i < numVertices; i++)
+    {
+      vku::Mesh::Vertex vertex
+      {
+        positionBuffer.data[positionBuffer.stride * i + 0],
+        positionBuffer.data[positionBuffer.stride * i + 1],
+        positionBuffer.data[positionBuffer.stride * i + 2],
+        normalBuffer.data  [normalBuffer.stride   * i + 0],
+        normalBuffer.data  [normalBuffer.stride   * i + 1],
+        normalBuffer.data  [normalBuffer.stride   * i + 2],
+      };
+      mesh.vertexBuffer.push_back(vertex);
+    }
+
+    scene.meshes.push_back(mesh);
+  }
+  return scene;
+}
+
 } // namespace vulkan_utils
 
-Renderer::Renderer(int width, int height)
+Renderer::Renderer(
+  int width,
+  int height,
+  const std::filesystem::path& assetPath)
   : m_extent {static_cast<unsigned>(width), static_cast<unsigned>(height), 1}
   , m_frame  {width, height, 4, std::vector<char>(width * height * 4)}
 {
@@ -292,32 +380,35 @@ Renderer::Renderer(int width, int height)
     debug_print("Using renderdoc app API");
   }
 
+  m_scene = vku::LoadScene(assetPath);
+
   if (m_renderdoc) m_renderdoc->StartFrameCapture(nullptr, nullptr);
 
   m_context = vku::CreateContext();
 
-//   const auto queueFamilyIndex = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
-  const auto queueFamilyIndex = 0; // TODO: Get queue index from context
-  m_commandPool = m_context.device.createCommandPool({{}, queueFamilyIndex});
-
-  struct Vertex { float x {0}, y {0}, z {0}; };
-  constexpr std::array<Vertex, 6> vertices
-  {{
-    {-1, -1, 1}, {+1, -1, 1}, {+1, +1, 1},
-    {+1, +1, 1}, {-1, +1, 1}, {-1, -1, 1},
-  }};
+  m_commandPool = m_context.device.createCommandPool({{}, m_context.queueFamilyIndex});
 
   /////////////////////////////////////////////////////////////////////////////
   // Buffers
   /////////////////////////////////////////////////////////////////////////////
 
-  m_vertexStorageBuffer = vku::CreateBuffer(
+  // TODO: Use single monolithic vertex and index buffer for entire scene
+
+  m_vertexBuffer = vku::CreateBuffer(
     m_context,
-    vku::SizeInBytes(vertices),
+    vku::SizeInBytes(m_scene.meshes[0].vertexBuffer),
     vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst,
     VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-  vku::CopyBuffer(m_context, vertices, m_vertexStorageBuffer);
+  vku::CopyBuffer(m_context, m_scene.meshes[0].vertexBuffer, m_vertexBuffer);
+
+  m_indexBuffer = vku::CreateBuffer(
+    m_context,
+    vku::SizeInBytes(m_scene.meshes[0].indexBuffer),
+    vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
+    VMA_MEMORY_USAGE_CPU_TO_GPU);
+
+  vku::CopyBuffer(m_context, m_scene.meshes[0].indexBuffer, m_indexBuffer);
 
   /////////////////////////////////////////////////////////////////////////////
   // Images
@@ -430,7 +521,7 @@ Renderer::Renderer(int width, int height)
   m_descSet = m_context.device.allocateDescriptorSets(descSetAI)[0];
 
   vk::DescriptorBufferInfo descBI;
-  descBI.buffer = m_vertexStorageBuffer.buffer;
+  descBI.buffer = m_vertexBuffer.buffer;
   descBI.offset = 0;
   descBI.range  = VK_WHOLE_SIZE;
 
@@ -454,10 +545,10 @@ Renderer::Renderer(int width, int height)
   std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStages;
   shaderStages[0].stage  = vk::ShaderStageFlagBits::eVertex;
   shaderStages[0].pName  = "main";
-  shaderStages[0].module = vku::CreateShaderModule(m_context, "default.vert.spv");
+  shaderStages[0].module = vku::CreateShaderModule(m_context, "shaders/default.vert.spv");
   shaderStages[1].stage  = vk::ShaderStageFlagBits::eFragment;
   shaderStages[1].pName  = "main";
-  shaderStages[1].module = vku::CreateShaderModule(m_context, "default.frag.spv");
+  shaderStages[1].module = vku::CreateShaderModule(m_context, "shaders/default.frag.spv");
 
   vk::PipelineVertexInputStateCreateInfo vertexInputState; // Empty for manual vertex attribute fetch in shader
 
@@ -538,7 +629,7 @@ auto Renderer::Render() -> void
   // Render
   /////////////////////////////////////////////////////////////////////////////
 
-  const auto commandBuffers = m_context.device.allocateCommandBuffers({
+  const auto cmdBufs = m_context.device.allocateCommandBuffers({
     m_commandPool, vk::CommandBufferLevel::ePrimary, 2});
 
   std::array<vk::ClearValue, 2> clearValues;
@@ -552,15 +643,19 @@ auto Renderer::Render() -> void
   renderPassBI.clearValueCount = clearValues.size();
   renderPassBI.pClearValues    = clearValues.data();
 
-  commandBuffers[0].begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
-  commandBuffers[0].beginRenderPass(renderPassBI, vk::SubpassContents::eInline);
-  commandBuffers[0].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline);
-  commandBuffers[0].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 0, m_descSet, {});
-  commandBuffers[0].draw(6, 1, 0, 0);
-  commandBuffers[0].endRenderPass();
-  commandBuffers[0].end();
+  cmdBufs[0].begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+  cmdBufs[0].beginRenderPass(renderPassBI, vk::SubpassContents::eInline);
+  cmdBufs[0].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline);
+  cmdBufs[0].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 0, m_descSet, {});
+  for (const auto& mesh : m_scene.meshes)
+  {
+    cmdBufs[0].bindIndexBuffer(m_indexBuffer.buffer, 0, vk::IndexType::eUint16);
+    cmdBufs[0].drawIndexed(mesh.indexBuffer.size(), 1, 0, 0, 0);
+  }
+  cmdBufs[0].endRenderPass();
+  cmdBufs[0].end();
 
-  vku::SubmitWork(m_context, commandBuffers[0]);
+  vku::SubmitWork(m_context, cmdBufs[0]);
 
   /////////////////////////////////////////////////////////////////////////////
   // Readback
@@ -587,18 +682,18 @@ auto Renderer::Render() -> void
   barriers[1].image            = m_copyImage.image;
   barriers[1].subresourceRange = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1};
 
-  commandBuffers[1].begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
-  commandBuffers[1].pipelineBarrier(
+  cmdBufs[1].begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+  cmdBufs[1].pipelineBarrier(
     vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, barriers[0]);
-  commandBuffers[1].copyImage(
+  cmdBufs[1].copyImage(
     m_colorImage.image, vk::ImageLayout::eTransferSrcOptimal,
     m_copyImage.image,  vk::ImageLayout::eTransferDstOptimal,
     regions);
-  commandBuffers[1].pipelineBarrier(
+  cmdBufs[1].pipelineBarrier(
     vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, barriers[1]);
-  commandBuffers[1].end();
+  cmdBufs[1].end();
 
-  vku::SubmitWork(m_context, commandBuffers[1]);
+  vku::SubmitWork(m_context, cmdBufs[1]);
 
   vku::CopyBuffer(m_context, m_copyImage, m_frame.data);
 }

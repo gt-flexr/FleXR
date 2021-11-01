@@ -32,11 +32,31 @@ FetchContent_Declare(
   DOWNLOAD_NO_EXTRACT ON
 )
 
+# TODO: Try to use GitHub links instead of raw links
+# WARNING: Requires latest cmake 3.21+ otherwise SOURCE_DIR is not populated
+FetchContent_Declare(
+  fetch_nlohmann_json
+  URL https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp
+  DOWNLOAD_NO_EXTRACT ON
+  SOURCE_DIR _deps/fetch_nlohmann_json/nlohmann
+)
+
+# TODO: Try to use GitHub links instead of raw links
+# WARNING: Requires latest cmake 3.21+ otherwise SOURCE_DIR is not populated
+FetchContent_Declare(
+  fetch_fx_gltf
+  URL https://raw.githubusercontent.com/jessey-git/fx-gltf/master/include/fx/gltf.h
+  DOWNLOAD_NO_EXTRACT ON
+  SOURCE_DIR _deps/fetch_fx_gltf-src/fx
+)
+
 FetchContent_MakeAvailable(
   fetch_vk_bootstrap
   fetch_vma
   fetch_renderdoc_app
-  fetch_stb_image_write)
+  fetch_stb_image_write
+  fetch_nlohmann_json
+  fetch_fx_gltf)
 
 # Setup header-only libraries
 
@@ -48,3 +68,9 @@ target_include_directories(renderdoc_app INTERFACE ${fetch_renderdoc_app_SOURCE_
 
 add_library(stb_image_write INTERFACE)
 target_include_directories(stb_image_write INTERFACE ${fetch_stb_image_write_SOURCE_DIR})
+
+add_library(nlohmann_json INTERFACE)
+target_include_directories(nlohmann_json INTERFACE ${fetch_nlohmann_json_SOURCE_DIR}/..)
+
+add_library(fx-gltf INTERFACE)
+target_include_directories(fx-gltf INTERFACE ${fetch_fx_gltf_SOURCE_DIR}/..)

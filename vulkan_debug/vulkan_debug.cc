@@ -11,11 +11,14 @@
 } while (0)
 #endif
 
-auto main() -> int
+auto main(int argc, char** argv) -> int
 {
-    Renderer renderer {256, 256};
-    renderer.Render();
-    const auto& frame = renderer.GetRenderFrame();
-    stbi_write_bmp("result.bmp", frame.width, frame.height, frame.channels, frame.data.data());
-    debug_print("Saved image");
+  constexpr auto defaultAssetPath = "assets/BoxInterleaved/BoxInterleaved.gltf";
+  const auto assetPath = argc > 1 ? argv[1] : defaultAssetPath;
+
+  Renderer renderer {512, 512, assetPath};
+  renderer.Render();
+  const auto& frame = renderer.GetRenderFrame();
+  stbi_write_bmp("result.bmp", frame.width, frame.height, frame.channels, frame.data.data());
+  debug_print("Saved image");
 }

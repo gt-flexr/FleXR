@@ -44,6 +44,8 @@ target_link_libraries(vulkan_renderer
   PRIVATE
     dl
     vk-bootstrap
+    nlohmann_json
+    fx-gltf
     ${FLEXR_LINKER_FLAGS}
     ${FLEXR_LINKER_LIBS}
     flexr_component)

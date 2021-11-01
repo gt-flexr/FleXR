@@ -6,8 +6,8 @@ project(vulkan_debug)
 set(ROOT_DIR "..")
 
 include(../shaders/CMakeLists.txt)
-
-include(${ROOT_DIR}/cmake/modules/Vulkan.cmake)
+include(../assets/CMakeLists.txt)
+include(${ROOT_DIR}/cmake/modules/renderer.cmake)
 
 add_executable(vulkan_debug)
 
@@ -29,4 +29,6 @@ target_link_libraries(vulkan_debug
     vk-bootstrap
     vma
     renderdoc_app
-    stb_image_write)
+    stb_image_write
+    nlohmann_json
+    fx-gltf)

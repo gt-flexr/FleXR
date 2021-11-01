@@ -11,6 +11,8 @@
 
 #include <renderdoc_app.h>
 
+#include <fx/gltf.h>
+
 namespace vulkan_utils
 {
 
@@ -20,6 +22,8 @@ struct Context
   vk::PhysicalDevice  physicalDevice;
   vk::Device          device;
   vk::Queue           queue; // TODO: Have separate queues for graphics, compute, and transfers
+
+  uint32_t            queueFamilyIndex {0};
 
   VmaAllocator        allocator;
 };
@@ -62,6 +66,34 @@ private:
   VmaMemoryUsage      usage;
 };
 
+// TODO: Replace with glm vector types
+template <typename T, int N>
+struct GLTFBuffer
+{
+  using value_type = T;
+  static constexpr auto components = N;
+
+  const T* data   {nullptr}; // TODO: Use C++20 std::span
+  uint32_t count  {0};
+  uint32_t stride {0};
+};
+
+struct Mesh
+{
+  struct Vertex
+  {
+    float px {0}, py {0}, pz {0}; // position
+    float nx {0}, ny {0}, nz {0}; // normal
+  };
+  std::vector<Vertex>   vertexBuffer;
+  std::vector<uint16_t> indexBuffer;
+};
+
+struct Scene
+{
+  std::vector<Mesh> meshes;
+};
+
 auto CreateContext() -> Context;
 
 auto CreateBuffer(
@@ -86,6 +118,8 @@ auto SubmitWork(
 //auto DestroyContext(Context&& context) -> void;
 // auto DestroyBuffer(Buffer&& buffer) -> void;
 // auto DestroyImage(Image&& image) -> void;
+
+auto LoadScene(const std::filesystem::path& path) -> Scene;
 
 template <typename T>
 inline auto SizeInBytes(T&& container)
@@ -113,6 +147,18 @@ auto CopyBuffer(const Context& context, const Src& object, Dst&& container)
   vmaUnmapMemory(context.allocator, object.allocation);
 }
 
+template <typename T, int N>
+auto GetGLTFBuffer(const fx::gltf::Document& scene, int attribIndex) -> GLTFBuffer<T, N>
+{
+  const auto& accessor   = scene.accessors[attribIndex];
+  const auto& bufferView = scene.bufferViews[accessor.bufferView];
+  const auto& buffer     = scene.buffers[bufferView.buffer];
+
+  const auto data = reinterpret_cast<const T*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+  const uint32_t stride = bufferView.byteStride / sizeof(T);
+  return {data, accessor.count, stride};
+}
+
 } // namespace vulkan_utils
 
 namespace vku = vulkan_utils;
@@ -128,7 +174,10 @@ struct RenderFrame
 class Renderer
 {
 public:
-  Renderer(int width, int height);
+  Renderer(
+    int width,
+    int height,
+    const std::filesystem::path& assetPath);
 
   ~Renderer();
 
@@ -147,8 +196,10 @@ private:
   vk::PipelineLayout  m_pipelineLayout;
   vk::Pipeline        m_pipeline;
 
+  vku::Scene          m_scene;
   vku::Context        m_context;
-  vku::Buffer         m_vertexStorageBuffer;
+  vku::Buffer         m_vertexBuffer;
+  vku::Buffer         m_indexBuffer;
   vku::Image          m_colorImage;
   vku::Image          m_depthImage;
   vku::Image          m_copyImage;

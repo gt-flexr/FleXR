@@ -45,7 +45,7 @@ include(cmake/modules/Spdlog.cmake)
 include(cmake/modules/yaml-cpp.cmake)
 include(cmake/modules/uvgRTP.cmake)
 include(cmake/modules/rosbag.cmake)
-include(cmake/modules/Vulkan.cmake)
+include(cmake/modules/renderer.cmake)
 
 message(STATUS "[FLEXR COMPILE INFO]")
 
