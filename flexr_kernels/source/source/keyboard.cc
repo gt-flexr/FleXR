@@ -15,28 +15,33 @@ namespace flexr
       portManager.registerOutPortTag("out_key",
                                      utils::sendLocalBasicCopy<KeyboardMsgType>);
       freqManager.setFrequency(frequency);
+
+      d = XOpenDisplay(NULL);
+      win = XCreateWindow(d, RootWindow(d, 0), 1, 1, 1, 1, 0, 0, InputOutput, NULL, 0, NULL);
+      XSelectInput(d, win, KeyPressMask | KeyReleaseMask | ClientMessage);
+      XMapWindow(d, win);
+      XFlush(d);
+      XEvent event;
+      Atom closeMessage = XInternAtom(d, "WM_DELETE_WINDOW", True);
+      XSetWMProtocols(d, win, &closeMessage, 1);
     }
 
-    char Keyboard::getch()
+
+    Keyboard::~Keyboard()
     {
-      char buf = 0;
-      struct termios old = {0};
-      fflush(stdout);
-      if(tcgetattr(0, &old) < 0)
-        perror("tcsetattr()");
-      old.c_lflag &= ~ICANON;
-      old.c_lflag &= ~ECHO;
-      old.c_cc[VMIN] = 1;
-      old.c_cc[VTIME] = 0;
-      if(tcsetattr(0, TCSANOW, &old) < 0)
-        perror("tcsetattr ICANON");
-      if(read(0, &buf, 1) < 0)
-        perror("read()");
-      old.c_lflag |= ICANON;
-      old.c_lflag |= ECHO;
-      if(tcsetattr(0, TCSADRAIN, &old) < 0)
-        perror("tcsetattr ~ICANON");
-      return buf;
+      XDestroyWindow(d, win);
+      XCloseDisplay(d);
+    }
+
+
+    bool Keyboard::was_it_auto_repeat(Display * d, XEvent * event, int current_type, int next_type){
+      /*  Holding down a key will cause 'autorepeat' to send fake keyup/keydown events, but we want to ignore these: '*/
+      if(event->type == current_type && XEventsQueued(d, QueuedAfterReading)){
+        XEvent nev;
+        XPeekEvent(d, &nev);
+        return (nev.type == next_type && nev.xkey.time == event->xkey.time && nev.xkey.keycode == event->xkey.keycode);
+      }
+      return false;
     }
 
 
@@ -44,13 +49,35 @@ namespace flexr
     {
       KeyboardMsgType *outKey = portManager.getOutputPlaceholder<KeyboardMsgType>("out_key");
 
-      outKey->data = getch();
+      outKey->data = 0;
       outKey->setHeader("keystroke", seq++, getTsNow(), sizeof(char));
-      outKey->printHeader();
+
+      XNextEvent(d, &event);
+      switch(event.type) {
+        case KeyPress: {
+          fprintf(stdout, "key (%c) was pressed.\n", XLookupKeysym(&event.xkey, 0));
+          outKey->data = XLookupKeysym(&event.xkey, 0);
+          break;
+        }case KeyRelease:{
+          if(was_it_auto_repeat(d, &event, KeyRelease, KeyPress)){
+            XNextEvent(d, &event); /* Consume the extra event so we can ignore it. */
+            fprintf(stdout, "key (%c) was still pressed.\n", XLookupKeysym(&event.xkey, 0));
+            outKey->data = XLookupKeysym(&event.xkey, 0);
+          }else{
+            fprintf(stdout, "key (%c) was released.\n", XLookupKeysym(&event.xkey, 0));
+            outKey->data = 0;
+          }
+          break;
+        }case ClientMessage:{
+          if ((Atom)event.xclient.data.l[0] == closeMessage) {
+            exit(1);
+          }
+          break;
+        }
+      }
 
       portManager.sendOutput<KeyboardMsgType>("out_key", outKey);
 
-      debug_print("stroke(%lf): %c", getTsNow(), outKey->data);
       if(logger.isSet()) logger.getInstance()->info("{}th keystroke {} occurs\t {}", seq-1, outKey->data, outKey->ts);
 
       freqManager.adjust();

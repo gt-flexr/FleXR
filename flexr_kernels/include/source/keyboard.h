@@ -4,9 +4,14 @@
 
 #include <bits/stdc++.h>
 #include <unistd.h>
-#include <termios.h>
 
-#include "flexr_core/include/core.h"
+#include <flexr_core/include/core.h>
+
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <X11/Xos.h>
+#include <X11/Xatom.h>
+#include <X11/keysym.h>
 
 namespace flexr
 {
@@ -26,8 +31,12 @@ namespace flexr
     {
     private:
       uint32_t seq;
+      Display *d;
+      Window win;
+      XEvent event;
+      Atom closeMessage;
 
-      char getch();
+      bool was_it_auto_repeat(Display * d, XEvent * event, int current_type, int next_type);
 
     public:
       /**
@@ -37,6 +46,7 @@ namespace flexr
        * @see flexr::components::FrequencyManager
        */
       Keyboard(std::string id, int frequency=60);
+      ~Keyboard();
 
 
       virtual raft::kstatus run();
