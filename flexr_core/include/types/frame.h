@@ -1,9 +1,8 @@
-#ifndef __FLEXR_CORE_FRAME__
-#define __FLEXR_CORE_FRAME__
+#pragma once
 
-#include <opencv2/opencv.hpp>
+#include <opencv4/opencv2/opencv.hpp>
 #include <bits/stdc++.h>
-#include "flexr_core/include/defs.h"
+#include <flexr_core/include/defs.h>
 
 
 namespace flexr
@@ -92,6 +91,4 @@ namespace flexr
 
   } // namespace types
 } // namespace flexr
-
-#endif
 

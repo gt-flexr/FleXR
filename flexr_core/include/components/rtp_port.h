@@ -63,15 +63,30 @@ namespace flexr {
        *  Even port to recv
        * @param sendEvenPort
        *  Even port to send
+       * @return Boolean of initialization success or failure
        */
-      void init(std::string addr, int recvEvenPort, int sendEvenPort)
+      bool init(std::string addr, int recvEvenPort, int sendEvenPort)
       {
         rtpSession = rtpContext.create_session(addr);
+        if(rtpSession == nullptr)
+        {
+          debug_print("fail to create rtpSession");
+          return false;
+        }
+
         unsigned flags = RCE_NO_SYSTEM_CALL_CLUSTERING | RCE_FRAGMENT_GENERIC;
         stream = rtpSession->create_stream(recvEvenPort, sendEvenPort, RTP_FORMAT_GENERIC, flags);
+        if(stream == nullptr)
+        {
+          debug_print("fail to create rtpStream");
+          return false;
+        }
+
         stream->configure_ctx(RCC_UDP_SND_BUF_SIZE, 20 * 1000 * 1000);
         stream->configure_ctx(RCC_UDP_RCV_BUF_SIZE, 20 * 1000 * 1000);
         stream->configure_ctx(RCC_PKT_MAX_DELAY,                 200); // Relaxed lossy recv
+
+        return true;
       }
 
 
