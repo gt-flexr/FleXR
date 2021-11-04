@@ -4,7 +4,6 @@
 #include "flexr_core/include/defs.h"
 #include "flexr_core/include/types/types.h"
 #include "flexr_core/include/types/frame.h"
-#include "flexr_core/include/components/flexr_port.h"
 
 namespace flexr {
   namespace utils {

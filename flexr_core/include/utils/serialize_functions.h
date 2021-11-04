@@ -1,11 +1,9 @@
 #ifndef __FLEXR_CORE_UTILS_SERIALIZE_FUNCS__
 #define __FLEXR_CORE_UTILS_SERIALIZE_FUNCS__
 
-#include <zmq.hpp>
 #include "flexr_core/include/defs.h"
 #include "flexr_core/include/types/frame.h"
 #include "flexr_core/include/types/types.h"
-#include "flexr_core/include/components/flexr_port.h"
 
 namespace flexr {
   namespace utils {
