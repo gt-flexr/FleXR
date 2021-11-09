@@ -4,10 +4,12 @@
 #include <algorithm>
 #include <dlfcn.h> // For dlopen
 #include <fstream>
-#include <iostream> // TODO: Remove this
 #include <vector>
 
 #include <VkBootstrap.h>
+
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/gtx/transform.hpp>
 
 #define VMA_ASSERT(expr) assert(expr)
 #define VMA_IMPLEMENTATION
@@ -322,43 +324,58 @@ auto CalculateDataTypeSize(const fx::gltf::Accessor& accessor) -> uint32_t
 auto LoadScene(const std::filesystem::path& path) -> Scene
 {
   Scene scene;
+  auto indexBufferOffset  = 0U;
+  auto vertexBufferOffset = 0U;
+
   const auto gltfScene = fx::gltf::LoadFromText(path);
+  debug_print("Loading glTF scene with %d meshe(s)", gltfScene.meshes.size());
+
   for (const auto& gltfMesh : gltfScene.meshes)
   {
-    debug_print("Loading mesh... %s", gltfMesh.name.c_str());
+    debug_print("-- Loading mesh %s with %d primitive(s)",
+      gltfMesh.name.c_str(), gltfMesh.primitives.size());
 
-    // TODO: Verfiy that each mesh has exactly one primitive
-    const auto& primitive = gltfMesh.primitives[0];
-
-    // TODO: Verify that attributes are of expected data types
-    // TODO: Support more attribute types
-    const auto indexBuffer    = vku::GetGLTFBuffer<uint16_t, 1>(gltfScene, primitive.indices);
-    const auto positionBuffer = vku::GetGLTFBuffer<float,    3>(gltfScene, primitive.attributes.at("POSITION"));
-    const auto normalBuffer   = vku::GetGLTFBuffer<float,    3>(gltfScene, primitive.attributes.at("NORMAL"));
-
-    Mesh mesh;
-    mesh.indexBuffer = {indexBuffer.data, indexBuffer.data + indexBuffer.count};
-
-    // Interleave attributes into single vertex buffer
-    const auto numVertices = positionBuffer.count;
-    mesh.vertexBuffer.reserve(numVertices);
-    for (auto i = 0; i < numVertices; i++)
+    for (const auto& primitive : gltfMesh.primitives)
     {
-      vku::Mesh::Vertex vertex
-      {
-        positionBuffer.data[positionBuffer.stride * i + 0],
-        positionBuffer.data[positionBuffer.stride * i + 1],
-        positionBuffer.data[positionBuffer.stride * i + 2],
-        normalBuffer.data  [normalBuffer.stride   * i + 0],
-        normalBuffer.data  [normalBuffer.stride   * i + 1],
-        normalBuffer.data  [normalBuffer.stride   * i + 2],
-      };
-      mesh.vertexBuffer.push_back(vertex);
-    }
+      // TODO: Verify that attributes are of expected data types
+      // TODO: Support more attribute types
+      const auto indexBuffer    = vku::GetGLTFBuffer<uint16_t, 1>(gltfScene, primitive.indices);
+      const auto positionBuffer = vku::GetGLTFBuffer<float,    3>(gltfScene, primitive.attributes.at("POSITION"));
+      const auto normalBuffer   = vku::GetGLTFBuffer<float,    3>(gltfScene, primitive.attributes.at("NORMAL"));
 
-    scene.meshes.push_back(mesh);
+      scene.indices.insert(std::end(scene.indices), indexBuffer.data, indexBuffer.data + indexBuffer.count);
+
+      debug_print("---- Loading primitive with %6d vertices", positionBuffer.count);
+
+      // Interleave attributes into single vertex buffer
+      for (auto i = 0; i < positionBuffer.count; i++)
+      {
+        vku::Scene::Vertex vertex
+        {
+          positionBuffer.data[positionBuffer.stride * i + 0],
+          positionBuffer.data[positionBuffer.stride * i + 1],
+          positionBuffer.data[positionBuffer.stride * i + 2],
+          normalBuffer.data  [normalBuffer.stride   * i + 0],
+          normalBuffer.data  [normalBuffer.stride   * i + 1],
+          normalBuffer.data  [normalBuffer.stride   * i + 2],
+        };
+        scene.vertices.push_back(vertex);
+      }
+
+      scene.drawInfos.push_back({indexBuffer.count, indexBufferOffset, vertexBufferOffset});
+      indexBufferOffset  += indexBuffer.count;
+      vertexBufferOffset += positionBuffer.count;
+    }
   }
   return scene;
+}
+
+auto DrawScene(const Scene& scene, vk::CommandBuffer cmdBuf) -> void
+{
+  for (const auto& di : scene.drawInfos)
+  {
+    cmdBuf.drawIndexed(di.indexCount, 1, di.indexOffset, di.vertexOffset, 0);
+  }
 }
 
 } // namespace vulkan_utils
@@ -389,26 +406,47 @@ Renderer::Renderer(
   m_commandPool = m_context.device.createCommandPool({{}, m_context.queueFamilyIndex});
 
   /////////////////////////////////////////////////////////////////////////////
+  // Camera matrices
+  /////////////////////////////////////////////////////////////////////////////
+
+  const auto aspectRatio   = static_cast<double>(m_extent.width) / m_extent.height;
+  const glm::mat4 modelMat = glm::scale(glm::mat4 {1}, glm::vec3 {0.008});
+  const glm::mat4 viewMat  = glm::translate(
+    glm::rotate(glm::mat4 {1}, glm::radians(90.0F), glm::vec3 {0, -1, 0}),
+    glm::vec3 {0, -1, 0});
+  const glm::mat4 projMat  = glm::perspective(glm::radians(60.0), aspectRatio, 0.1, 100.0);
+
+  m_frameData.mvpMat    = projMat * viewMat * modelMat;
+  m_frameData.modelMat  = modelMat;
+  m_frameData.normalMat = glm::transpose(glm::inverse(modelMat));
+
+  /////////////////////////////////////////////////////////////////////////////
   // Buffers
   /////////////////////////////////////////////////////////////////////////////
 
-  // TODO: Use single monolithic vertex and index buffer for entire scene
+  m_uniformBuffer = vku::CreateBuffer(
+    m_context,
+    sizeof(m_frameData),
+    vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eTransferDst,
+    VMA_MEMORY_USAGE_CPU_TO_GPU);
+
+  vku::CopyBuffer(m_context, std::array {m_frameData}, m_uniformBuffer);
 
   m_vertexBuffer = vku::CreateBuffer(
     m_context,
-    vku::SizeInBytes(m_scene.meshes[0].vertexBuffer),
+    vku::SizeInBytes(m_scene.vertices),
     vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst,
     VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-  vku::CopyBuffer(m_context, m_scene.meshes[0].vertexBuffer, m_vertexBuffer);
+  vku::CopyBuffer(m_context, m_scene.vertices, m_vertexBuffer);
 
   m_indexBuffer = vku::CreateBuffer(
     m_context,
-    vku::SizeInBytes(m_scene.meshes[0].indexBuffer),
+    vku::SizeInBytes(m_scene.indices),
     vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
     VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-  vku::CopyBuffer(m_context, m_scene.meshes[0].indexBuffer, m_indexBuffer);
+  vku::CopyBuffer(m_context, m_scene.indices, m_indexBuffer);
 
   /////////////////////////////////////////////////////////////////////////////
   // Images
@@ -493,20 +531,26 @@ Renderer::Renderer(
   // Descriptor Sets
   /////////////////////////////////////////////////////////////////////////////
 
-  std::array<vk::DescriptorSetLayoutBinding, 1> bindings;
+  std::array<vk::DescriptorSetLayoutBinding, 2> bindings;
   bindings[0].binding         = 0;
-  bindings[0].descriptorType  = vk::DescriptorType::eStorageBuffer;
+  bindings[0].descriptorType  = vk::DescriptorType::eUniformBuffer;
   bindings[0].descriptorCount = 1;
   bindings[0].stageFlags      = vk::ShaderStageFlagBits::eAllGraphics;
+  bindings[1].binding         = 1;
+  bindings[1].descriptorType  = vk::DescriptorType::eStorageBuffer;
+  bindings[1].descriptorCount = 1;
+  bindings[1].stageFlags      = vk::ShaderStageFlagBits::eAllGraphics;
 
   vk::DescriptorSetLayoutCreateInfo descSetLayoutCI;
   descSetLayoutCI.bindingCount  = bindings.size();
   descSetLayoutCI.pBindings     = bindings.data();
   const auto descSetLayout = m_context.device.createDescriptorSetLayout(descSetLayoutCI);
 
-  std::array<vk::DescriptorPoolSize, 1> descPoolSize;
-  descPoolSize[0].type            = vk::DescriptorType::eStorageBuffer;
+  std::array<vk::DescriptorPoolSize, 2> descPoolSize;
+  descPoolSize[0].type            = vk::DescriptorType::eUniformBuffer;
   descPoolSize[0].descriptorCount = 1;
+  descPoolSize[1].type            = vk::DescriptorType::eStorageBuffer;
+  descPoolSize[1].descriptorCount = 1;
 
   vk::DescriptorPoolCreateInfo descPoolCI;
   descPoolCI.maxSets        = 1;
@@ -520,18 +564,27 @@ Renderer::Renderer(
   descSetAI.pSetLayouts         = &descSetLayout;
   m_descSet = m_context.device.allocateDescriptorSets(descSetAI)[0];
 
-  vk::DescriptorBufferInfo descBI;
-  descBI.buffer = m_vertexBuffer.buffer;
-  descBI.offset = 0;
-  descBI.range  = VK_WHOLE_SIZE;
+  std::array<vk::DescriptorBufferInfo, 2> descBIs;
+  descBIs[0].buffer = m_uniformBuffer.buffer;
+  descBIs[0].offset = 0;
+  descBIs[0].range  = VK_WHOLE_SIZE;
+  descBIs[1].buffer = m_vertexBuffer.buffer;
+  descBIs[1].offset = 0;
+  descBIs[1].range  = VK_WHOLE_SIZE;
 
-  vk::WriteDescriptorSet writeDescSet;
-  writeDescSet.dstSet           = m_descSet;
-  writeDescSet.dstBinding       = 0;
-  writeDescSet.descriptorCount  = 1;
-  writeDescSet.descriptorType   = vk::DescriptorType::eStorageBuffer;
-  writeDescSet.pBufferInfo      = &descBI;
-  m_context.device.updateDescriptorSets(writeDescSet, {});
+  std::array<vk::WriteDescriptorSet, 2> writeDescSets;
+  writeDescSets[0].dstSet           = m_descSet;
+  writeDescSets[0].dstBinding       = 0;
+  writeDescSets[0].descriptorCount  = 1;
+  writeDescSets[0].descriptorType   = vk::DescriptorType::eUniformBuffer;
+  writeDescSets[0].pBufferInfo      = &descBIs[0];
+  writeDescSets[1].dstSet           = m_descSet;
+  writeDescSets[1].dstBinding       = 1;
+  writeDescSets[1].descriptorCount  = 1;
+  writeDescSets[1].descriptorType   = vk::DescriptorType::eStorageBuffer;
+  writeDescSets[1].pBufferInfo      = &descBIs[1];
+
+  m_context.device.updateDescriptorSets(writeDescSets, {});
 
   /////////////////////////////////////////////////////////////////////////////
   // Graphics Pipeline
@@ -585,7 +638,7 @@ Renderer::Renderer(
   vk::PipelineDepthStencilStateCreateInfo depthStencilState;
   depthStencilState.depthTestEnable  = true;
   depthStencilState.depthWriteEnable = true;
-  depthStencilState.depthCompareOp   = vk::CompareOp::eAlways;
+  depthStencilState.depthCompareOp   = vk::CompareOp::eLessOrEqual;
 
   vk::PipelineColorBlendAttachmentState blendAttachmentState;
   blendAttachmentState.colorWriteMask =
@@ -647,11 +700,8 @@ auto Renderer::Render() -> void
   cmdBufs[0].beginRenderPass(renderPassBI, vk::SubpassContents::eInline);
   cmdBufs[0].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline);
   cmdBufs[0].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 0, m_descSet, {});
-  for (const auto& mesh : m_scene.meshes)
-  {
-    cmdBufs[0].bindIndexBuffer(m_indexBuffer.buffer, 0, vk::IndexType::eUint16);
-    cmdBufs[0].drawIndexed(mesh.indexBuffer.size(), 1, 0, 0, 0);
-  }
+  cmdBufs[0].bindIndexBuffer(m_indexBuffer.buffer, 0, vk::IndexType::eUint16);
+  vku::DrawScene(m_scene, cmdBufs[0]);
   cmdBufs[0].endRenderPass();
   cmdBufs[0].end();
 

@@ -8,6 +8,14 @@ FetchContent_Declare(
   GIT_PROGRESS    ON
 )
 
+FetchContent_Declare(
+  fetch_glm
+  GIT_REPOSITORY  https://github.com/g-truc/glm.git
+  GIT_TAG         0.9.9.8
+  GIT_SHALLOW     ON
+  GIT_PROGRESS    ON
+)
+
 # TODO: Try to use GitHub links instead of raw links
 # WARNING: Requires latest cmake 3.21+ otherwise SOURCE_DIR is not populated
 FetchContent_Declare(
@@ -52,6 +60,7 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(
   fetch_vk_bootstrap
+  fetch_glm
   fetch_vma
   fetch_renderdoc_app
   fetch_stb_image_write

@@ -19,6 +19,7 @@ auto main(int argc, char** argv) -> int
   Renderer renderer {512, 512, assetPath};
   renderer.Render();
   const auto& frame = renderer.GetRenderFrame();
-  stbi_write_bmp("result.bmp", frame.width, frame.height, frame.channels, frame.data.data());
+  const auto stride = frame.width * frame.channels;
+  stbi_write_png("result.png", frame.width, frame.height, frame.channels, frame.data.data(), stride);
   debug_print("Saved image");
 }

@@ -13,6 +13,9 @@
 
 #include <fx/gltf.h>
 
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
+
 namespace vulkan_utils
 {
 
@@ -78,20 +81,26 @@ struct GLTFBuffer
   uint32_t stride {0};
 };
 
-struct Mesh
+struct DrawInfo
+{
+  uint32_t indexCount   {0};
+  uint32_t indexOffset  {0};
+  uint32_t vertexOffset {0};
+};
+
+struct Scene
 {
   struct Vertex
   {
     float px {0}, py {0}, pz {0}; // position
     float nx {0}, ny {0}, nz {0}; // normal
   };
-  std::vector<Vertex>   vertexBuffer;
-  std::vector<uint16_t> indexBuffer;
-};
 
-struct Scene
-{
-  std::vector<Mesh> meshes;
+  using Index = uint16_t;
+
+  std::vector<DrawInfo> drawInfos;
+  std::vector<Index>    indices;
+  std::vector<Vertex>   vertices;
 };
 
 auto CreateContext() -> Context;
@@ -120,6 +129,8 @@ auto SubmitWork(
 // auto DestroyImage(Image&& image) -> void;
 
 auto LoadScene(const std::filesystem::path& path) -> Scene;
+
+auto DrawScene(const Scene& scene, vk::CommandBuffer cmdBuf) -> void;
 
 template <typename T>
 inline auto SizeInBytes(T&& container)
@@ -155,7 +166,7 @@ auto GetGLTFBuffer(const fx::gltf::Document& scene, int attribIndex) -> GLTFBuff
   const auto& buffer     = scene.buffers[bufferView.buffer];
 
   const auto data = reinterpret_cast<const T*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
-  const uint32_t stride = bufferView.byteStride / sizeof(T);
+  const uint32_t stride = bufferView.byteStride ? (bufferView.byteStride / sizeof(T)) : N;
   return {data, accessor.count, stride};
 }
 
@@ -198,6 +209,7 @@ private:
 
   vku::Scene          m_scene;
   vku::Context        m_context;
+  vku::Buffer         m_uniformBuffer;
   vku::Buffer         m_vertexBuffer;
   vku::Buffer         m_indexBuffer;
   vku::Image          m_colorImage;
@@ -205,4 +217,12 @@ private:
   vku::Image          m_copyImage;
 
   RenderFrame         m_frame;
+
+  struct FrameData
+  {
+    glm::mat4 mvpMat;
+    glm::mat4 modelMat;
+    glm::mat4 normalMat;
+  };
+  FrameData           m_frameData;
 };

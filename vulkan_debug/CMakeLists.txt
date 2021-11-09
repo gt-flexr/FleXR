@@ -27,6 +27,7 @@ target_link_libraries(vulkan_debug
     dl
     Vulkan-Headers
     vk-bootstrap
+    glm
     vma
     renderdoc_app
     stb_image_write
