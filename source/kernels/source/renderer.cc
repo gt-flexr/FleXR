@@ -4,7 +4,9 @@
 #include <algorithm>
 #include <dlfcn.h> // For dlopen
 #include <fstream>
+#include <map>
 #include <vector>
+#include <iostream> // TODO: Remove this
 
 #include <VkBootstrap.h>
 
@@ -14,6 +16,9 @@
 #define VMA_ASSERT(expr) assert(expr)
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 #define ASSERT_THROW(status, ...) \
 if (!(status)) { \
@@ -138,21 +143,37 @@ auto CreateContext() -> Context
 
   const auto queueFamilyIndex = vkbDevice.get_queue_index(queueType).value();
 
-  return {instance, physicalDevice, device, queue, queueFamilyIndex, allocator};
+  const auto commandPool = device.createCommandPool({{}, queueFamilyIndex});
+
+  return {instance, physicalDevice, device, queue, commandPool, queueFamilyIndex, allocator};
 }
 
-ImageBuilder::ImageBuilder(vk::Extent3D extent, vk::Format format, VmaMemoryUsage usage)
-  : usage {usage}
+ImageBuilder::ImageBuilder(vk::Extent3D extent, vk::Format format, VmaMemoryUsage vmaUsage)
+  : vmaUsage {vmaUsage}
 {
+  const auto tiling =
+    (vmaUsage == VMA_MEMORY_USAGE_CPU_TO_GPU) || (vmaUsage == VMA_MEMORY_USAGE_GPU_TO_CPU) ?
+    vk::ImageTiling::eLinear : vk::ImageTiling::eOptimal;
+
+  const auto initialLayout =
+    tiling == vk::ImageTiling::eLinear ? vk::ImageLayout::ePreinitialized : vk::ImageLayout::eUndefined;
+
   imageCI.imageType     = vk::ImageType::e2D;
   imageCI.format        = format;
   imageCI.extent        = extent;
   imageCI.arrayLayers   = 1;
   imageCI.mipLevels     = 1;
-  imageCI.initialLayout = vk::ImageLayout::eUndefined;
+  imageCI.initialLayout = initialLayout;
   imageCI.samples       = vk::SampleCountFlagBits::e1;
-  imageCI.tiling        = vk::ImageTiling::eOptimal;
+  imageCI.tiling        = tiling;
   imageCI.usage         = vk::ImageUsageFlagBits::eColorAttachment;
+}
+
+ImageBuilder::ImageBuilder(vk::Extent3D extent, vk::Format format, vk::ArrayProxy<std::filesystem::path> paths)
+  : ImageBuilder {extent, format, VMA_MEMORY_USAGE_CPU_TO_GPU}
+{
+  this->imageCI.arrayLayers = paths.size();
+  this->paths.assign(std::cbegin(paths), std::cend(paths));
 }
 
 auto ImageBuilder::SetUsage(vk::ImageUsageFlags usage) -> ImageBuilder&
@@ -167,10 +188,16 @@ auto ImageBuilder::SetTiling(vk::ImageTiling tiling) -> ImageBuilder&
   return *this;
 }
 
+auto ImageBuilder::SetLayers(uint32_t layers) -> ImageBuilder&
+{
+  imageCI.arrayLayers = layers;
+  return *this;
+}
+
 auto ImageBuilder::Build(const Context& context) const -> Image
 {
   VmaAllocationCreateInfo allocationCI {};
-  allocationCI.usage = VMA_MEMORY_USAGE_GPU_TO_CPU;
+  allocationCI.usage = vmaUsage;
 
   VkImage vkImage;
   VmaAllocation allocation {};
@@ -184,6 +211,39 @@ auto ImageBuilder::Build(const Context& context) const -> Image
   ASSERT_THROW(imageStatus == VK_SUCCESS, "Failed to create vulkan image! %d", imageStatus);
   const auto image = vk::Image {vkImage};
 
+  // TODO: Add SetSampler() method
+  vk::SamplerCreateInfo samplerCI;
+  samplerCI.magFilter = vk::Filter::eLinear;
+  samplerCI.minFilter = vk::Filter::eLinear;
+  const auto sampler = context.device.createSampler(samplerCI);
+
+
+  const auto aspect =
+    imageCI.usage == vk::ImageUsageFlagBits::eDepthStencilAttachment ?
+    vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
+
+  if (paths.size())
+  {
+    char* hostPtr {nullptr};
+    vmaMapMemory(context.allocator, allocation, reinterpret_cast<void**>(&hostPtr));
+    auto layer = 0U;
+    for (const auto& path : paths)
+    {
+      auto width    = 0;
+      auto height   = 0;
+      auto channels = 0;
+      constexpr auto preferred = STBI_rgb_alpha; // TODO: Parameterize
+      const auto data = stbi_load(path.c_str(), &width, &height, &channels, preferred);
+      debug_print("Loading %dx%dx%d image %s", width, height, channels, path.filename().c_str());
+
+      const auto subresourceLayout = context.device.getImageSubresourceLayout(image, {aspect, 0, layer++});
+      std::memcpy(hostPtr + subresourceLayout.offset, data, width * height * preferred);
+
+      stbi_image_free(data);
+    }
+    vmaUnmapMemory(context.allocator, allocation);
+  }
+
   constexpr auto validImageViewUsageFlags =
     vk::ImageUsageFlagBits::eSampled                |
     vk::ImageUsageFlagBits::eStorage                |
@@ -192,21 +252,27 @@ auto ImageBuilder::Build(const Context& context) const -> Image
     vk::ImageUsageFlagBits::eInputAttachment        |
     vk::ImageUsageFlagBits::eTransientAttachment;
 
+  // Only create image vies if possible
+  // One view per array layer for image arrays
   if (imageCI.usage & validImageViewUsageFlags)
   {
-    const auto aspect = imageCI.usage == vk::ImageUsageFlagBits::eDepthStencilAttachment ?
-      vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
-
-    vk::ImageViewCreateInfo imageViewCI;
-    imageViewCI.image    = image;
-    imageViewCI.viewType = vk::ImageViewType::e2D;
-    imageViewCI.format   = imageCI.format; // TODO: Support aliased formats
-    imageViewCI.subresourceRange = {aspect, 0, 1, 0, 1};
-    const auto view = context.device.createImageView(imageViewCI);
-    return {allocation, imageCI.format, imageCI.usage, imageCI.initialLayout, image, view};
+    std::vector<vk::ImageView> views (imageCI.arrayLayers);
+    auto layerCounter = 0U;
+    std::generate(
+      std::begin(views), std::end(views),
+      [&]() mutable -> vk::ImageView
+      {
+        vk::ImageViewCreateInfo imageViewCI;
+        imageViewCI.image    = image;
+        imageViewCI.viewType = vk::ImageViewType::e2D;
+        imageViewCI.format   = imageCI.format; // TODO: Support aliased formats
+        imageViewCI.subresourceRange = {aspect, 0, 1, layerCounter++, 1};
+        return context.device.createImageView(imageViewCI);
+      });
+    return {allocation, imageCI.format, imageCI.usage, aspect, image, sampler, views};
   }
 
-  return {allocation, imageCI.format, imageCI.usage, imageCI.initialLayout, image, std::nullopt};
+  return {allocation, imageCI.format, imageCI.usage, aspect, image, sampler};
 }
 
 auto CreateBuffer(
@@ -236,20 +302,6 @@ auto CreateBuffer(
   return {allocation, buffer};
 }
 
-auto CreateShaderModule(
-  const Context& context,
-  const std::filesystem::path& path) -> vk::ShaderModule
-{
-  std::basic_ifstream<char> file {path, std::ios::binary};
-  ASSERT_THROW(file.is_open(), "Failed to open SPIRV shader! %s", path.c_str());
-  const std::vector<char> data {std::istreambuf_iterator<char> {file}, {}};
-
-  vk::ShaderModuleCreateInfo shaderModuleCI;
-  shaderModuleCI.codeSize = data.size();
-  shaderModuleCI.pCode    = reinterpret_cast<const uint32_t*>(data.data());
-  return context.device.createShaderModule(shaderModuleCI);
-}
-
 auto CreateAttachmentDescription(
   const Image& image,
   vk::ImageLayout finalLayout) -> vk::AttachmentDescription
@@ -261,9 +313,182 @@ auto CreateAttachmentDescription(
   desc.samples       = vk::SampleCountFlagBits::e1;
   desc.loadOp        = vk::AttachmentLoadOp::eClear; // TODO: eLoad for textures
   desc.storeOp       = isDepthAttachment ? vk::AttachmentStoreOp::eDontCare : vk::AttachmentStoreOp::eStore;
-  desc.initialLayout = image.initialLayout;
+  desc.initialLayout = vk::ImageLayout::eUndefined; // TODO: Verify this
   desc.finalLayout   = isDepthAttachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal : finalLayout;
   return desc;
+}
+
+auto CreateDescriptorSet(
+  const Context& context,
+  vk::ArrayProxy<const Descriptor> descriptors) -> DescriptorSet
+{
+  const auto numDescriptors = descriptors.size();
+
+  std::vector<DescriptorBinding> bindings (numDescriptors);
+  auto bindingCounter = 0U;
+  std::transform(
+    std::cbegin(descriptors), std::cend(descriptors),
+    std::begin(bindings),
+    [&](const auto& d) mutable -> DescriptorBinding
+    {
+      return {d, bindingCounter++};
+    });
+
+  std::vector<vk::DescriptorSetLayoutBinding> layoutBindings (numDescriptors);
+  std::transform(
+    std::cbegin(bindings), std::cend(bindings),
+    std::begin(layoutBindings),
+    [&](const auto& b) -> vk::DescriptorSetLayoutBinding
+    {
+      return {b.binding, b.descriptor.type, b.descriptor.count, vk::ShaderStageFlagBits::eAllGraphics};
+    });
+
+  vk::DescriptorSetLayoutCreateInfo descSetLayoutCI;
+  descSetLayoutCI.bindingCount  = layoutBindings.size();
+  descSetLayoutCI.pBindings     = layoutBindings.data();
+  const auto descSetLayout = context.device.createDescriptorSetLayout(descSetLayoutCI);
+
+  std::vector<vk::DescriptorPoolSize> sizes (numDescriptors);
+  std::transform(
+    std::cbegin(descriptors), std::cend(descriptors),
+    std::begin(sizes),
+    [&](const auto& d) -> vk::DescriptorPoolSize
+    {
+      return {d.type, d.count};
+    });
+
+  vk::DescriptorPoolCreateInfo descPoolCI;
+  descPoolCI.maxSets        = 1;
+  descPoolCI.poolSizeCount  = sizes.size();
+  descPoolCI.pPoolSizes     = sizes.data();
+  const auto descPool = context.device.createDescriptorPool(descPoolCI);
+
+  vk::DescriptorSetAllocateInfo descSetAI;
+  descSetAI.descriptorPool      = descPool;
+  descSetAI.descriptorSetCount  = 1;
+  descSetAI.pSetLayouts         = &descSetLayout;
+  const auto descSet = context.device.allocateDescriptorSets(descSetAI)[0];
+
+  return {descSet, descSetLayout, {std::cbegin(bindings), std::cend(bindings)}};
+}
+
+auto CreatePipelineLayout(
+  const Context&        context,
+  const DescriptorSet&  descSet) -> vk::PipelineLayout
+{
+  vk::PipelineLayoutCreateInfo ci;
+  ci.setLayoutCount = 1;
+  ci.pSetLayouts    = &descSet.layout;
+  return context.device.createPipelineLayout(ci);
+}
+
+auto CreateShaderModule(
+  const Context&                context,
+  const std::filesystem::path&  path
+) -> vk::ShaderModule
+{
+  std::basic_ifstream<char> file {path, std::ios::binary};
+  ASSERT_THROW(file.is_open(), "Failed to open SPIRV shader! %s", path.c_str());
+  const std::vector<char> data {std::istreambuf_iterator<char> {file}, {}};
+
+  vk::ShaderModuleCreateInfo shaderModuleCI;
+  shaderModuleCI.codeSize = data.size();
+  shaderModuleCI.pCode    = reinterpret_cast<const uint32_t*>(data.data());
+  return context.device.createShaderModule(shaderModuleCI);
+}
+
+auto CreateGraphicsPipelineShaderStages(
+  const Context&                context,
+  const std::filesystem::path&  vertexShaderPath,
+  const std::filesystem::path&  fragmentShaderPath
+) -> std::array<vk::PipelineShaderStageCreateInfo, 2>
+{
+  std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStages;
+  shaderStages[0].stage  = vk::ShaderStageFlagBits::eVertex;
+  shaderStages[0].pName  = "main";
+  shaderStages[0].module = vku::CreateShaderModule(context, vertexShaderPath);
+  shaderStages[1].stage  = vk::ShaderStageFlagBits::eFragment;
+  shaderStages[1].pName  = "main";
+  shaderStages[1].module = vku::CreateShaderModule(context, fragmentShaderPath);
+  return shaderStages;
+}
+
+auto BindDescriptorSet(
+  vk::CommandBuffer     cmdBuf,
+  vk::PipelineLayout    pipelineLayout,
+  const DescriptorSet&  descSet,
+  vk::PipelineBindPoint bindPoint) -> void
+{
+  // TODO: SUpport multiple descriptor sets
+  // TODO: Support push constants
+  cmdBuf.bindDescriptorSets(bindPoint, pipelineLayout, 0, descSet.set, {});
+}
+
+auto SetImageLayout(
+  vk::CommandBuffer cmdBuf,
+  const Image& image,
+  vk::ImageLayout oldLayout,
+  vk::ImageLayout newLayout,
+  vk::ImageSubresourceRange subresourceRange,
+  vk::PipelineStageFlags srcStageMask,
+  vk::PipelineStageFlags dstStageMask
+) -> void
+{
+  vk::ImageMemoryBarrier barrier;
+  barrier.oldLayout        = oldLayout;
+  barrier.newLayout        = newLayout;
+  barrier.image            = image.image;
+  barrier.subresourceRange = subresourceRange;
+
+  barrier.srcAccessMask = [&]() -> vk::AccessFlags
+  {
+    switch (oldLayout)
+    {
+      default:                                              [[fallthrough]];
+      case vk::ImageLayout::eUndefined:                     return {};
+      case vk::ImageLayout::ePreinitialized:                return vk::AccessFlagBits::eHostWrite;
+      case vk::ImageLayout::eColorAttachmentOptimal:        return vk::AccessFlagBits::eColorAttachmentWrite;
+      case vk::ImageLayout::eDepthStencilAttachmentOptimal: return vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+      case vk::ImageLayout::eTransferSrcOptimal:            return vk::AccessFlagBits::eTransferRead;
+      case vk::ImageLayout::eTransferDstOptimal:            return vk::AccessFlagBits::eTransferWrite;
+      case vk::ImageLayout::eShaderReadOnlyOptimal:         return vk::AccessFlagBits::eShaderRead;
+    };
+  }();
+
+  barrier.dstAccessMask = [&]() -> vk::AccessFlags
+  {
+    switch (newLayout)
+    {
+      default:                                              return {};
+      case vk::ImageLayout::eTransferDstOptimal:            return vk::AccessFlagBits::eTransferWrite;
+      case vk::ImageLayout::eTransferSrcOptimal:            return vk::AccessFlagBits::eTransferRead;
+      case vk::ImageLayout::eColorAttachmentOptimal:        return vk::AccessFlagBits::eColorAttachmentWrite;
+      case vk::ImageLayout::eDepthStencilAttachmentOptimal: return vk::AccessFlagBits::eDepthStencilAttachmentWrite | barrier.dstAccessMask;
+      case vk::ImageLayout::eShaderReadOnlyOptimal:
+        if (barrier.srcAccessMask == vk::AccessFlags {})
+        {
+          barrier.srcAccessMask = vk::AccessFlagBits::eHostWrite | vk::AccessFlagBits::eTransferWrite;
+        }
+        return vk::AccessFlagBits::eShaderRead;
+    };
+  }();
+
+  cmdBuf.pipelineBarrier(srcStageMask, dstStageMask, {}, {}, {}, barrier);
+}
+
+auto SubmitImmediate(
+  const Context& context,
+  submit_function_type function,
+  bool block) -> void
+{
+  const auto cmdBuf = context.device.allocateCommandBuffers({
+    context.commandPool, vk::CommandBufferLevel::ePrimary, 1})[0];
+
+  cmdBuf.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+  function(cmdBuf);
+  cmdBuf.end();
+
+  SubmitWork(context, cmdBuf, block);
 }
 
 auto SubmitWork(const Context& context, vk::CommandBuffer cmdBuf, bool block) -> void
@@ -321,7 +546,7 @@ auto CalculateDataTypeSize(const fx::gltf::Accessor& accessor) -> uint32_t
   return 0; // Only to suppress compiler warning
 }
 
-auto LoadScene(const std::filesystem::path& path) -> Scene
+auto LoadScene(const Context& context, const std::filesystem::path& path) -> Scene
 {
   Scene scene;
   auto indexBufferOffset  = 0U;
@@ -329,6 +554,8 @@ auto LoadScene(const std::filesystem::path& path) -> Scene
 
   const auto gltfScene = fx::gltf::LoadFromText(path);
   debug_print("Loading glTF scene with %d meshe(s)", gltfScene.meshes.size());
+
+  std::map<uint32_t, std::filesystem::path> uniqueImagePaths;
 
   for (const auto& gltfMesh : gltfScene.meshes)
   {
@@ -342,10 +569,9 @@ auto LoadScene(const std::filesystem::path& path) -> Scene
       const auto indexBuffer    = vku::GetGLTFBuffer<uint16_t, 1>(gltfScene, primitive.indices);
       const auto positionBuffer = vku::GetGLTFBuffer<float,    3>(gltfScene, primitive.attributes.at("POSITION"));
       const auto normalBuffer   = vku::GetGLTFBuffer<float,    3>(gltfScene, primitive.attributes.at("NORMAL"));
+      const auto texcoordBuffer = vku::GetGLTFBuffer<float,    2>(gltfScene, primitive.attributes.at("TEXCOORD_0"));
 
       scene.indices.insert(std::end(scene.indices), indexBuffer.data, indexBuffer.data + indexBuffer.count);
-
-      debug_print("---- Loading primitive with %6d vertices", positionBuffer.count);
 
       // Interleave attributes into single vertex buffer
       for (auto i = 0; i < positionBuffer.count; i++)
@@ -358,22 +584,67 @@ auto LoadScene(const std::filesystem::path& path) -> Scene
           normalBuffer.data  [normalBuffer.stride   * i + 0],
           normalBuffer.data  [normalBuffer.stride   * i + 1],
           normalBuffer.data  [normalBuffer.stride   * i + 2],
+          texcoordBuffer.data[texcoordBuffer.stride * i + 0],
+          texcoordBuffer.data[texcoordBuffer.stride * i + 1],
         };
         scene.vertices.push_back(vertex);
       }
 
-      scene.drawInfos.push_back({indexBuffer.count, indexBufferOffset, vertexBufferOffset});
+      // TODO: First check if material is present
+      const auto& material  = gltfScene.materials[primitive.material];
+      const auto  textureId = material.pbrMetallicRoughness.baseColorTexture.index;
+      const auto  imageId   = gltfScene.textures[textureId].source;
+
+      const auto& filename  = gltfScene.images[imageId].uri;
+      const auto  imagePath = path.parent_path() / filename;
+
+      const auto [iter, status] = uniqueImagePaths.emplace(imageId, imagePath);
+      const uint32_t newImageId = std::distance(std::begin(uniqueImagePaths), iter);
+
+      scene.drawInfos.push_back({indexBuffer.count, indexBufferOffset, vertexBufferOffset, newImageId});
       indexBufferOffset  += indexBuffer.count;
       vertexBufferOffset += positionBuffer.count;
-    }
+
+      debug_print("---- Loaded primitive with %6d vertices and image ID %d",
+        positionBuffer.count, newImageId);
+   }
   }
+
+  std::vector<std::filesystem::path> imagePaths;
+  for (const auto [index, path] : uniqueImagePaths)
+  {
+    imagePaths.push_back(path);
+  }
+
+  // TODO: Use per-mesh image array
+  debug_print("-- Loading %d images in scene", imagePaths.size());
+  constexpr vk::Extent3D extent {1024, 1024, 1}; // TODO: Parameterize
+  scene.imageArray = vku::ImageBuilder(
+    extent, vk::Format::eR8G8B8A8Srgb, imagePaths)
+    .SetUsage(vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst)
+    .Build(context);
+
+  vku::SubmitImmediate(context, [&](vk::CommandBuffer cmdBuf)
+  {
+    const uint32_t numLayers = scene.imageArray.views.size();
+    vku::SetImageLayout(
+      cmdBuf, scene.imageArray, vk::ImageLayout::ePreinitialized, vk::ImageLayout::eShaderReadOnlyOptimal,
+      {scene.imageArray.aspect, 0, 1, 0, numLayers});
+  });
+
   return scene;
 }
 
-auto DrawScene(const Scene& scene, vk::CommandBuffer cmdBuf) -> void
+auto DrawScene(
+  vk::CommandBuffer cmdBuf,
+  vk::PipelineLayout pipelineLayout,
+  const Scene& scene
+) -> void
 {
   for (const auto& di : scene.drawInfos)
   {
+    vku::PushConstant<DrawPushConstant> pushConstant {di.imageId};
+    vku::BindPushConstant(cmdBuf, pipelineLayout, pushConstant);
     cmdBuf.drawIndexed(di.indexCount, 1, di.indexOffset, di.vertexOffset, 0);
   }
 }
@@ -397,13 +668,11 @@ Renderer::Renderer(
     debug_print("Using renderdoc app API");
   }
 
-  m_scene = vku::LoadScene(assetPath);
-
   if (m_renderdoc) m_renderdoc->StartFrameCapture(nullptr, nullptr);
 
   m_context = vku::CreateContext();
 
-  m_commandPool = m_context.device.createCommandPool({{}, m_context.queueFamilyIndex});
+  m_scene = vku::LoadScene(m_context, assetPath);
 
   /////////////////////////////////////////////////////////////////////////////
   // Camera matrices
@@ -465,7 +734,6 @@ Renderer::Renderer(
   m_copyImage = vku::ImageBuilder(
     m_extent, vk::Format::eR8G8B8A8Unorm, VMA_MEMORY_USAGE_GPU_TO_CPU)
     .SetUsage(vk::ImageUsageFlagBits::eTransferDst)
-    .SetTiling(vk::ImageTiling::eLinear)
     .Build(m_context);
 
   /////////////////////////////////////////////////////////////////////////////
@@ -474,8 +742,8 @@ Renderer::Renderer(
 
   const std::array<vk::AttachmentDescription, 2> attachments
   {
-    CreateAttachmentDescription(m_colorImage, vk::ImageLayout::eTransferSrcOptimal),
-    CreateAttachmentDescription(m_depthImage),
+    vku::CreateAttachmentDescription(m_colorImage, vk::ImageLayout::eTransferSrcOptimal),
+    vku::CreateAttachmentDescription(m_depthImage),
   };
 
   const vk::AttachmentReference colorAttachmentRef {0, vk::ImageLayout::eColorAttachmentOptimal};
@@ -514,8 +782,8 @@ Renderer::Renderer(
 
   const std::array<vk::ImageView, 2> imageViews
   {
-    m_colorImage.view.value(),
-    m_depthImage.view.value(),
+    m_colorImage.views[0],
+    m_depthImage.views[0],
   };
 
   vk::FramebufferCreateInfo framebufferCI;
@@ -531,77 +799,27 @@ Renderer::Renderer(
   // Descriptor Sets
   /////////////////////////////////////////////////////////////////////////////
 
-  std::array<vk::DescriptorSetLayoutBinding, 2> bindings;
-  bindings[0].binding         = 0;
-  bindings[0].descriptorType  = vk::DescriptorType::eUniformBuffer;
-  bindings[0].descriptorCount = 1;
-  bindings[0].stageFlags      = vk::ShaderStageFlagBits::eAllGraphics;
-  bindings[1].binding         = 1;
-  bindings[1].descriptorType  = vk::DescriptorType::eStorageBuffer;
-  bindings[1].descriptorCount = 1;
-  bindings[1].stageFlags      = vk::ShaderStageFlagBits::eAllGraphics;
+  m_descSet = vku::CreateDescriptorSet(
+    m_context,
+    {
+      {vk::DescriptorType::eUniformBuffer},
+      {vk::DescriptorType::eStorageBuffer},
+      {vk::DescriptorType::eCombinedImageSampler, static_cast<uint32_t>(m_scene.imageArray.views.size())},
+    });
 
-  vk::DescriptorSetLayoutCreateInfo descSetLayoutCI;
-  descSetLayoutCI.bindingCount  = bindings.size();
-  descSetLayoutCI.pBindings     = bindings.data();
-  const auto descSetLayout = m_context.device.createDescriptorSetLayout(descSetLayoutCI);
-
-  std::array<vk::DescriptorPoolSize, 2> descPoolSize;
-  descPoolSize[0].type            = vk::DescriptorType::eUniformBuffer;
-  descPoolSize[0].descriptorCount = 1;
-  descPoolSize[1].type            = vk::DescriptorType::eStorageBuffer;
-  descPoolSize[1].descriptorCount = 1;
-
-  vk::DescriptorPoolCreateInfo descPoolCI;
-  descPoolCI.maxSets        = 1;
-  descPoolCI.poolSizeCount  = descPoolSize.size();
-  descPoolCI.pPoolSizes     = descPoolSize.data();
-  const auto descPool = m_context.device.createDescriptorPool(descPoolCI);
-
-  vk::DescriptorSetAllocateInfo descSetAI;
-  descSetAI.descriptorPool      = descPool;
-  descSetAI.descriptorSetCount  = 1;
-  descSetAI.pSetLayouts         = &descSetLayout;
-  m_descSet = m_context.device.allocateDescriptorSets(descSetAI)[0];
-
-  std::array<vk::DescriptorBufferInfo, 2> descBIs;
-  descBIs[0].buffer = m_uniformBuffer.buffer;
-  descBIs[0].offset = 0;
-  descBIs[0].range  = VK_WHOLE_SIZE;
-  descBIs[1].buffer = m_vertexBuffer.buffer;
-  descBIs[1].offset = 0;
-  descBIs[1].range  = VK_WHOLE_SIZE;
-
-  std::array<vk::WriteDescriptorSet, 2> writeDescSets;
-  writeDescSets[0].dstSet           = m_descSet;
-  writeDescSets[0].dstBinding       = 0;
-  writeDescSets[0].descriptorCount  = 1;
-  writeDescSets[0].descriptorType   = vk::DescriptorType::eUniformBuffer;
-  writeDescSets[0].pBufferInfo      = &descBIs[0];
-  writeDescSets[1].dstSet           = m_descSet;
-  writeDescSets[1].dstBinding       = 1;
-  writeDescSets[1].descriptorCount  = 1;
-  writeDescSets[1].descriptorType   = vk::DescriptorType::eStorageBuffer;
-  writeDescSets[1].pBufferInfo      = &descBIs[1];
-
-  m_context.device.updateDescriptorSets(writeDescSets, {});
+  vku::UpdateDescriptorSet(m_context, m_descSet, 0, m_uniformBuffer);
+  vku::UpdateDescriptorSet(m_context, m_descSet, 1, m_vertexBuffer);
+  vku::UpdateDescriptorSet(m_context, m_descSet, 2, m_scene.imageArray);
 
   /////////////////////////////////////////////////////////////////////////////
   // Graphics Pipeline
   /////////////////////////////////////////////////////////////////////////////
 
-  vk::PipelineLayoutCreateInfo pipelineLayoutCI;
-  pipelineLayoutCI.setLayoutCount = 1;
-  pipelineLayoutCI.pSetLayouts    = &descSetLayout;
-  m_pipelineLayout = m_context.device.createPipelineLayout(pipelineLayoutCI);
+  m_pipelineLayout = vku::CreatePipelineLayout(
+    m_context, m_descSet, vku::PushConstant<DrawPushConstant> {});
 
-  std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStages;
-  shaderStages[0].stage  = vk::ShaderStageFlagBits::eVertex;
-  shaderStages[0].pName  = "main";
-  shaderStages[0].module = vku::CreateShaderModule(m_context, "shaders/default.vert.spv");
-  shaderStages[1].stage  = vk::ShaderStageFlagBits::eFragment;
-  shaderStages[1].pName  = "main";
-  shaderStages[1].module = vku::CreateShaderModule(m_context, "shaders/default.frag.spv");
+  const auto shaderStages = vku::CreateGraphicsPipelineShaderStages(
+    m_context, "shaders/default.vert.spv", "shaders/default.frag.spv");
 
   vk::PipelineVertexInputStateCreateInfo vertexInputState; // Empty for manual vertex attribute fetch in shader
 
@@ -682,9 +900,6 @@ auto Renderer::Render() -> void
   // Render
   /////////////////////////////////////////////////////////////////////////////
 
-  const auto cmdBufs = m_context.device.allocateCommandBuffers({
-    m_commandPool, vk::CommandBufferLevel::ePrimary, 2});
-
   std::array<vk::ClearValue, 2> clearValues;
   clearValues[0].color = std::array<float, 4> {{0.25, 0.5, 1, 1}};
   clearValues[1].depthStencil = {{1.0F, 1}};
@@ -696,54 +911,40 @@ auto Renderer::Render() -> void
   renderPassBI.clearValueCount = clearValues.size();
   renderPassBI.pClearValues    = clearValues.data();
 
-  cmdBufs[0].begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
-  cmdBufs[0].beginRenderPass(renderPassBI, vk::SubpassContents::eInline);
-  cmdBufs[0].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline);
-  cmdBufs[0].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 0, m_descSet, {});
-  cmdBufs[0].bindIndexBuffer(m_indexBuffer.buffer, 0, vk::IndexType::eUint16);
-  vku::DrawScene(m_scene, cmdBufs[0]);
-  cmdBufs[0].endRenderPass();
-  cmdBufs[0].end();
-
-  vku::SubmitWork(m_context, cmdBufs[0]);
+  vku::SubmitImmediate(m_context, [&](vk::CommandBuffer cmdBuf)
+  {
+    cmdBuf.beginRenderPass(renderPassBI, vk::SubpassContents::eInline);
+    cmdBuf.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline);
+    cmdBuf.bindIndexBuffer(m_indexBuffer.buffer, 0, vk::IndexType::eUint16);
+    vku::BindDescriptorSet(cmdBuf, m_pipelineLayout, m_descSet);
+    vku::DrawScene(cmdBuf, m_pipelineLayout, m_scene);
+    cmdBuf.endRenderPass();
+  });
 
   /////////////////////////////////////////////////////////////////////////////
   // Readback
   /////////////////////////////////////////////////////////////////////////////
 
+  const vk::ImageSubresourceRange subresourceRange {m_copyImage.aspect, 0, 1, 0, 1};
+
   std::array<vk::ImageCopy, 1> regions;
-  regions[0].srcSubresource = {vk::ImageAspectFlagBits::eColor, 0, 0, 1};
-  regions[0].dstSubresource = {vk::ImageAspectFlagBits::eColor, 0, 0, 1};
+  regions[0].srcSubresource = {m_colorImage.aspect, 0, 0, 1};
+  regions[0].dstSubresource = {m_copyImage.aspect,  0, 0, 1};
   regions[0].extent = m_extent;
 
-  std::array<vk::ImageMemoryBarrier, 2> barriers;
+  vku::SubmitImmediate(m_context, [&](vk::CommandBuffer cmdBuf)
+  {
+    vku::SetImageLayout(
+      cmdBuf, m_copyImage, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, subresourceRange);
 
-  barriers[0].srcAccessMask    = {};
-  barriers[0].dstAccessMask    = vk::AccessFlagBits::eTransferWrite;
-  barriers[0].oldLayout        = vk::ImageLayout::eUndefined;
-  barriers[0].newLayout        = vk::ImageLayout::eTransferDstOptimal;
-  barriers[0].image            = m_copyImage.image;
-  barriers[0].subresourceRange = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1};
+    cmdBuf.copyImage(
+      m_colorImage.image, vk::ImageLayout::eTransferSrcOptimal,
+      m_copyImage.image,  vk::ImageLayout::eTransferDstOptimal,
+      regions);
 
-  barriers[1].srcAccessMask    = vk::AccessFlagBits::eTransferWrite;
-  barriers[1].dstAccessMask    = vk::AccessFlagBits::eMemoryRead;
-  barriers[1].oldLayout        = vk::ImageLayout::eTransferDstOptimal;
-  barriers[1].newLayout        = vk::ImageLayout::eGeneral;
-  barriers[1].image            = m_copyImage.image;
-  barriers[1].subresourceRange = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1};
-
-  cmdBufs[1].begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
-  cmdBufs[1].pipelineBarrier(
-    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, barriers[0]);
-  cmdBufs[1].copyImage(
-    m_colorImage.image, vk::ImageLayout::eTransferSrcOptimal,
-    m_copyImage.image,  vk::ImageLayout::eTransferDstOptimal,
-    regions);
-  cmdBufs[1].pipelineBarrier(
-    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, barriers[1]);
-  cmdBufs[1].end();
-
-  vku::SubmitWork(m_context, cmdBufs[1]);
+    vku::SetImageLayout(
+      cmdBuf, m_copyImage, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eGeneral, subresourceRange);
+  });
 
   vku::CopyBuffer(m_context, m_copyImage, m_frame.data);
 }

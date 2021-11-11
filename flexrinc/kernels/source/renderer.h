@@ -1,6 +1,8 @@
 #include <filesystem>
+#include <functional>
 #include <optional>
 #include <type_traits>
+#include <variant>
 
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #include <vulkan/vulkan.hpp>
@@ -25,48 +27,73 @@ struct Context
   vk::PhysicalDevice  physicalDevice;
   vk::Device          device;
   vk::Queue           queue; // TODO: Have separate queues for graphics, compute, and transfers
+  vk::CommandPool     commandPool; // Internally used for immediate command buffer submits
 
   uint32_t            queueFamilyIndex {0};
 
   VmaAllocator        allocator;
 };
 
-struct Resource
+struct VmaResource
 {
   VmaAllocation allocation;
 };
 
 template <typename T>
-inline constexpr auto is_resource_v = std::is_base_of_v<Resource, T>;
+inline constexpr auto is_vmaresource_v = std::is_base_of_v<VmaResource, T>;
 
-struct Buffer : Resource
+struct Buffer : VmaResource
 {
   vk::Buffer buffer;
 };
 
-struct Image : Resource
+struct Image : VmaResource
 {
-  vk::Format          format;
-  vk::ImageUsageFlags usage;
-  vk::ImageLayout     initialLayout;
-  vk::Image           image;
-  std::optional<vk::ImageView> view;
+  vk::Format            format;
+  vk::ImageUsageFlags   usage;
+  vk::ImageAspectFlags  aspect;
+  vk::Image             image;
+  vk::Sampler           sampler;
+
+  std::vector<vk::ImageView> views;
 };
 
 class ImageBuilder
 {
 public:
-  ImageBuilder(vk::Extent3D extent, vk::Format, VmaMemoryUsage usage);
+  ImageBuilder(vk::Extent3D extent, vk::Format, VmaMemoryUsage vmaUsage);
+  ImageBuilder(vk::Extent3D extent, vk::Format, vk::ArrayProxy<std::filesystem::path> paths);
 
   auto SetUsage(vk::ImageUsageFlags usage) -> ImageBuilder&;
   auto SetTiling(vk::ImageTiling tiling)   -> ImageBuilder&;
+  auto SetLayers(uint32_t layers)          -> ImageBuilder&;
 
   auto Build(const Context& context) const -> Image;
 
 private:
-
   vk::ImageCreateInfo imageCI;
-  VmaMemoryUsage      usage;
+  VmaMemoryUsage      vmaUsage;
+
+  std::vector<std::filesystem::path> paths;
+};
+
+struct Descriptor
+{
+  vk::DescriptorType type;
+  uint32_t count {1};
+};
+
+struct DescriptorBinding
+{
+  Descriptor  descriptor;
+  uint32_t    binding {0};
+};
+
+struct DescriptorSet
+{
+  vk::DescriptorSet       set;
+  vk::DescriptorSetLayout layout;
+  std::vector<DescriptorBinding> bindings;
 };
 
 // TODO: Replace with glm vector types
@@ -86,6 +113,7 @@ struct DrawInfo
   uint32_t indexCount   {0};
   uint32_t indexOffset  {0};
   uint32_t vertexOffset {0};
+  uint32_t imageId      {0};
 };
 
 struct Scene
@@ -94,6 +122,7 @@ struct Scene
   {
     float px {0}, py {0}, pz {0}; // position
     float nx {0}, ny {0}, nz {0}; // normal
+    float tu {0}, tv {0};         // texcoord
   };
 
   using Index = uint16_t;
@@ -101,22 +130,112 @@ struct Scene
   std::vector<DrawInfo> drawInfos;
   std::vector<Index>    indices;
   std::vector<Vertex>   vertices;
+
+  Image imageArray;
+};
+
+template <typename T>
+struct PushConstant
+{
+  T        value;
+  uint32_t size   {sizeof(T)};
+  uint32_t offset {0};
+  vk::ShaderStageFlags stageFlags {vk::ShaderStageFlagBits::eAllGraphics};
 };
 
 auto CreateContext() -> Context;
 
 auto CreateBuffer(
-  const Context& context,
-  vk::DeviceSize size,
-  VmaMemoryUsage usage) -> Buffer;
-
-auto CreateShaderModule(
-  const Context&                context,
-  const std::filesystem::path&  path) -> vk::ShaderModule;
+  const Context&        context,
+  vk::DeviceSize        size,
+  vk::BufferUsageFlags  usage,
+  VmaMemoryUsage        memoryUsage
+) -> Buffer;
 
 auto CreateAttachmentDescription(
   const Image& image,
-  vk::ImageLayout finalLayout = vk::ImageLayout::eGeneral) -> vk::AttachmentDescription;
+  vk::ImageLayout finalLayout = vk::ImageLayout::eGeneral
+) -> vk::AttachmentDescription;
+
+auto CreateDescriptorSet(
+  const Context& context,
+  vk::ArrayProxy<const Descriptor> descriptors
+) -> DescriptorSet;
+
+auto CreatePipelineLayout(
+  const Context&        context,
+  const DescriptorSet&  descSet
+) -> vk::PipelineLayout;
+
+template <typename T>
+auto CreatePipelineLayout(
+  const Context&          context,
+  const DescriptorSet&    descSet,
+  const PushConstant<T>&  pushConstant
+) -> vk::PipelineLayout
+{
+  vk::PushConstantRange pcr;
+  pcr.stageFlags  = pushConstant.stageFlags;
+  pcr.offset      = pushConstant.offset;
+  pcr.size        = pushConstant.size;
+
+  vk::PipelineLayoutCreateInfo ci;
+  ci.setLayoutCount         = 1;
+  ci.pSetLayouts            = &descSet.layout;
+  ci.pushConstantRangeCount = 1;
+  ci.pPushConstantRanges    = &pcr;
+  return context.device.createPipelineLayout(ci);
+}
+
+auto CreateShaderModule(
+  const Context&                context,
+  const std::filesystem::path&  path
+) -> vk::ShaderModule;
+
+auto CreateGraphicsPipelineShaderStages(
+  const Context&                context,
+  const std::filesystem::path&  vertexShaderPath,
+  const std::filesystem::path&  fragmentShaderPath
+) -> std::array<vk::PipelineShaderStageCreateInfo, 2>;
+
+auto BindDescriptorSet(
+  vk::CommandBuffer     cmdBuf,
+  vk::PipelineLayout    pipelineLayout,
+  const DescriptorSet&  descSet,
+  vk::PipelineBindPoint bindPoint = vk::PipelineBindPoint::eGraphics
+) -> void;
+
+template <typename T>
+auto BindPushConstant(
+  vk::CommandBuffer cmdBuf,
+  vk::PipelineLayout pipelineLayout,
+  const PushConstant<T>& pushConstant
+) -> void
+{
+  cmdBuf.pushConstants(
+    pipelineLayout,
+    pushConstant.stageFlags,
+    pushConstant.offset,
+    pushConstant.size,
+    reinterpret_cast<const void*>(&pushConstant.value));
+}
+
+auto SetImageLayout(
+  vk::CommandBuffer cmdBuf,
+  const Image& image,
+  vk::ImageLayout oldLayout,
+  vk::ImageLayout newLayout,
+  vk::ImageSubresourceRange subresourceRange,
+  vk::PipelineStageFlags srcStageMask = vk::PipelineStageFlagBits::eAllCommands,
+  vk::PipelineStageFlags dstStageMask = vk::PipelineStageFlagBits::eAllCommands
+) -> void;
+
+using submit_function_type = std::function<void(vk::CommandBuffer)>;
+
+auto SubmitImmediate(
+  const Context& context,
+  submit_function_type function,
+  bool block=true) -> void;
 
 auto SubmitWork(
   const Context&    context,
@@ -128,9 +247,53 @@ auto SubmitWork(
 // auto DestroyBuffer(Buffer&& buffer) -> void;
 // auto DestroyImage(Image&& image) -> void;
 
-auto LoadScene(const std::filesystem::path& path) -> Scene;
+auto LoadScene(const Context& context, const std::filesystem::path& path) -> Scene;
 
-auto DrawScene(const Scene& scene, vk::CommandBuffer cmdBuf) -> void;
+auto DrawScene(
+  vk::CommandBuffer cmdBuf,
+  vk::PipelineLayout pipelineLayout, // TODO: Move into scene class
+  const Scene& scene
+) -> void;
+
+template <typename T>
+auto UpdateDescriptorSet(
+  const Context&        context,
+  const DescriptorSet&  descSet,
+  uint32_t              index,
+  const T&              object
+) -> std::enable_if_t<is_vmaresource_v<T>>
+{
+  const auto& binding = descSet.bindings[index];
+
+  vk::WriteDescriptorSet writeDescSet;
+  writeDescSet.dstSet          = descSet.set;
+  writeDescSet.dstBinding      = binding.binding;
+  writeDescSet.descriptorCount = binding.descriptor.count;
+  writeDescSet.descriptorType  = binding.descriptor.type;
+
+  if constexpr (std::is_same_v<T, Image>)
+  {
+    const auto& image = object; // Alias
+    std::vector<vk::DescriptorImageInfo> infos (image.views.size());
+    std::transform(
+      std::cbegin(image.views), std::cend(image.views),
+      std::begin(infos),
+      [&](const auto& v) -> vk::DescriptorImageInfo
+      {
+        return {image.sampler, v, vk::ImageLayout::eShaderReadOnlyOptimal}; // TODO: Parameterize image layout
+      });
+    writeDescSet.pImageInfo = infos.data();
+    return context.device.updateDescriptorSets(writeDescSet, {});
+  }
+
+  if constexpr (std::is_same_v<T, Buffer>)
+  {
+    const auto& buffer = object; // Alias
+    vk::DescriptorBufferInfo info {buffer.buffer, 0, VK_WHOLE_SIZE}; // TODO: Parameterize buffer offset and range
+    writeDescSet.pBufferInfo = &info;
+    return context.device.updateDescriptorSets(writeDescSet, {});
+  }
+}
 
 template <typename T>
 inline auto SizeInBytes(T&& container)
@@ -140,7 +303,7 @@ inline auto SizeInBytes(T&& container)
 
 template <typename Src, typename Dst>
 auto CopyBuffer(const Context& context, Src&& container, const Dst& object)
-  -> std::enable_if_t<is_resource_v<Dst>>
+  -> std::enable_if_t<is_vmaresource_v<Dst>>
 {
   char* data {nullptr};
   vmaMapMemory(context.allocator, object.allocation, reinterpret_cast<void**>(&data));
@@ -150,7 +313,7 @@ auto CopyBuffer(const Context& context, Src&& container, const Dst& object)
 
 template <typename Src, typename Dst>
 auto CopyBuffer(const Context& context, const Src& object, Dst&& container)
-  -> std::enable_if_t<is_resource_v<Src>>
+  -> std::enable_if_t<is_vmaresource_v<Src>>
 {
   char* data {nullptr};
   vmaMapMemory(context.allocator, object.allocation, reinterpret_cast<void**>(&data));
@@ -182,6 +345,11 @@ struct RenderFrame
   std::vector<char> data;
 };
 
+struct DrawPushConstant
+{
+  uint32_t imageId {0};
+};
+
 class Renderer
 {
 public:
@@ -203,7 +371,6 @@ private:
   vk::CommandPool     m_commandPool;
   vk::RenderPass      m_renderPass;
   vk::Framebuffer     m_framebuffer;
-  vk::DescriptorSet   m_descSet;
   vk::PipelineLayout  m_pipelineLayout;
   vk::Pipeline        m_pipeline;
 
@@ -215,6 +382,7 @@ private:
   vku::Image          m_colorImage;
   vku::Image          m_depthImage;
   vku::Image          m_copyImage;
+  vku::DescriptorSet  m_descSet;
 
   RenderFrame         m_frame;
 

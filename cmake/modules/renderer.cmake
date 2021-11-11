@@ -35,6 +35,14 @@ FetchContent_Declare(
 # TODO: Try to use GitHub links instead of raw links
 # WARNING: Requires latest cmake 3.21+ otherwise SOURCE_DIR is not populated
 FetchContent_Declare(
+  fetch_stb_image
+  URL https://raw.githubusercontent.com/nothings/stb/master/stb_image.h
+  DOWNLOAD_NO_EXTRACT ON
+)
+
+# TODO: Try to use GitHub links instead of raw links
+# WARNING: Requires latest cmake 3.21+ otherwise SOURCE_DIR is not populated
+FetchContent_Declare(
   fetch_stb_image_write
   URL https://raw.githubusercontent.com/nothings/stb/master/stb_image_write.h
   DOWNLOAD_NO_EXTRACT ON
@@ -63,6 +71,7 @@ FetchContent_MakeAvailable(
   fetch_glm
   fetch_vma
   fetch_renderdoc_app
+  fetch_stb_image
   fetch_stb_image_write
   fetch_nlohmann_json
   fetch_fx_gltf)
@@ -74,6 +83,9 @@ target_include_directories(vma INTERFACE ${fetch_vma_SOURCE_DIR})
 
 add_library(renderdoc_app INTERFACE)
 target_include_directories(renderdoc_app INTERFACE ${fetch_renderdoc_app_SOURCE_DIR})
+
+add_library(stb_image INTERFACE)
+target_include_directories(stb_image INTERFACE ${fetch_stb_image_SOURCE_DIR})
 
 add_library(stb_image_write INTERFACE)
 target_include_directories(stb_image_write INTERFACE ${fetch_stb_image_write_SOURCE_DIR})

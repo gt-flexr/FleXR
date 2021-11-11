@@ -30,6 +30,7 @@ target_link_libraries(vulkan_debug
     glm
     vma
     renderdoc_app
+    stb_image
     stb_image_write
     nlohmann_json
     fx-gltf)

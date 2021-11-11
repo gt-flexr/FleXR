@@ -13,7 +13,7 @@
 
 auto main(int argc, char** argv) -> int
 {
-  constexpr auto defaultAssetPath = "assets/BoxInterleaved/BoxInterleaved.gltf";
+  constexpr auto defaultAssetPath = "assets/Sponza/Sponza.gltf";
   const auto assetPath = argc > 1 ? argv[1] : defaultAssetPath;
 
   Renderer renderer {512, 512, assetPath};
