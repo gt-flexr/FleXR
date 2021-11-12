@@ -47,9 +47,9 @@ extern "C" {
     }
 
     uint8_t* recvBuffer = nullptr;
-    uint32_t recvSize, ts;
+    uint32_t recvSize;
 
-    if( rtpPort.receiveMsg(isBlocking, recvBuffer, recvSize, ts) )
+    if( rtpPort.receiveMsg(isBlocking, recvBuffer, recvSize) )
     {
       flexr::types::Message<flexr::types::Frame> frameMsg;
       frameMsg.data = flexr::types::Frame(height, width, CV_8UC3);
@@ -78,11 +78,20 @@ extern "C" {
     }
 
     uint8_t* recvBuffer = nullptr;
-    uint32_t recvSize, ts;
-    if( rtpPort.receiveMsg(isBlocking, recvBuffer, recvSize, ts) )
+    uint32_t recvSize;
+    if( rtpPort.receiveMsg(isBlocking, recvBuffer, recvSize) )
     {
+      if(recvSize != sizeof(flexr::types::Message<flexr::types::ObjectPose>)) return false;
+
       flexr::types::Message<flexr::types::ObjectPose> *poseMsg = (flexr::types::Message<flexr::types::ObjectPose>*) recvBuffer;
-      *objectPose = poseMsg->data;
+
+      objectPose->rx = poseMsg->data.rx;
+      objectPose->ry = poseMsg->data.ry;
+      objectPose->rz = poseMsg->data.rz;
+
+      objectPose->tx = poseMsg->data.tx;
+      objectPose->ty = poseMsg->data.ty;
+      objectPose->tz = poseMsg->data.tz;
 
       delete recvBuffer;
       return true;
@@ -100,9 +109,11 @@ extern "C" {
     }
 
     uint8_t* recvBuffer = nullptr;
-    uint32_t recvSize, ts;
-    if( rtpPort.receiveMsg(isBlocking, recvBuffer, recvSize, ts) )
+    uint32_t recvSize;
+    if( rtpPort.receiveMsg(isBlocking, recvBuffer, recvSize) )
     {
+      if(recvSize != sizeof(flexr::types::Message<char>)) return false;
+
       flexr::types::Message<char> *keyMsg = (flexr::types::Message<char>*) recvBuffer;
       *key = keyMsg->data;
 
@@ -121,7 +132,7 @@ extern "C" {
     }
 
     uint8_t* sendBuffer = nullptr;
-    uint32_t sendSize, ts;
+    uint32_t sendSize;
 
     flexr::types::Message<flexr::types::Frame> frameMsg;
 
@@ -133,7 +144,7 @@ extern "C" {
     cvtColor(unityFrame, frameMsg.data.useAsCVMat(), cv::COLOR_BGRA2RGB);
 
     flip(frameMsg.data.useAsCVMat(), frameMsg.data.useAsCVMat(), 0);
-    flexr::utils::serializeRawFrame(&frameMsg, sendBuffer, sendSize);
+    flexr::utils::serializeRawFrame(&frameMsg, sendBuffer, sendSize, true);
 
     rtpPort.send(sendBuffer, sendSize, frameMsg.ts);
     delete sendBuffer;

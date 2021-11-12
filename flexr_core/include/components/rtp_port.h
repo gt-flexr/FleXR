@@ -122,11 +122,9 @@ namespace flexr {
        *  Reference of the pointer to the received data buffer
        * @param[out] outSize
        *  Size of the received data
-       * @param[out] outTs
-       *  Timestamp for tracking
        * @return Boolean of success or faile of receiving
        */
-      bool receiveMsg(bool inBlock, uint8_t* &outBuffer, uint32_t &outSize, uint32_t &outTs)
+      bool receiveMsg(bool inBlock, uint8_t* &outBuffer, uint32_t &outSize)
       {
         uvg_rtp::frame::rtp_frame *rtpFrame = nullptr;
         if(outBuffer != nullptr) { delete outBuffer; outBuffer = nullptr; }
@@ -137,10 +135,9 @@ namespace flexr {
           rtpFrame = stream->pull_frame(1);
 
         if(rtpFrame != nullptr) {
-          outTs = rtpFrame->header.timestamp;
           outSize = rtpFrame->payload_len;
           outBuffer = std::move(rtpFrame->payload);
-          debug_print("Received RTP msg: size(%ld), ts(%d)", rtpFrame->payload_len, outTs);
+          debug_print("Received RTP msg: size(%ld), ts(%d)", rtpFrame->payload_len, rtpFrame->header.timestamp);
 
           unrefFrameExceptData(rtpFrame);
           return true;

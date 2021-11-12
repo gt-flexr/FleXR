@@ -1,5 +1,4 @@
-#ifndef __FLEXR_CORE_UTILS_SERIALIZE_FUNCS__
-#define __FLEXR_CORE_UTILS_SERIALIZE_FUNCS__
+#pragma once
 
 #include "flexr_core/include/defs.h"
 #include "flexr_core/include/types/frame.h"
@@ -8,15 +7,14 @@
 namespace flexr {
   namespace utils {
 
-    static void serializeRawFrame(void* msg, uint8_t* &data, uint32_t &size)
+    static bool serializeRawFrame(void* msg, uint8_t* &data, uint32_t &size, bool freeMsgData)
     {
       types::Message<types::Frame> *castedFrame = static_cast<types::Message<types::Frame>*>(msg);
       uint32_t msgMetaSize = sizeof(*castedFrame);
-      uint32_t frameMetaSize = sizeof(types::Frame);
 
-      size = msgMetaSize + frameMetaSize + castedFrame->dataSize;
+      size = msgMetaSize + castedFrame->dataSize;
 
-      if(castedFrame->dataSize != castedFrame->data.dataSize &&
+      if(castedFrame->dataSize != castedFrame->data.dataSize ||
          castedFrame->dataSize != castedFrame->data.useAsCVMat().total()*castedFrame->data.useAsCVMat().elemSize())
       {
         debug_print("Message<Frame> dataSize(%d) mismatches to Frame->dataSize (%ld) and real dataSize(%ld)",
@@ -25,16 +23,19 @@ namespace flexr {
       }
 
       data = new uint8_t[size];
-      uint8_t *temp = data;
-      memcpy(temp, castedFrame,            msgMetaSize);   temp += msgMetaSize;
-      memcpy(temp, &castedFrame->data,     frameMetaSize); temp += frameMetaSize;
-      memcpy(temp, castedFrame->data.data, castedFrame->dataSize);
+      memcpy(data,             castedFrame, msgMetaSize);
+      memcpy(data+msgMetaSize, castedFrame->data.data, castedFrame->dataSize);
 
-      castedFrame->data.release();
+      if(freeMsgData)
+      {
+        castedFrame->data.release();
+      }
+
+      return true;
     }
 
 
-    static void serializeEncodedFrame(void* msg, uint8_t* &data, uint32_t &size)
+    static bool serializeEncodedFrame(void* msg, uint8_t* &data, uint32_t &size, bool freeMsgData)
     {
       types::Message<uint8_t*> *castedFrame = static_cast<types::Message<uint8_t*>*>(msg);
       uint32_t metaSize = sizeof(*castedFrame);
@@ -45,13 +46,18 @@ namespace flexr {
       memcpy(data,          castedFrame,       metaSize);
       memcpy(data+metaSize, castedFrame->data, castedFrame->dataSize);
 
-      delete castedFrame->data;
-      castedFrame->data = nullptr;
+      if(freeMsgData)
+      {
+        delete castedFrame->data;
+        castedFrame->data = nullptr;
+      }
+
+      return true;
     }
 
 
     template <typename T>
-    void serializeVector(void* msg, uint8_t* &data, uint32_t &size)
+    bool serializeVector(void* msg, uint8_t* &data, uint32_t &size, bool freeMsgData)
     {
       T* castedMsg = static_cast<T*>(msg);
       uint32_t metaSize = sizeof(*castedMsg);
@@ -65,11 +71,14 @@ namespace flexr {
       else
         debug_print("msg->dataSize is not matched to real data size");
 
-      castedMsg->data.clear();
+      if(freeMsgData)
+      {
+        castedMsg->data.clear();
+      }
+
+      return true;
     }
 
   }
 }
-
-#endif
 

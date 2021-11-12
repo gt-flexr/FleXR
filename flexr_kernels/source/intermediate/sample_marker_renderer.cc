@@ -34,37 +34,47 @@ namespace flexr
 
     raft::kstatus SampleMarkerRenderer::run()
     {
+      double st, et;
       SamMarRendFrame     *inFrame   = portManager.getInput<SamMarRendFrame>("in_frame");
       SamMarRendInCamPose *inCamPose = portManager.getInput<SamMarRendInCamPose>("in_cam_pose");
       SamMarRendInKey     *inKey     = portManager.getInput<SamMarRendInKey>("in_key");
 
-      SamMarRendFrame     *outFrame  = portManager.getOutputPlaceholder<SamMarRendFrame>("out_frame");
+      if(inKey != nullptr)
+        if(inKey->data != 0) debug_print("input key: %c", inKey->data);
 
-      double st, et;
-
-      st = getTsMs();
-      inFrame->printHeader();
-      outFrame->setHeader(inFrame->tag, inFrame->seq, inFrame->ts, inFrame->dataSize);
-      outFrame->data = inFrame->data;
-
-      cv::Vec3d rvec, tvec;
-      if(inCamPose != nullptr)
+      if(inFrame != nullptr)
       {
-        rvec = cv::Vec3d(inCamPose->data.rx, inCamPose->data.ry, inCamPose->data.rz);
-        tvec = cv::Vec3d(inCamPose->data.tx, inCamPose->data.ty, inCamPose->data.tz);
+        SamMarRendFrame *outFrame  = portManager.getOutputPlaceholder<SamMarRendFrame>("out_frame");
+
+
+        st = getTsMs();
+        outFrame->setHeader(inFrame->tag, inFrame->seq, inFrame->ts, inFrame->dataSize);
+        outFrame->data = inFrame->data;
+
+        cv::Vec3d rvec, tvec;
+        if(inCamPose != nullptr)
+        {
+          rvec = cv::Vec3d(inCamPose->data.rx, inCamPose->data.ry, inCamPose->data.rz);
+          tvec = cv::Vec3d(inCamPose->data.tx, inCamPose->data.ty, inCamPose->data.tz);
+          debug_print("Marker Rotation: %f / %f / %f", inCamPose->data.rx, inCamPose->data.ry, inCamPose->data.rz);
+          cv::aruco::drawAxis(outFrame->data.useAsCVMat(), camIntrinsic, camDistCoeffs, rvec, tvec, 0.05);
+        }
+
+        et = getTsMs();
+
+        portManager.sendOutput("out_frame", outFrame);
+        if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}", st, et, et-st);
       }
-      cv::aruco::drawAxis(outFrame->data.useAsCVMat(), camIntrinsic, camDistCoeffs, rvec, tvec, 0.05);
-
-      et = getTsMs();
-
-      portManager.sendOutput("out_frame", outFrame);
+      else
+      {
+        debug_print("received corrupted frame");
+      }
 
       portManager.freeInput("in_frame", inFrame);
       portManager.freeInput("in_key", inKey);
       portManager.freeInput("in_cam_pose", inCamPose);
 
       debug_print("st(%lf) et(%lf) exe(%lf)", st, et, et-st);
-      if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}", st, et, et-st);
       return raft::proceed;
     }
 

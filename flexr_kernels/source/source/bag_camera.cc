@@ -10,7 +10,7 @@ namespace flexr
     BagCamera::BagCamera(std::string id): FleXRKernel(id) {
       setName("BagCamera");
       seq = 0;
-      portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy);
+      portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, utils::serializeRawFrame);
     }
     BagCamera::~BagCamera() {}
 
@@ -42,7 +42,6 @@ namespace flexr
 
       outFrame->data = bagReader.getNextFrame();
       outFrame->setHeader("bag_frame", seq++, getTsNow(), outFrame->data.useAsCVMat().total()*outFrame->data.useAsCVMat().elemSize());
-      outFrame->printHeader();
 
       portManager.sendOutput<BagCameraMsgType>("out_frame", outFrame);
 

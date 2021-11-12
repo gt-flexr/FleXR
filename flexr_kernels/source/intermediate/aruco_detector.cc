@@ -14,8 +14,7 @@ namespace flexr
     {
       setName("ArUcoDetector");
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, utils::deserializeRawFrame);
-      portManager.registerOutPortTag("out_marker_pose",
-                                     utils::sendLocalBasicCopy<ArUcoDetectorOutPoseType>);
+      portManager.registerOutPortTag("out_marker_pose", utils::sendLocalBasicCopy<ArUcoDetectorOutPoseType>);
       markerDict = cv::aruco::getPredefinedDictionary(dictName);
 
       camIntrinsic  = cv::Mat(3, 3, CV_64FC1);
@@ -58,6 +57,8 @@ namespace flexr
 
         debug_print("Marker Rotation: %f / %f / %f", roll, pitch, yaw);
 
+        outMarkerPose->setHeader("marker pose", inFrame->seq, inFrame->ts, sizeof(outMarkerPose->data));
+
         outMarkerPose->data.rx = roll;
         outMarkerPose->data.ry = pitch;
         outMarkerPose->data.rz = yaw;
@@ -65,14 +66,13 @@ namespace flexr
         outMarkerPose->data.tx = tvecs[0][0];
         outMarkerPose->data.ty = tvecs[0][1];
         outMarkerPose->data.tz = tvecs[0][2];
+        portManager.sendOutput("out_marker_pose", outMarkerPose);
       }
       et = getTsMs();
 
-      portManager.sendOutput("out_marker_pose", outMarkerPose);
       inFrame->data.release();
       portManager.freeInput("in_frame", inFrame);
 
-      debug_print("st(%lf) et(%lf) exe(%lf)", st, et, et-st);
       if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}", st, et, et-st);
       return raft::proceed;
     }
