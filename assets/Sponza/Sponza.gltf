@@ -7833,16 +7833,6 @@
                     }
                 },
                 {
-                    "indices": 215,
-                    "material": 2,
-                    "mode": 4,
-                    "attributes": {
-                        "POSITION": 216,
-                        "TEXCOORD_0": 217,
-                        "NORMAL": 218
-                    }
-                },
-                {
                     "indices": 219,
                     "material": 5,
                     "mode": 4,

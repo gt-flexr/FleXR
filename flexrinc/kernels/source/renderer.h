@@ -120,16 +120,17 @@ struct DrawInfo
   uint32_t indexCount   {0};
   uint32_t indexOffset  {0};
   uint32_t vertexOffset {0};
-  uint32_t imageId      {0};
+  uint32_t textureId    {0};
 };
 
 struct Scene
 {
   struct Vertex
   {
-    float px {0}, py {0}, pz {0}; // position
-    float nx {0}, ny {0}, nz {0}; // normal
-    float tu {0}, tv {0};         // texcoord
+    float px {0}, py {0}, pz {0};         // Position
+    float nx {0}, ny {0}, nz {0};         // Normal
+    float tx {0}, ty {0}, tz {0}, tw {0}; // Tangent
+    float tu {0}, tv {0};                 // Texcoord
   };
 
   using Index = uint16_t;
@@ -138,7 +139,8 @@ struct Scene
   std::vector<Index>    indices;
   std::vector<Vertex>   vertices;
 
-  Image imageArray;
+  Image baseColorTextures;
+  Image normalTextures;
 };
 
 template <typename T>
@@ -165,7 +167,6 @@ auto CreateSampler(
   vk::Filter      minFilter,
   uint32_t        mipLevels = 1
 ) -> vk::Sampler;
-
 
 auto CreateAttachmentDescription(
   const Image& image,
@@ -371,7 +372,7 @@ struct RenderFrame
 
 struct DrawPushConstant
 {
-  uint32_t imageId {0};
+  uint32_t textureId {0};
 };
 
 class Renderer
@@ -414,7 +415,6 @@ private:
   {
     glm::mat4 mvpMat;
     glm::mat4 modelMat;
-    glm::mat4 normalMat;
   };
   FrameData           m_frameData;
 };

@@ -663,12 +663,16 @@ auto LoadScene(const Context& context, const std::filesystem::path& path) -> Sce
   const auto gltfScene = fx::gltf::LoadFromText(path);
   debug_print("Loading glTF scene with %d meshe(s)", gltfScene.meshes.size());
 
-  std::map<uint32_t, std::filesystem::path> uniqueImagePaths;
+  struct TexturePaths
+  {
+    std::filesystem::path baseColorTexturePath;
+    std::filesystem::path normalTexturePath;
+  };
+  std::map<uint32_t, TexturePaths> uniqueTexturePaths;
 
   for (const auto& gltfMesh : gltfScene.meshes)
   {
-    debug_print("-- Loading mesh %s with %d primitive(s)",
-      gltfMesh.name.c_str(), gltfMesh.primitives.size());
+    debug_print("-- Loading mesh %s with %d primitive(s)", gltfMesh.name.c_str(), gltfMesh.primitives.size());
 
     for (const auto& primitive : gltfMesh.primitives)
     {
@@ -677,6 +681,7 @@ auto LoadScene(const Context& context, const std::filesystem::path& path) -> Sce
       const auto indexBuffer    = vku::GetGLTFBuffer<uint16_t, 1>(gltfScene, primitive.indices);
       const auto positionBuffer = vku::GetGLTFBuffer<float,    3>(gltfScene, primitive.attributes.at("POSITION"));
       const auto normalBuffer   = vku::GetGLTFBuffer<float,    3>(gltfScene, primitive.attributes.at("NORMAL"));
+      const auto tangentBuffer  = vku::GetGLTFBuffer<float,    4>(gltfScene, primitive.attributes.at("TANGENT"));
       const auto texcoordBuffer = vku::GetGLTFBuffer<float,    2>(gltfScene, primitive.attributes.at("TEXCOORD_0"));
 
       scene.indices.insert(std::end(scene.indices), indexBuffer.data, indexBuffer.data + indexBuffer.count);
@@ -692,43 +697,68 @@ auto LoadScene(const Context& context, const std::filesystem::path& path) -> Sce
           normalBuffer.data  [normalBuffer.stride   * i + 0],
           normalBuffer.data  [normalBuffer.stride   * i + 1],
           normalBuffer.data  [normalBuffer.stride   * i + 2],
+          tangentBuffer.data [tangentBuffer.stride  * i + 0],
+          tangentBuffer.data [tangentBuffer.stride  * i + 1],
+          tangentBuffer.data [tangentBuffer.stride  * i + 2],
+          tangentBuffer.data [tangentBuffer.stride  * i + 3],
           texcoordBuffer.data[texcoordBuffer.stride * i + 0],
           texcoordBuffer.data[texcoordBuffer.stride * i + 1],
         };
         scene.vertices.push_back(vertex);
       }
 
+      const auto GetTexturePath = [&](uint32_t textureId) -> std::filesystem::path
+      {
+        const auto  imageId  = gltfScene.textures[textureId].source;
+        const auto& filename = gltfScene.images[imageId].uri;
+        return path.parent_path() / filename;
+      };
+
       // TODO: First check if material is present
-      const auto& material  = gltfScene.materials[primitive.material];
-      const auto  textureId = material.pbrMetallicRoughness.baseColorTexture.index;
-      const auto  imageId   = gltfScene.textures[textureId].source;
+      const auto& material = gltfScene.materials[primitive.material];
+      const auto textureId = material.pbrMetallicRoughness.baseColorTexture.index;
+      const TexturePaths texturePaths
+      {
+        GetTexturePath(textureId),
+        GetTexturePath(material.normalTexture.index),
+      };
+      const auto [iter, status] = uniqueTexturePaths.emplace(textureId, texturePaths);
+      const uint32_t newTextureId = std::distance(std::begin(uniqueTexturePaths), iter);
 
-      const auto& filename  = gltfScene.images[imageId].uri;
-      const auto  imagePath = path.parent_path() / filename;
-
-      const auto [iter, status] = uniqueImagePaths.emplace(imageId, imagePath);
-      const uint32_t newImageId = std::distance(std::begin(uniqueImagePaths), iter);
-
-      scene.drawInfos.push_back({indexBuffer.count, indexBufferOffset, vertexBufferOffset, newImageId});
+      scene.drawInfos.push_back({indexBuffer.count, indexBufferOffset, vertexBufferOffset, newTextureId});
       indexBufferOffset  += indexBuffer.count;
       vertexBufferOffset += positionBuffer.count;
 
-      debug_print("---- Loaded primitive with %6d vertices and image ID %d",
-        positionBuffer.count, newImageId);
+      debug_print("---- Loaded primitive with %6d vertices and texture ID %d",
+        positionBuffer.count, newTextureId);
    }
   }
 
-  std::vector<std::filesystem::path> imagePaths (uniqueImagePaths.size());
-  std::transform(
-    std::cbegin(uniqueImagePaths), std::cend(uniqueImagePaths),
-    std::begin(imagePaths),
-    [](const auto& p) -> std::filesystem::path { return p.second; });
+  // Unzip unique texture paths into separate vectors
+  const auto numUniqueTextures = uniqueTexturePaths.size();
+  std::vector<std::filesystem::path> baseColorTexturePaths;
+  std::vector<std::filesystem::path> normalTexturePaths;
+  std::for_each(
+    std::cbegin(uniqueTexturePaths), std::cend(uniqueTexturePaths),
+    [&](const auto& p) mutable
+    {
+      baseColorTexturePaths.push_back(p.second.baseColorTexturePath);
+      normalTexturePaths.push_back(p.second.normalTexturePath);
+    });
 
   // TODO: Use per-mesh image array
-  debug_print("-- Loading %d images in scene", imagePaths.size());
   constexpr vk::Extent3D extent {1024, 1024, 1}; // TODO: Parameterize
-  scene.imageArray = vku::ImageBuilder(
-    extent, vk::Format::eR8G8B8A8Srgb, imagePaths)
+
+  debug_print("-- Loading %d base color textures in scene", numUniqueTextures);
+  scene.baseColorTextures = vku::ImageBuilder(
+    extent, vk::Format::eR8G8B8A8Srgb, baseColorTexturePaths)
+    .SetUsage(vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst)
+    .SetMipLevels(vku::ImageBuilder::sAllMipLevels)
+    .Build(context);
+
+  debug_print("-- Loading %d normal textures in scene", numUniqueTextures);
+  scene.normalTextures = vku::ImageBuilder(
+    extent, vk::Format::eR8G8B8A8Unorm, normalTexturePaths)
     .SetUsage(vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst)
     .SetMipLevels(vku::ImageBuilder::sAllMipLevels)
     .Build(context);
@@ -744,7 +774,7 @@ auto DrawScene(
 {
   for (const auto& di : scene.drawInfos)
   {
-    vku::PushConstant<DrawPushConstant> pushConstant {di.imageId};
+    vku::PushConstant<DrawPushConstant> pushConstant {di.textureId};
     vku::BindPushConstant(cmdBuf, pipelineLayout, pushConstant);
     cmdBuf.drawIndexed(di.indexCount, 1, di.indexOffset, di.vertexOffset, 0);
   }
@@ -791,9 +821,8 @@ Renderer::Renderer(
     glm::vec3 {0, -1, 0});
   const glm::mat4 projMat  = glm::perspective(glm::radians(60.0), aspectRatio, 0.1, 100.0);
 
-  m_frameData.mvpMat    = projMat * viewMat * modelMat;
-  m_frameData.modelMat  = modelMat;
-  m_frameData.normalMat = glm::transpose(glm::inverse(modelMat));
+  m_frameData.mvpMat   = projMat * viewMat * modelMat;
+  m_frameData.modelMat = modelMat;
 
   /////////////////////////////////////////////////////////////////////////////
   // Buffers
@@ -910,12 +939,14 @@ Renderer::Renderer(
     {
       {vk::DescriptorType::eUniformBuffer},
       {vk::DescriptorType::eStorageBuffer},
-      {vk::DescriptorType::eCombinedImageSampler, static_cast<uint32_t>(m_scene.imageArray.views.size())},
+      {vk::DescriptorType::eCombinedImageSampler, static_cast<uint32_t>(m_scene.baseColorTextures.views.size())},
+      {vk::DescriptorType::eCombinedImageSampler, static_cast<uint32_t>(m_scene.normalTextures.views.size())},
     });
 
   vku::UpdateDescriptorSet(m_context, m_descSet, 0, m_uniformBuffer);
   vku::UpdateDescriptorSet(m_context, m_descSet, 1, m_vertexBuffer);
-  vku::UpdateDescriptorSet(m_context, m_descSet, 2, m_scene.imageArray);
+  vku::UpdateDescriptorSet(m_context, m_descSet, 2, m_scene.baseColorTextures);
+  vku::UpdateDescriptorSet(m_context, m_descSet, 3, m_scene.normalTextures);
 
   /////////////////////////////////////////////////////////////////////////////
   // Graphics Pipeline
@@ -925,7 +956,9 @@ Renderer::Renderer(
     m_context, m_descSet, vku::PushConstant<DrawPushConstant> {});
 
   const auto shaderStages = vku::CreateGraphicsPipelineShaderStages(
-    m_context, "shaders/default.vert.spv", "shaders/default.frag.spv");
+    m_context,
+    "shaders/forward_rendering.vert.spv",
+    "shaders/forward_rendering.frag.spv");
 
   vk::PipelineVertexInputStateCreateInfo vertexInputState; // Empty for manual vertex attribute fetch in shader
 

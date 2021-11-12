@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.21)
 set(SHADER_DIR ${CMAKE_SOURCE_DIR}/../shaders)
 
 set(SHADERS
-  ${SHADER_DIR}/default.vert
-  ${SHADER_DIR}/default.frag)
+  ${SHADER_DIR}/forward_rendering.vert
+  ${SHADER_DIR}/forward_rendering.frag)
 
 # Create output directory for SPIRV shaders
 set(OUT_DIR shaders)
