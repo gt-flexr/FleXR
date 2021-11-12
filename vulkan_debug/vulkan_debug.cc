@@ -16,7 +16,7 @@ auto main(int argc, char** argv) -> int
   constexpr auto defaultAssetPath = "assets/Sponza/Sponza.gltf";
   const auto assetPath = argc > 1 ? argv[1] : defaultAssetPath;
 
-  Renderer renderer {512, 512, assetPath};
+  Renderer renderer {1280, 720, assetPath};
   renderer.Render();
   const auto& frame = renderer.GetRenderFrame();
   const auto stride = frame.width * frame.channels;

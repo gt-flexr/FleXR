@@ -2,6 +2,7 @@
 
 #include <array>
 #include <algorithm>
+#include <cmath>
 #include <dlfcn.h> // For dlopen
 #include <fstream>
 #include <map>
@@ -28,7 +29,7 @@ if (!(status)) { \
 
 #ifndef debug_print
 #define debug_print(...) do { \
-  fprintf(stderr, "\033[1;31m[DEBUG] \033[0;32m[FUNC] %s \033[0m", __PRETTY_FUNCTION__); \
+  fprintf(stderr, "\033[1;31m[DEBUG] \033[0;32m[FUNC] %s \033[0m", __func__); \
   fprintf(stderr, __VA_ARGS__); \
   fprintf(stderr, "\n"); \
 } while (0)
@@ -62,12 +63,16 @@ auto CreateContext() -> Context
   const auto instance = vkbInstance.instance;
   VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
 
+  vk::PhysicalDeviceFeatures features;
+  features.samplerAnisotropy = true;
+
   vkb::PhysicalDeviceSelector physicalDeviceSelector {vkbInstance};
   const auto physicalDeviceStatus = physicalDeviceSelector
     .set_minimum_version(1, 2)
     .add_required_extension("VK_KHR_get_memory_requirements2")
     .add_required_extension("VK_KHR_bind_memory2")
     .add_required_extension("VK_KHR_maintenance1")
+    .set_required_features(features)
     .select();
   ASSERT_THROW(physicalDeviceStatus,
     "Failed to select vulkan physical device! %s", physicalDeviceStatus.error().message().c_str());
@@ -155,15 +160,15 @@ ImageBuilder::ImageBuilder(vk::Extent3D extent, vk::Format format, VmaMemoryUsag
     (vmaUsage == VMA_MEMORY_USAGE_CPU_TO_GPU) || (vmaUsage == VMA_MEMORY_USAGE_GPU_TO_CPU) ?
     vk::ImageTiling::eLinear : vk::ImageTiling::eOptimal;
 
-  const auto initialLayout =
-    tiling == vk::ImageTiling::eLinear ? vk::ImageLayout::ePreinitialized : vk::ImageLayout::eUndefined;
+  const auto layout = tiling == vk::ImageTiling::eLinear ?
+    vk::ImageLayout::ePreinitialized : vk::ImageLayout::eUndefined;
 
   imageCI.imageType     = vk::ImageType::e2D;
   imageCI.format        = format;
   imageCI.extent        = extent;
   imageCI.arrayLayers   = 1;
   imageCI.mipLevels     = 1;
-  imageCI.initialLayout = initialLayout;
+  imageCI.initialLayout = layout;
   imageCI.samples       = vk::SampleCountFlagBits::e1;
   imageCI.tiling        = tiling;
   imageCI.usage         = vk::ImageUsageFlagBits::eColorAttachment;
@@ -188,61 +193,50 @@ auto ImageBuilder::SetTiling(vk::ImageTiling tiling) -> ImageBuilder&
   return *this;
 }
 
-auto ImageBuilder::SetLayers(uint32_t layers) -> ImageBuilder&
+auto ImageBuilder::SetArrayLayers(uint32_t layers) -> ImageBuilder&
 {
   imageCI.arrayLayers = layers;
   return *this;
 }
 
+auto ImageBuilder::SetMipLevels(uint32_t levels) -> ImageBuilder&
+{
+  // Assume automatic mipmap generation
+  if (levels == sAllMipLevels)
+    levels = CalculateMipLevels({imageCI.extent.width, imageCI.extent.height});
+  imageCI.usage     |= vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
+  imageCI.mipLevels  = levels;
+  return *this;
+}
+
 auto ImageBuilder::Build(const Context& context) const -> Image
 {
+  Image result;
+  result.format       = imageCI.format;
+  result.extent       = imageCI.extent;
+  result.mipLevels    = imageCI.mipLevels;
+  result.arrayLayers  = imageCI.arrayLayers;
+  result.usage        = imageCI.usage;
+  result.aspect       =
+    imageCI.usage == vk::ImageUsageFlagBits::eDepthStencilAttachment ?
+    vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
+
   VmaAllocationCreateInfo allocationCI {};
   allocationCI.usage = vmaUsage;
 
-  VkImage vkImage;
-  VmaAllocation allocation {};
   const auto imageStatus = vmaCreateImage(
     context.allocator,
     reinterpret_cast<const VkImageCreateInfo*>(&imageCI),
     &allocationCI,
-    &vkImage,
-    &allocation,
+    reinterpret_cast<VkImage*>(&result.image),
+    &result.allocation,
     nullptr);
   ASSERT_THROW(imageStatus == VK_SUCCESS, "Failed to create vulkan image! %d", imageStatus);
-  const auto image = vk::Image {vkImage};
 
-  // TODO: Add SetSampler() method
-  vk::SamplerCreateInfo samplerCI;
-  samplerCI.magFilter = vk::Filter::eLinear;
-  samplerCI.minFilter = vk::Filter::eLinear;
-  const auto sampler = context.device.createSampler(samplerCI);
-
-
-  const auto aspect =
-    imageCI.usage == vk::ImageUsageFlagBits::eDepthStencilAttachment ?
-    vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
-
-  if (paths.size())
-  {
-    char* hostPtr {nullptr};
-    vmaMapMemory(context.allocator, allocation, reinterpret_cast<void**>(&hostPtr));
-    auto layer = 0U;
-    for (const auto& path : paths)
-    {
-      auto width    = 0;
-      auto height   = 0;
-      auto channels = 0;
-      constexpr auto preferred = STBI_rgb_alpha; // TODO: Parameterize
-      const auto data = stbi_load(path.c_str(), &width, &height, &channels, preferred);
-      debug_print("Loading %dx%dx%d image %s", width, height, channels, path.filename().c_str());
-
-      const auto subresourceLayout = context.device.getImageSubresourceLayout(image, {aspect, 0, layer++});
-      std::memcpy(hostPtr + subresourceLayout.offset, data, width * height * preferred);
-
-      stbi_image_free(data);
-    }
-    vmaUnmapMemory(context.allocator, allocation);
-  }
+  // All images have default sampler
+  // TODO: Add support for other sampler types and configuring with sampler
+  result.sampler = CreateSampler(
+    context, vk::Filter::eLinear, vk::Filter::eLinear, imageCI.mipLevels);
 
   constexpr auto validImageViewUsageFlags =
     vk::ImageUsageFlagBits::eSampled                |
@@ -252,27 +246,38 @@ auto ImageBuilder::Build(const Context& context) const -> Image
     vk::ImageUsageFlagBits::eInputAttachment        |
     vk::ImageUsageFlagBits::eTransientAttachment;
 
-  // Only create image vies if possible
-  // One view per array layer for image arrays
+  // Only create image views if possible and one view per array layer for image arrays
   if (imageCI.usage & validImageViewUsageFlags)
   {
-    std::vector<vk::ImageView> views (imageCI.arrayLayers);
+    result.views.resize(imageCI.arrayLayers);
     auto layerCounter = 0U;
     std::generate(
-      std::begin(views), std::end(views),
+      std::begin(result.views), std::end(result.views),
       [&]() mutable -> vk::ImageView
       {
         vk::ImageViewCreateInfo imageViewCI;
-        imageViewCI.image    = image;
+        imageViewCI.image    = result.image;
         imageViewCI.viewType = vk::ImageViewType::e2D;
         imageViewCI.format   = imageCI.format; // TODO: Support aliased formats
-        imageViewCI.subresourceRange = {aspect, 0, 1, layerCounter++, 1};
+        imageViewCI.subresourceRange = {result.aspect, 0, imageCI.mipLevels, layerCounter++, 1};
         return context.device.createImageView(imageViewCI);
       });
-    return {allocation, imageCI.format, imageCI.usage, aspect, image, sampler, views};
   }
 
-  return {allocation, imageCI.format, imageCI.usage, aspect, image, sampler};
+  vku::SubmitImmediate(context, [&](vk::CommandBuffer cmdBuf)
+  {
+    vku::SetImageLayout(
+      cmdBuf, result,
+      imageCI.initialLayout, vk::ImageLayout::eGeneral,
+      {result.aspect, 0, imageCI.mipLevels, 0, imageCI.arrayLayers});
+  });
+
+  if (paths.size()) LoadImage(context, result, paths);
+
+  if (imageCI.mipLevels > 1)
+    GenerateMipmaps(context, result, vk::ImageLayout::eShaderReadOnlyOptimal);
+
+  return result;
 }
 
 auto CreateBuffer(
@@ -300,6 +305,25 @@ auto CreateBuffer(
   ASSERT_THROW(bufferStatus == VK_SUCCESS, "Failed to create vulkan buffer! %d", bufferStatus);
 
   return {allocation, buffer};
+}
+
+auto CreateSampler(
+  const Context&  context,
+  vk::Filter      magFilter,
+  vk::Filter      minFilter,
+  uint32_t        mipLevels
+) -> vk::Sampler
+{
+  vk::SamplerCreateInfo ci;
+  ci.magFilter         = magFilter;
+  ci.minFilter         = minFilter;
+  ci.mipmapMode        = vk::SamplerMipmapMode::eLinear;
+  ci.mipLodBias        = 0;
+  ci.anisotropyEnable  = true;
+  ci.maxAnisotropy     = 16;
+  ci.minLod            = 0;
+  ci.maxLod            = mipLevels;
+  return context.device.createSampler(ci);
 }
 
 auto CreateAttachmentDescription(
@@ -546,6 +570,90 @@ auto CalculateDataTypeSize(const fx::gltf::Accessor& accessor) -> uint32_t
   return 0; // Only to suppress compiler warning
 }
 
+auto LoadImage(
+  const Context&  context,
+  const Image&    image,
+  vk::ArrayProxy<const std::filesystem::path> paths
+) -> void
+{
+  char* hostPtr {nullptr};
+  vmaMapMemory(context.allocator, image.allocation, reinterpret_cast<void**>(&hostPtr));
+  auto layer = 0U;
+  for (const auto& path : paths)
+  {
+    auto width    = 0;
+    auto height   = 0;
+    auto channels = 0;
+    constexpr auto preferred = STBI_rgb_alpha; // TODO: Parameterize
+    const auto data = stbi_load(path.c_str(), &width, &height, &channels, preferred);
+    debug_print("Loading %dx%dx%d image %s", width, height, channels, path.filename().c_str());
+
+    const auto layout = context.device.getImageSubresourceLayout(
+      image.image, {image.aspect, 0, layer++});
+    std::memcpy(hostPtr + layout.offset, data, width * height * preferred);
+
+    stbi_image_free(data);
+  }
+  vmaUnmapMemory(context.allocator, image.allocation);
+}
+
+auto GenerateMipmaps(
+  const Context&  context,
+  const Image&    image,
+  vk::ImageLayout finalLayout
+) -> void
+{
+  vku::SubmitImmediate(context, [&](vk::CommandBuffer cmdBuf)
+  {
+    const auto numLayers = image.arrayLayers;
+    const auto numLevels = image.mipLevels;
+
+    vku::SetImageLayout(
+      cmdBuf, image,
+      vk::ImageLayout::eGeneral, vk::ImageLayout::eTransferDstOptimal,
+      {image.aspect, 0, numLevels, 0, numLayers});
+
+    for (auto layer = 0U; layer < numLayers; layer++)
+    {
+      int mipWidth  = image.extent.width;
+      int mipHeight = image.extent.height;
+
+      for (auto level = 1U; level < numLevels; level++)
+      {
+        vk::ImageBlit region;
+        region.srcSubresource = {image.aspect, level - 1, layer, 1};
+        region.srcOffsets[0]  = vk::Offset3D {0, 0, 0};
+        region.srcOffsets[1]  = vk::Offset3D {std::max(1, mipWidth), std::max(1, mipHeight), 1};
+        mipWidth  >>= 1;
+        mipHeight >>= 1;
+        region.dstSubresource = {image.aspect, level - 0, layer, 1};
+        region.dstOffsets[0]  = vk::Offset3D {0, 0, 0};
+        region.dstOffsets[1]  = vk::Offset3D {std::max(1, mipWidth), std::max(1, mipHeight), 1};
+
+        vku::SetImageLayout(
+          cmdBuf, image,
+          vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eTransferSrcOptimal,
+          {image.aspect, level - 1, 1, layer, 1});
+
+        cmdBuf.blitImage(
+          image.image, vk::ImageLayout::eTransferSrcOptimal,
+          image.image, vk::ImageLayout::eTransferDstOptimal,
+          region, vk::Filter::eLinear);
+      } // levels
+    } // layers
+
+    vku::SetImageLayout(
+      cmdBuf, image,
+      vk::ImageLayout::eTransferSrcOptimal, finalLayout,
+      {image.aspect, 0, numLevels - 1, 0, numLayers});
+
+    vku::SetImageLayout(
+      cmdBuf, image,
+      vk::ImageLayout::eTransferDstOptimal, finalLayout,
+      {image.aspect, numLevels - 1, 1, 0, numLayers});
+  });
+}
+
 auto LoadScene(const Context& context, const std::filesystem::path& path) -> Scene
 {
   Scene scene;
@@ -610,11 +718,11 @@ auto LoadScene(const Context& context, const std::filesystem::path& path) -> Sce
    }
   }
 
-  std::vector<std::filesystem::path> imagePaths;
-  for (const auto [index, path] : uniqueImagePaths)
-  {
-    imagePaths.push_back(path);
-  }
+  std::vector<std::filesystem::path> imagePaths (uniqueImagePaths.size());
+  std::transform(
+    std::cbegin(uniqueImagePaths), std::cend(uniqueImagePaths),
+    std::begin(imagePaths),
+    [](const auto& p) -> std::filesystem::path { return p.second; });
 
   // TODO: Use per-mesh image array
   debug_print("-- Loading %d images in scene", imagePaths.size());
@@ -622,15 +730,8 @@ auto LoadScene(const Context& context, const std::filesystem::path& path) -> Sce
   scene.imageArray = vku::ImageBuilder(
     extent, vk::Format::eR8G8B8A8Srgb, imagePaths)
     .SetUsage(vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst)
+    .SetMipLevels(vku::ImageBuilder::sAllMipLevels)
     .Build(context);
-
-  vku::SubmitImmediate(context, [&](vk::CommandBuffer cmdBuf)
-  {
-    const uint32_t numLayers = scene.imageArray.views.size();
-    vku::SetImageLayout(
-      cmdBuf, scene.imageArray, vk::ImageLayout::ePreinitialized, vk::ImageLayout::eShaderReadOnlyOptimal,
-      {scene.imageArray.aspect, 0, 1, 0, numLayers});
-  });
 
   return scene;
 }
@@ -647,6 +748,11 @@ auto DrawScene(
     vku::BindPushConstant(cmdBuf, pipelineLayout, pushConstant);
     cmdBuf.drawIndexed(di.indexCount, 1, di.indexOffset, di.vertexOffset, 0);
   }
+}
+
+auto CalculateMipLevels(vk::Extent2D extent) -> uint32_t
+{
+  return 1 + static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height))));
 }
 
 } // namespace vulkan_utils
@@ -722,7 +828,7 @@ Renderer::Renderer(
   /////////////////////////////////////////////////////////////////////////////
 
   m_colorImage = vku::ImageBuilder(
-    m_extent, vk::Format::eR8G8B8A8Unorm, VMA_MEMORY_USAGE_GPU_ONLY)
+    m_extent, vk::Format::eR8G8B8A8Srgb, VMA_MEMORY_USAGE_GPU_ONLY)
     .SetUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc)
     .Build(m_context);
 

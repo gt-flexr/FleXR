@@ -36,7 +36,7 @@ struct Context
 
 struct VmaResource
 {
-  VmaAllocation allocation;
+  VmaAllocation allocation {};
 };
 
 template <typename T>
@@ -50,8 +50,12 @@ struct Buffer : VmaResource
 struct Image : VmaResource
 {
   vk::Format            format;
+  vk::Extent3D          extent;
+  uint32_t              mipLevels   {0};
+  uint32_t              arrayLayers {0};
   vk::ImageUsageFlags   usage;
   vk::ImageAspectFlags  aspect;
+
   vk::Image             image;
   vk::Sampler           sampler;
 
@@ -61,12 +65,15 @@ struct Image : VmaResource
 class ImageBuilder
 {
 public:
+  static constexpr uint32_t sAllMipLevels = 0;
+
   ImageBuilder(vk::Extent3D extent, vk::Format, VmaMemoryUsage vmaUsage);
   ImageBuilder(vk::Extent3D extent, vk::Format, vk::ArrayProxy<std::filesystem::path> paths);
 
-  auto SetUsage(vk::ImageUsageFlags usage) -> ImageBuilder&;
-  auto SetTiling(vk::ImageTiling tiling)   -> ImageBuilder&;
-  auto SetLayers(uint32_t layers)          -> ImageBuilder&;
+  auto SetUsage(vk::ImageUsageFlags usage)  -> ImageBuilder&;
+  auto SetTiling(vk::ImageTiling tiling)    -> ImageBuilder&;
+  auto SetArrayLayers(uint32_t layers)      -> ImageBuilder&;
+  auto SetMipLevels(uint32_t levels)        -> ImageBuilder&;
 
   auto Build(const Context& context) const -> Image;
 
@@ -151,6 +158,14 @@ auto CreateBuffer(
   vk::BufferUsageFlags  usage,
   VmaMemoryUsage        memoryUsage
 ) -> Buffer;
+
+auto CreateSampler(
+  const Context&  context,
+  vk::Filter      magFilter,
+  vk::Filter      minFilter,
+  uint32_t        mipLevels = 1
+) -> vk::Sampler;
+
 
 auto CreateAttachmentDescription(
   const Image& image,
@@ -242,10 +257,17 @@ auto SubmitWork(
   vk::CommandBuffer cmdBuf,
   bool              block=true) -> void;
 
-// TODO: Add destruction methods
-//auto DestroyContext(Context&& context) -> void;
-// auto DestroyBuffer(Buffer&& buffer) -> void;
-// auto DestroyImage(Image&& image) -> void;
+auto LoadImage(
+  const Context&  context,
+  const Image&    image,
+  vk::ArrayProxy<const std::filesystem::path> paths
+) -> void;
+
+auto GenerateMipmaps(
+  const Context&  context,
+  const Image&    image,
+  vk::ImageLayout finalLayout = vk::ImageLayout::eGeneral
+) -> void;
 
 auto LoadScene(const Context& context, const std::filesystem::path& path) -> Scene;
 
@@ -294,6 +316,8 @@ auto UpdateDescriptorSet(
     return context.device.updateDescriptorSets(writeDescSet, {});
   }
 }
+
+auto CalculateMipLevels(vk::Extent2D extent) -> uint32_t;
 
 template <typename T>
 inline auto SizeInBytes(T&& container)
