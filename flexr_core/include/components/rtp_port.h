@@ -31,13 +31,29 @@ namespace flexr {
     public:
       ~RtpPort()
       {
-        rtpSession->destroy_stream(stream);
-        rtpContext.destroy_session(rtpSession);
+        close();
       }
+
+
+      /**
+       * @brief Close RTP session
+       */
+      void close()
+      {
+        if(stream != nullptr)     rtpSession->destroy_stream(stream);
+        if(rtpSession != nullptr) rtpContext.destroy_session(rtpSession);
+
+        stream     = nullptr;
+        rtpSession = nullptr;
+      }
+
 
       RtpPort()
       {
+        rtpSession = nullptr;
+        stream     = nullptr;
       }
+
 
       /**
        * @brief Construct RTP session with initialization
@@ -52,7 +68,6 @@ namespace flexr {
       {
         init(addr, recvEvenPort, sendEvenPort);
       }
-
 
 
       /**
@@ -90,8 +105,6 @@ namespace flexr {
       }
 
 
-
-
       /**
        * @brief Send data as RTP stream
        * @param inData
@@ -110,8 +123,6 @@ namespace flexr {
         }
         return true;
       }
-
-
 
 
       /**
