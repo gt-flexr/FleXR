@@ -60,7 +60,7 @@ namespace flexr
       }
 
 
-      bool receiveMsg(bool inBlock, uint8_t* &outBuffer, uint32_t &outSize, uint32_t &outTs)
+      bool receiveMsg(bool inBlock, uint8_t* &outBuffer, uint32_t &outSize)
       {
         zmq::message_t msg;
 
@@ -69,21 +69,18 @@ namespace flexr
         else
           socket.recv(msg, zmq::recv_flags::dontwait);
 
-        debug_print("received Msg Size: %ld\n", msg.size());
         if(msg.size() > 0)
         {
           outSize = msg.size();
           outBuffer = new uint8_t[outSize];
           memcpy(outBuffer, msg.data(), outSize);
-          types::Message<int> *temp = (types::Message<int>*)outBuffer; // ts only
-          outTs = temp->ts;
-          debug_print("Received TCP msg: size(%ld), ts(%d)", msg.size(), outTs);
 
           return true;
         }
 
         return false;
       }
+
     };
   }
 }

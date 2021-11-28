@@ -1,0 +1,64 @@
+- kernel   : BagCamera
+  id       : bag_camera
+  frequency: 15
+  logger   : [bag_camera, bag_camera.log]
+  others   :
+    - frames_to_cache: 400
+      start_index    : 400
+      bag_path       :
+      bag_topic      : /camera/image_raw
+  output   :
+    - port_name      : out_frame
+      connection_type: local
+    - port_name      : out_frame2
+      connection_type: remote
+      duplicated_from: out_frame
+      remote_info    : [RTP, 127.0.0.1, 49991]
+
+
+- kernel   : Keyboard
+  id       : keyboard
+  frequency: 120
+  logger   : [keyboard, keyboard.log]
+  output   :
+    - port_name      : out_key
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 49993]
+  single   : true
+
+
+- kernel   : ArUcoCamLocator
+  id       : aruco_cam_locator
+  frequency: 60
+  logger   : [aruco_cam_locator, aruco_cam_locator.log]
+  others   :
+    - marker_dict: DICT_6X6_250
+      width       : 1920
+      height      : 1080
+  input    :
+    - port_name      : in_frame
+      connection_type: local
+  output    :
+    - port_name      : out_cam_pose
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 49995]
+
+
+- kernel   : CVDisplay
+  id       : cv_display
+  frequency: 60
+  logger   : [cv_display, cv_display.log]
+  input    :
+    - port_name      : in_frame
+      connection_type: remote
+      remote_info    : [RTP, 49997]
+  single   : true
+
+
+- local_connections:
+  - send_kernel   : bag_camera
+    send_port_name: out_frame
+    recv_kernel   : aruco_cam_locator
+    recv_port_name: in_frame
+    queue_size    : 1
+

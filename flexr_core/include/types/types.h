@@ -39,7 +39,6 @@ namespace flexr {
       public:
       float rx, ry, rz;
       float tx, ty, tz;
-      bool  vaild;
     };
 
 

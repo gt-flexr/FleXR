@@ -1,40 +1,40 @@
-#ifndef __FLEXR_CORE_UTILS_DESERIALIZE_FUNCS__
-#define __FLEXR_CORE_UTILS_DESERIALIZE_FUNCS__
+#pragma once
 
 #include "flexr_core/include/defs.h"
 #include "flexr_core/include/types/types.h"
 #include "flexr_core/include/types/frame.h"
-#include "flexr_core/include/components/flexr_port.h"
 
 namespace flexr {
   namespace utils {
 
-    static void deserializeRawFrame(uint8_t* &data, uint32_t &size, void** msg)
+    static bool deserializeRawFrame(uint8_t* &data, uint32_t &size, void** msg)
     {
+      bool received = true;
       types::Message<types::Frame> *castedFrame = static_cast<types::Message<types::Frame>*>(*msg);
       uint32_t msgMetaSize   = sizeof(*castedFrame);
-      uint32_t frameMetaSize = sizeof(types::Frame);
 
-      uint8_t *temp = data;
-      memcpy(castedFrame,        temp, msgMetaSize);    temp += msgMetaSize;
-      memcpy(&castedFrame->data, temp, frameMetaSize);  temp += frameMetaSize;
+      memcpy(castedFrame, data, msgMetaSize);
 
-      if(size-msgMetaSize-frameMetaSize != castedFrame->dataSize &&
-         size-msgMetaSize-frameMetaSize != castedFrame->data.dataSize)
+      if(size-msgMetaSize != castedFrame->dataSize || size-msgMetaSize != castedFrame->data.dataSize)
       {
-        debug_print("Data size(%d) mismatches to %d, %d, %d", size, msgMetaSize, frameMetaSize, castedFrame->dataSize);
+        debug_print("Data size(%d) mismatches to %d, %d", size, msgMetaSize, castedFrame->dataSize);
+        received = false;
       }
-
-      castedFrame->data.data = new uint8_t[castedFrame->dataSize];
-      memcpy(castedFrame->data.data, temp, castedFrame->dataSize);
+      else
+      {
+        castedFrame->data.data = new uint8_t[castedFrame->dataSize];
+        memcpy(castedFrame->data.data, data+msgMetaSize, castedFrame->dataSize);
+      }
 
       delete data;
       data = nullptr;
+      return received;
     }
 
 
-    static void deserializeEncodedFrame(uint8_t* &data, uint32_t &size, void** msg)
+    static bool deserializeEncodedFrame(uint8_t* &data, uint32_t &size, void** msg)
     {
+      bool received = true;
       types::Message<uint8_t*> *castedFrame = static_cast<types::Message<uint8_t*>*>(*msg);
       uint32_t metaSize = sizeof(*castedFrame);
 
@@ -45,16 +45,22 @@ namespace flexr {
         memcpy(castedFrame->data, data+metaSize, castedFrame->dataSize);
       }
       else
-        debug_print("received castedFrame->dataSize is not matched to size-metaSize");
+      {
+        debug_print("received castedFrame->dataSize is not matched to size-metaSize: %d / %d",
+                    castedFrame->dataSize, size-metaSize);
+        received = false;
+      }
 
       delete data;
       data = nullptr;
+      return received;
     }
 
 
     template <typename T>
-    void deserializeVector(uint8_t* &data, uint32_t &size, void** msg)
+    bool deserializeVector(uint8_t* &data, uint32_t &size, void** msg)
     {
+      bool received = true;
       T* castedMsg = static_cast<T*>(*msg);
       uint32_t metaSize = sizeof(*castedMsg);
 
@@ -68,14 +74,18 @@ namespace flexr {
         memcpy((void*)castedMsg->data.data(), data+metaSize, castedMsg->dataSize);
       }
       else
-        debug_print("received castedFrame->dataSize is not matched to size-metaSize");
+      {
+        debug_print("received castedMsg->dataSize is not matched to size-metaSize: %d / %d",
+                    castedMsg->dataSize, size-metaSize);
+        received = false;
+
+      }
 
       delete data;
       data = nullptr;
+      return received;
     }
 
   }
 }
-
-#endif
 

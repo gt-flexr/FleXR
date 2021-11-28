@@ -67,6 +67,7 @@ namespace flexr
       avcodec_close(decoderContext);
     }
 
+
     /* Run() */
     raft::kstatus FrameDecoder::run()
     {

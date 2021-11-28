@@ -1,5 +1,4 @@
-#ifndef __FLEXR_CORE_COMPONENTS_FLEXRPORT__
-#define __FLEXR_CORE_COMPONENTS_FLEXRPORT__
+#pragma once
 
 #include <bits/stdc++.h>
 #include <raftinc/port.hpp>
@@ -58,79 +57,42 @@ namespace flexr
          *  input message pointer to recv dst
          */
         template <typename T>
-        bool getInputFromRemote(T* &input)
+        bool getInputFromRemote(T* &inputMsg)
         {
-          uint8_t *data   = nullptr;
-          uint32_t size   = 0;
+          uint8_t *recvBuf   = nullptr;
+          uint32_t recvSize  = 0;
           bool isBlocking = true;
           bool received   = false;
 
-          if(dependency == PortDependency::BLOCKING)
-            isBlocking = true;
-          else
-            isBlocking = false;
+          if(dependency == PortDependency::BLOCKING) isBlocking = true;
+          else                                       isBlocking = false;
 
           if(protocol == RemoteProtocol::TCP)
           {
-            debug_print("getInputFromRemote TCP");
-            received = tcpPort.receiveMsg(isBlocking, data, size, input->ts);
+            received = tcpPort.receiveMsg(isBlocking, recvBuf, recvSize);
           }
-
           if(protocol == RemoteProtocol::RTP)
           {
-            debug_print("getInputFromRemote RTP");
-            received = rtpPort.receiveMsg(isBlocking, data, size, input->ts);
+            received = rtpPort.receiveMsg(isBlocking, recvBuf, recvSize);
           }
 
-          if(deserialize != 0 && received)
+          if(deserialize != 0 && received)  // deserialize need to set output->data properly & free data
           {
-            deserialize(data, size, (void**)&input); // deserialize need to set output->data properly & free data
-            received = true;
+            inputMsg = new T;
+            received = deserialize(recvBuf, recvSize, (void**)&inputMsg);
           }
-          if(received == false)
+          else if(deserialize == 0 && received && recvSize == sizeof(T)) // primitive msg (no need deser)
           {
-            debug_print("Failed to receive");
+            inputMsg = (T*)recvBuf;
+            recvBuf = nullptr;
+          }
+          else
+          {
+            debug_print("received failed...");
           }
 
+          if(recvBuf != nullptr) delete recvBuf;
           return received;
-        }
-
-
-        /**
-         * @brief Send output msg via internal network ports
-         * @param output
-         *  output message pointer to send src
-         */
-        template <typename T>
-        void sendOutputToRemote(T *output)
-        {
-          uint8_t *data     = nullptr;
-          uint32_t size     = 0;
-
-          if(serialize != 0)
-          {
-            serialize((void*)output, data, size); // serialize need to free output->data
-          }
-          else
-          {
-            // static msg: ex) T = Message<int>, Message<int[100]> ...
-            data         = (uint8_t*)output;
-            size         = sizeof(T);
-          }
-
-          if(protocol == RemoteProtocol::TCP)
-          {
-            zmq::message_t sendMsg(data, size);
-            tcpPort.socket.send(sendMsg, zmq::send_flags::none); // BK
-          }
-
-          if(protocol == RemoteProtocol::RTP)
-          {
-            rtpPort.send(data, size, output->ts); // NBK..., need to make BK
-          }
-
-          // delete serialized buffer after sending
-          if(serialize) delete data;
         }
 
 
@@ -150,8 +112,9 @@ namespace flexr
 
         std::function<void (FleXRPort*, void*)> sendLocalCopy;
 
-        std::function<void (void*,      uint8_t* &, uint32_t &)> serialize;
-        std::function<void (uint8_t* &, uint32_t &,     void**)> deserialize;
+        std::function<bool (void*,      uint8_t* &, uint32_t &, bool)> serialize;
+        std::function<bool (uint8_t* &, uint32_t &, void**)> deserialize;
+
 
         /**
          * @brief Check the existence of an activated local port
@@ -287,8 +250,8 @@ namespace flexr
               break;
 
             case PortState::REMOTE:
-              input = new T;
-              if(getInputFromRemote(input) == false) // for non-blocking recv
+              bool received = getInputFromRemote(input);
+              if(received == false && input != nullptr) // for failure
               {
                 delete input;
                 input = nullptr;
@@ -346,9 +309,50 @@ namespace flexr
             (*localPort)[tag].send();
             break;
           case PortState::REMOTE:
-            sendOutputToRemote(msg);
+            sendOutputToRemote(msg, true);
             break;
           }
+        }
+
+
+        /**
+         * @brief Send output msg via internal network ports
+         * @param output
+         *  output message pointer to send src
+         */
+        template <typename T>
+        void sendOutputToRemote(T *outputMsg, bool freeMsg)
+        {
+          uint8_t *sendBuf  = nullptr;
+          uint32_t sendSize = 0;
+
+          if(serialize != 0)
+          {
+            // serialize need to free output->data when freeMsgData==true
+            bool freeMsgData = freeMsg;
+            serialize((void*)outputMsg, sendBuf, sendSize, freeMsgData);
+          }
+          else
+          {
+            // static msg: ex) T = Message<int>, Message<int[100]> ...
+            sendBuf  = (uint8_t*)outputMsg;
+            sendSize = sizeof(T);
+          }
+
+          if(protocol == RemoteProtocol::TCP)
+          {
+            zmq::message_t zmqMsg(sendBuf, sendSize);
+            tcpPort.socket.send(zmqMsg, zmq::send_flags::none); // relaxed BK with high-water mark
+          }
+
+          if(protocol == RemoteProtocol::RTP)
+          {
+            rtpPort.send(sendBuf, sendSize, outputMsg->ts); // NBK..., need to make BK
+          }
+
+          // delete serialized buffer after sending & conditionally output also
+          if(serialize && sendBuf != nullptr) delete sendBuf;
+          if(freeMsg && outputMsg != nullptr) delete outputMsg;
         }
 
 
@@ -379,6 +383,4 @@ namespace flexr
     };
   }
 }
-
-#endif
 

@@ -52,7 +52,7 @@ namespace flexr
          */
         void registerInPortTag(std::string tag,
                                PortDependency pd,
-                               std::function<void (uint8_t* &, uint32_t &, void**)> deserializeFunc = 0)
+                               std::function<bool (uint8_t* &, uint32_t &, void**)> deserializeFunc = 0)
         {
           inPortMap[tag]                 = new FleXRPort(inLocalPorts, tag);
           inPortMap[tag]->dependency     = pd;
@@ -71,7 +71,7 @@ namespace flexr
          */
         void registerOutPortTag(std::string tag,
                                 std::function<void (FleXRPort*, void*)> sendLocalCopyFunc,
-                                std::function<void (void*, uint8_t* &, uint32_t &)> serializeFunc = 0)
+                                std::function<bool (void*, uint8_t* &, uint32_t &, bool)> serializeFunc = 0)
         {
           outPortMap[tag]                = new FleXRPort(outLocalPorts, tag);
           outPortMap[tag]->sendLocalCopy = sendLocalCopyFunc;
@@ -120,13 +120,15 @@ namespace flexr
         {
           // send dup ports
           auto portRange = duplicatedOutPortMap.equal_range(tag);
-          for(auto port = portRange.first; port != portRange.second; ++port) {
-            switch(outPortMap[port->second]->state) {
+          for(auto port = portRange.first; port != portRange.second; ++port)
+          {
+            switch(outPortMap[port->second]->state)
+            {
             case PortState::LOCAL:
               outPortMap[port->second]->sendLocalCopy(outPortMap[port->second], msg);
               break;
             case PortState::REMOTE:
-              outPortMap[port->second]->sendOutput(msg);
+              outPortMap[port->second]->sendOutputToRemote(msg, false);
               break;
             }
           }
