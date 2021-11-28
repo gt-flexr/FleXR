@@ -223,10 +223,10 @@ extern "C" {
     frame.data = flexr::types::Frame(temp);
     frame.setHeader("unity frame", sessions[sessionIdx].seq++, getTsMs(), frame.data.dataSize);
 
-    cv::Mat unityFrame(height, width, CV_8UC4, *unityFrameBuffer);
-    cvtColor(unityFrame, frame.data.useAsCVMat(), cv::COLOR_BGRA2RGB);
+    cv::Mat unityFrame(height, width, CV_8UC3, *unityFrameBuffer);
+    cvtColor(unityFrame, frame.data.useAsCVMat(), cv::COLOR_BGR2RGB);
 
-    flip(frame.data.useAsCVMat(), frame.data.useAsCVMat(), 1);
+    flip(frame.data.useAsCVMat(), frame.data.useAsCVMat(), 0);
     flexr::utils::serializeRawFrame(&frame, sendBuffer, sendSize, true);
 
     sessions[sessionIdx].sendMsg(sendBuffer, sendSize, frame.ts);
