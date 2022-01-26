@@ -14,7 +14,7 @@ namespace flexr
 
     void FrequencyManager::setFrequency(int targetFrequency)
     {
-      if(targetFrequency == 0) periodUs = 0;
+      if(targetFrequency == 0) periodUs = 5000;
       else periodUs = (uint32_t)(1000000/targetFrequency);
 
       lastTs = getTsUs();

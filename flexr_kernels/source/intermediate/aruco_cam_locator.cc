@@ -78,6 +78,8 @@ namespace flexr
       portManager.freeInput("in_frame", inFrame);
 
       if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}", st, et, et-st);
+
+      freqManager.adjust();
       return raft::proceed;
     }
 

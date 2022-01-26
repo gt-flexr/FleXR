@@ -98,6 +98,8 @@ namespace flexr
       inFrame->data.release();
       portManager.sendOutput("out_frame", outFrame);
       portManager.freeInput("in_frame", inFrame);
+
+      freqManager.adjust();
       return raft::proceed;
     }
 

@@ -34,6 +34,7 @@ namespace flexr
       inFrame->data.release();
       portManager.freeInput("in_frame", inFrame);
 
+      freqManager.adjust();
       return raft::proceed;
     }
 

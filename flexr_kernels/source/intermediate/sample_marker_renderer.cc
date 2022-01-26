@@ -75,6 +75,8 @@ namespace flexr
       portManager.freeInput("in_cam_pose", inCamPose);
 
       debug_print("st(%lf) et(%lf) exe(%lf)", st, et, et-st);
+
+      freqManager.adjust();
       return raft::proceed;
     }
 
