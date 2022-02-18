@@ -17,6 +17,7 @@ util_debug_mode(ON)
 
 # Build core
 util_flexr_option(USE_FFMPEG_NVCODEC "Use nvcodec with ffmpeg" OFF)
+util_flexr_option(USE_NVMPI_PORTABLE "Use nvmpi"               OFF)
 core_setup_dependencies()
 add_subdirectory(flexr_third_party)
 add_subdirectory(flexr_core)
