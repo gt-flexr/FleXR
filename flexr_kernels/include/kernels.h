@@ -6,6 +6,8 @@
 #include "flexr_kernels/include/intermediate/frame_converter.h"
 #include "flexr_kernels/include/intermediate/frame_decoder.h"
 #include "flexr_kernels/include/intermediate/frame_encoder.h"
+#include "flexr_kernels/include/intermediate/nvmpi_decoder.h"
+#include "flexr_kernels/include/intermediate/nvmpi_encoder.h"
 #include "flexr_kernels/include/intermediate/orb_cam_locator.h"
 #include "flexr_kernels/include/intermediate/cuda_orb_cam_locator.h"
 #include "flexr_kernels/include/intermediate/sample_marker_renderer.h"
