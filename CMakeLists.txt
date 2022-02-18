@@ -38,10 +38,12 @@ util_flexr_option(KERNEL_CUDA_ORB_CAM_LOCATOR   "Use CudaOrbCamLocator Intermedi
 util_flexr_option(KERNEL_SAMPLE_MARKER_RENDERER "Use SampleMarkerRenderer Intermediate kernel" OFF)
 util_flexr_option(KERNEL_FRAME_DECODER          "Use FrameDecoder Intermediate kernel"         OFF)
 util_flexr_option(KERNEL_FRAME_ENCODER          "Use FrameEncoder Intermediate kernel"         OFF)
-util_flexr_option(KERNEL_FRAME_CONVERTER        "Use FrameConverter Intermediate kernel"       OFF)
+util_flexr_option(KERNEL_NVMPI_DECODER          "Use NvmpiDecoder Intermediate kernel"         OFF)
+util_flexr_option(KERNEL_NVMPI_ENCODER          "Use NvmpiEncoder Intermediate kernel"         OFF)
+util_flexr_option(KERNEL_FRAME_COFFVERTER       "Use FrameConverter Intermediate kernel"       OFF)
 
 # Build kernels
-kernel_setup_dependencies()
+kernel_setup()
 add_subdirectory(flexr_kernels)
 
 # Build tests & exmamples
