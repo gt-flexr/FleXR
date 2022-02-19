@@ -1,0 +1,72 @@
+- kernel   : BagCamera
+  id       : bag_camera
+  frequency: 60
+  logger   : [client_bag_camera, client_bag_camera.log]
+  others   :
+    - frames_to_cache: 400
+      start_index    : 400
+      bag_path       : /home/jin/mnt/Data/aruco.bag
+      bag_topic      : /camera/image_raw
+  output   :
+    - port_name      : out_frame
+      connection_type: local
+
+
+- kernel   : NvmpiEncoder
+  id       : nvmpiEncoder1
+  frequency: 60
+  logger   : [client_nvmpi_encoder, client_nvmpi_encoder.log]
+  others   :
+    - encoder : h264_nvmpi
+      width   : 1920
+      height  : 1080
+      bitrate : 100000000
+      fps     : 60
+      qp      : 0
+  input    :
+    - port_name: in_frame
+      connection_type: local
+  output   :
+    - port_name      : out_encoded_frame
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 49991]
+
+
+- kernel   : NvmpiDecoder
+  id       : nvmpiDecoder1
+  frequency: 60
+  logger   : [client_nvmpi_decoder, client_nvmpi_decoder.log]
+  others   :
+    - decoder: h264_nvmpi
+      width  : 1920
+      height : 1080
+  input    :
+    - port_name      : in_encoded_frame
+      connection_type: remote
+      remote_info    : [RTP, 49992]
+  output   :
+    - port_name      : out_frame
+      connection_type: local
+
+
+- kernel   : CVDisplay
+  id       : cv_display
+  frequency: 60
+  logger   : [cv_display, cv_display.log]
+  input    :
+    - port_name      : in_frame
+      connection_type: local
+
+
+- local_connections:
+  - send_kernel   : bag_camera
+    send_port_name: out_frame
+    recv_kernel   : nvmpiEncoder1
+    recv_port_name: in_frame
+    queue_size    : 1
+  - send_kernel   : nvmpiDecoder1
+    send_port_name: out_frame
+    recv_kernel   : cv_display
+    recv_port_name: in_frame
+    queue_size    : 1
+
