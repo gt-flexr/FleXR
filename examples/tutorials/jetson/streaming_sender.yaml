@@ -1,6 +1,6 @@
 - kernel   : BagCamera
   id       : bag_camera
-  frequency: 60
+  frequency: 10
   logger   : [client_bag_camera, client_bag_camera.log]
   others   :
     - frames_to_cache: 400

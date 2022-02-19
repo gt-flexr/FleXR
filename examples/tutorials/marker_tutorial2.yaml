@@ -66,10 +66,10 @@
       connection_type: local
 
 
-- kernel   : CVDisplay
-  id       : cv_display
+- kernel   : Cv2GlRgbDisplay
+  id       : cv2gl_rgb_display
   frequency: 60
-  logger   : [cv_display, cv_display.log]
+  logger   : [cv2gl_rgb_display, cv2gl_rgb_display.log]
   input    :
     - port_name      : in_frame
       connection_type: local
@@ -84,7 +84,7 @@
 
   - send_kernel   : sample_marker_renderer
     send_port_name: out_frame
-    recv_kernel   : cv_display
+    recv_kernel   : cv2gl_rgb_display
     recv_port_name: in_frame
     queue_size    : 1
 

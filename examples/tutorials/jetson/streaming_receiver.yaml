@@ -15,10 +15,13 @@
       connection_type: local
 
 
-- kernel   : CVDisplay
-  id       : cv_display
+- kernel   : Cv2GlRgbDisplay
+  id       : cv2gl_rgb_display
   frequency: 60
-  logger   : [cv_display, cv_display.log]
+  logger   : [cv2gl_rgb_display, cv2gl_rgb_display.log]
+  others   :
+    - width  : 1920
+      height : 1080
   input    :
     - port_name      : in_frame
       connection_type: local
@@ -27,7 +30,7 @@
 - local_connections:
   - send_kernel   : nvmpi_decoder
     send_port_name: out_frame
-    recv_kernel   : cv_display
+    recv_kernel   : cv2gl_rgb_display
     recv_port_name: in_frame
     queue_size    : 1
 
