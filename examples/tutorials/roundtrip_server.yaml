@@ -20,7 +20,7 @@
   frequency: 60
   logger   : [server_frame_encoder, server_frame_encoder.log]
   others   :
-    - encoder : h264_nvenc
+    - encoder : libx264
       width   : 1920
       height  : 1080
       bitrate : 10000000
