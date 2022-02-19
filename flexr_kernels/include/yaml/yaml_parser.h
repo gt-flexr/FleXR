@@ -10,6 +10,8 @@
 #include "flexr_kernels/include/yaml/intermediate/yaml_frame_converter.h"
 #include "flexr_kernels/include/yaml/intermediate/yaml_frame_decoder.h"
 #include "flexr_kernels/include/yaml/intermediate/yaml_frame_encoder.h"
+#include "flexr_kernels/include/yaml/intermediate/yaml_nvmpi_decoder.h"
+#include "flexr_kernels/include/yaml/intermediate/yaml_nvmpi_encoder.h"
 #include "flexr_kernels/include/yaml/intermediate/yaml_orb_cam_locator.h"
 #include "flexr_kernels/include/yaml/intermediate/yaml_cuda_orb_cam_locator.h"
 #include "flexr_kernels/include/yaml/intermediate/yaml_sample_marker_renderer.h"
@@ -175,6 +177,12 @@ namespace flexr
 #ifdef __FLEXR_KERNEL_FRAME_ENCODER__
           if(kernel->getName() == "FrameEncoder") delete (flexr::kernels::FrameEncoder*) kernel;
 #endif
+#ifdef __FLEXR_KERNEL_NVMPI_DECODER__
+          if(kernel->getName() == "NvmpiDecoder") delete (flexr::kernels::NvmpiDecoder*) kernel;
+#endif
+#ifdef __FLEXR_KERNEL_NVMPI_ENCODER__
+          if(kernel->getName() == "NvmpiEncoder") delete (flexr::kernels::NvmpiEncoder*) kernel;
+#endif
 #ifdef __FLEXR_KERNEL_FRAME_CONVERTER__
           if(kernel->getName() == "FrameConverter") delete (flexr::kernels::FrameConverter*) kernel;
 #endif
@@ -201,7 +209,8 @@ namespace flexr
          * @see flexr::yaml::YamlBagCamera, flexr::yaml::YamlCvCamera, flexr::yaml::YamlKeyboard,
          * flexr::yaml::YamlFrameDecoder, flexr::yaml::YamlCvDisplay, flexr::yaml::YamlNonDisplay,
          * flexr::yaml::YamlFrameEncoder, flexr::yaml::YamlFrameConverter, flexr::yaml::YamlMarkerCtxExtractor,
-         * flexr::yaml::YamlCudaOrbCamLocator, flexr::yaml::YamlOrbCamLocator
+         * flexr::yaml::YamlNvmpiEncoder, flexr::yamlNvmpiDecoder,
+         * flexr::yaml::YamlCudaOrbCamLocator, flexr::yaml::YamlOrbCamLocator,
          * flexr::yaml::YamlArUcoDetector, flexr::yaml::YamlArUcoCamLocator
          */
         void initKernels()
@@ -296,6 +305,29 @@ namespace flexr
                 debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
 #endif
               }
+              if(doc[i]["kernel"].as<std::string>() == "NvmpiDecoder")
+              {
+#ifdef __FLEXR_KERNEL_NVMPI_DECODER__
+                YamlNvmpiDecoder yamlNvmpiDecoder;
+                yamlNvmpiDecoder.parseNvmpiDecoder(doc[i]);
+                yamlNvmpiDecoder.printNvmpiDecoder();
+                temp = (kernels::FrameDecoder*)yamlNvmpiDecoder.make();
+#else
+                debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
+#endif
+              }
+              if(doc[i]["kernel"].as<std::string>() == "NvmpiEncoder")
+              {
+#ifdef __FLEXR_KERNEL_NVMPI_ENCODER__
+                YamlNvmpiEncoder yamlNvmpiEncoder;
+                yamlNvmpiEncoder.parseNvmpiEncoder(doc[i]);
+                yamlNvmpiEncoder.printNvmpiEncoder();
+                temp = (kernels::FrameEncoder*)yamlNvmpiEncoder.make();
+#else
+                debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
+#endif
+              }
+
               if(doc[i]["kernel"].as<std::string>() == "FrameConverter")
               {
 #ifdef __FLEXR_KERNEL_FRAME_CONVERTER__

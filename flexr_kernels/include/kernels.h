@@ -27,6 +27,8 @@
 #include "flexr_kernels/include/yaml/intermediate/yaml_frame_converter.h"
 #include "flexr_kernels/include/yaml/intermediate/yaml_frame_decoder.h"
 #include "flexr_kernels/include/yaml/intermediate/yaml_frame_encoder.h"
+#include "flexr_kernels/include/yaml/intermediate/yaml_nvmpi_decoder.h"
+#include "flexr_kernels/include/yaml/intermediate/yaml_nvmpi_encoder.h"
 #include "flexr_kernels/include/yaml/intermediate/yaml_orb_cam_locator.h"
 #include "flexr_kernels/include/yaml/intermediate/yaml_cuda_orb_cam_locator.h"
 #include "flexr_kernels/include/yaml/intermediate/yaml_sample_marker_renderer.h"
