@@ -28,8 +28,9 @@ util_flexr_option(KERNEL_BAG_CAMERA        "Use BagCamera Source kernel" OFF)
 util_flexr_option(KERNEL_CV_CAMERA         "Use CVCamera Source kernel"  OFF)
 util_flexr_option(KERNEL_KEYBOARD          "Use Keyboard Source kernel"  OFF)
 # Sink
-util_flexr_option(KERNEL_CV_DISPLAY        "Use CVDisplay Sink kernel"   OFF)
-util_flexr_option(KERNEL_NON_DISPLAY       "Use NonDisplay Sink kernel"  OFF)
+util_flexr_option(KERNEL_CV_DISPLAY        "Use CVDisplay Sink kernel"       OFF)
+util_flexr_option(KERNEL_CV2GL_RGB_DISPLAY "Use Cv2GlRgbDisplay Sink kernel" OFF)
+util_flexr_option(KERNEL_NON_DISPLAY       "Use NonDisplay Sink kernel"      OFF)
 # Intermediate
 util_flexr_option(KERNEL_ARUCO_CAM_LOCATOR      "Use ArUcoCamLocator Intermediate kernel"      OFF)
 util_flexr_option(KERNEL_ARUCO_DETECTOR         "Use ArUcoDetector Intermediate kernel"        OFF)
@@ -40,7 +41,7 @@ util_flexr_option(KERNEL_FRAME_DECODER          "Use FrameDecoder Intermediate k
 util_flexr_option(KERNEL_FRAME_ENCODER          "Use FrameEncoder Intermediate kernel"         OFF)
 util_flexr_option(KERNEL_NVMPI_DECODER          "Use NvmpiDecoder Intermediate kernel"         OFF)
 util_flexr_option(KERNEL_NVMPI_ENCODER          "Use NvmpiEncoder Intermediate kernel"         OFF)
-util_flexr_option(KERNEL_FRAME_COFFVERTER       "Use FrameConverter Intermediate kernel"       OFF)
+util_flexr_option(KERNEL_FRAME_CONVERTER        "Use FrameConverter Intermediate kernel"       OFF)
 
 # Build kernels
 kernel_setup()

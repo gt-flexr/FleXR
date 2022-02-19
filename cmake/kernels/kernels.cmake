@@ -7,6 +7,7 @@ include(cmake/kernels/source/cv_camera.cmake)
 include(cmake/kernels/source/keyboard.cmake)
 
 include(cmake/kernels/sink/cv_display.cmake)
+include(cmake/kernels/sink/cv2gl_rgb_display.cmake)
 include(cmake/kernels/sink/non_display.cmake)
 
 include(cmake/kernels/intermediate/aruco_cam_locator.cmake)
@@ -29,6 +30,7 @@ macro(kernel_setup)
 
   # Sink
   kernel_cv_display()
+  kernel_cv2gl_rgb_display()
   kernel_non_display()
 
   # Intermediate
