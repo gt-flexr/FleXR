@@ -13,6 +13,7 @@
 #include "flexr_kernels/include/intermediate/sample_marker_renderer.h"
 
 #include "flexr_kernels/include/sink/cv_display.h"
+#include "flexr_kernels/include/sink/cv2gl_rgb_display.h"
 #include "flexr_kernels/include/sink/non_display.h"
 
 #include "flexr_kernels/include/source/bag_camera.h"
@@ -34,6 +35,7 @@
 #include "flexr_kernels/include/yaml/intermediate/yaml_sample_marker_renderer.h"
 
 #include "flexr_kernels/include/yaml/sink/yaml_cv_display.h"
+#include "flexr_kernels/include/yaml/sink/yaml_cv2gl_rgb_display.h"
 #include "flexr_kernels/include/yaml/sink/yaml_non_display.h"
 
 #include "flexr_kernels/include/yaml/source/yaml_bag_camera.h"

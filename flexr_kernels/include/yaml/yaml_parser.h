@@ -17,6 +17,7 @@
 #include "flexr_kernels/include/yaml/intermediate/yaml_sample_marker_renderer.h"
 
 #include "flexr_kernels/include/yaml/sink/yaml_cv_display.h"
+#include "flexr_kernels/include/yaml/sink/yaml_cv2gl_rgb_display.h"
 #include "flexr_kernels/include/yaml/sink/yaml_non_display.h"
 
 #include "flexr_kernels/include/yaml/source/yaml_bag_camera.h"
@@ -265,6 +266,17 @@ namespace flexr
                 yamlCvDisplay.parseCvDisplay(doc[i]);
                 yamlCvDisplay.printCvDisplay();
                 temp = (kernels::CVDisplay*)yamlCvDisplay.make();
+#else
+                debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
+#endif
+              }
+              if(doc[i]["kernel"].as<std::string>() == "Cv2GlRgbDisplay")
+              {
+#ifdef __FLEXR_KERNEL_CV2GL_RGB_DISPLAY__
+                YamlCv2GlRgbDisplay yamlCv2GlRgbDisplay;
+                yamlCv2GlRgbDisplay.parseCv2GlRgbDisplay(doc[i]);
+                yamlCv2GlRgbDisplay.printCv2GlRgbDisplay();
+                temp = (kernels::Cv2GlRgbDisplay*)yamlCv2GlRgbDisplay.make();
 #else
                 debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
 #endif
