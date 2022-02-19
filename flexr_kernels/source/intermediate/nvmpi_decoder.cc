@@ -1,4 +1,4 @@
-#ifdef __FLEXR_KERNEL_FRAME_DECODER__
+#ifdef __FLEXR_KERNEL_NVMPI_DECODER__
 
 #include <flexr_core/include/core.h>
 #include <flexr_kernels/include/kernels.h>
