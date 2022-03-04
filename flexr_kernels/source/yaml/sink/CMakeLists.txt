@@ -1,6 +1,6 @@
 file(GLOB_RECURSE FLEXR_YAML_SINK_KERNEL_SRCS *.cc)
 
-add_library(flexr_yaml_sink_kernel ${FLEXR_YAML_SINK_KERNEL_SRCS})
+add_library(flexr_yaml_sink_kernel SHARED ${FLEXR_YAML_SINK_KERNEL_SRCS})
 target_include_directories(flexr_yaml_sink_kernel PUBLIC "${PROJECT_SOURCE_DIR}")
 
 target_link_libraries(flexr_yaml_sink_kernel flexr_core)

@@ -56,11 +56,11 @@ namespace flexr
           if(inPorts[i].portName == "in_frame")
           {
             if(inPorts[i].connectionType == "local")
-              temp->activateInPortAsLocal<kernels::CVDisplayMsgType>(inPorts[i].portName);
+              temp->activateInPortAsLocal<kernels::Cv2GlRgbDisplayMsgType>(inPorts[i].portName);
             else
-              temp->activateInPortAsRemote<kernels::CVDisplayMsgType>(inPorts[i].portName,
-                                                                      inPorts[i].protocol,
-                                                                      inPorts[i].bindingPortNum);
+              temp->activateInPortAsRemote<kernels::Cv2GlRgbDisplayMsgType>(inPorts[i].portName,
+                                                                            inPorts[i].protocol,
+                                                                            inPorts[i].bindingPortNum);
           }
           else debug_print("invalid input port_name %s for Cv2GlRgbDisplay", inPorts[i].portName.c_str());
 

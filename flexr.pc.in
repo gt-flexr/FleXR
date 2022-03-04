@@ -1,11 +1,13 @@
 prefix=@CMAKE_INSTALL_PREFIX@
-libdir=@CMAKE_INSTALL_PREFIX@/lib
-includedir=@CMAKE_INSTALL_PREFIX@/include
+exec_prefix=@CMAKE_INSTALL_PREFIX@
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
 
 Name: FleXR
-Description: Flexibly Edge-assisted XR
+Description: Flexible Edge-assisted XR
 URL: https://github.com/jheo4/flexr
 Version: 1.0
-Cflags:  -std=c++14 -I${includedir} -I${includedir}/flexrinc @FLEXR_CORE_CXX_FLAGS@ @FLEXR_KERNEL_CXX_FLAGS@
-Libs:  -L${libdir} -lflexr @FLEXR_CORE_LINKER_FLAGS@ @FLEXR_KERNEL_LINKER_FLAGS@
+
 Requires:
+Cflags:  -std=c++14 -I${includedir} -I${includedir}/flexrinc @FLEXR_CORE_CXX_FLAGS@ @FLEXR_CORE_INCLUDE_DIRS@ @FLEXR_KERNEL_CXX_FLAGS@
+Libs:  -L${libdir} -lflexr_yaml_sink_kernel -lflexr_yaml_intermediate_kernel -lflexr_yaml_source_kernel -lflexr_sink_kernel -lflexr_source_kernel -lflexr_intermediate_kernel -lflexr_core_component @FLEXR_CORE_LINKER_FLAGS@ @FLEXR_KERNEL_LINKER_FLAGS@

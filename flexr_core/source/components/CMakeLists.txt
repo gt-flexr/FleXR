@@ -1,6 +1,6 @@
 file(GLOB_RECURSE FLEXR_CORE_COMPONENT_SRCS *.cc)
 
-add_library(flexr_core_component ${FLEXR_CORE_COMPONENT_SRCS})
+add_library(flexr_core_component SHARED ${FLEXR_CORE_COMPONENT_SRCS})
 target_include_directories(flexr_core_component PUBLIC "${PROJECT_SOURCE_DIR}")
 
 target_compile_options(flexr_core_component PUBLIC ${FLEXR_CORE_CXX_FLAGS})

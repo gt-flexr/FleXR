@@ -1,6 +1,7 @@
 set(FLEXR_CORE_CXX_FLAGS "")
 set(FLEXR_CORE_LINKER_FLAGS "")
 set(FLEXR_CORE_LINKER_LIBS "")
+set(FLEXR_CORE_INCLUDE_DIRS "")
 
 include(cmake/core/FFmpeg.cmake)
 include(cmake/core/nvmpi_portable.cmake)

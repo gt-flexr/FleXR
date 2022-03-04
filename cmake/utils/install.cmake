@@ -1,6 +1,7 @@
 macro(util_set_installation)
   # Install
   string(REPLACE ";" " " FLEXR_CORE_CXX_FLAGS    "${FLEXR_CORE_CXX_FLAGS}")
+  string(REPLACE ";" " " FLEXR_CORE_INCLUDE_DIRS "${FLEXR_CORE_INCLUDE_DIRS}")
   string(REPLACE ";" " " FLEXR_CORE_LINKER_FLAGS "${FLEXR_CORE_LINKER_FLAGS}")
   string(REPLACE ";" " " FLEXR_CORE_LINKER_LIBS  "${FLEXR_CORE_LINKER_LIBS}")
 
@@ -18,7 +19,8 @@ macro(util_set_installation)
     endif(NOT DEFINED ENV{PKG_CONFIG_PATH})
 
     configure_file("flexr.pc.in" "flexr.pc" @ONLY)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/flexr.pc DESTINATION ${PKG_CONFIG_PATH}/)
+    #install(FILES ${CMAKE_CURRENT_BINARY_DIR}/flexr.pc DESTINATION ${PKG_CONFIG_PATH}/)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/flexr.pc DESTINATION /usr/local/lib/pkgconfig/)
   endif(NOT WIN32)
 endmacro()
 

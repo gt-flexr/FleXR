@@ -10,3 +10,5 @@ target_link_libraries(flexr_kernel INTERFACE flexr_intermediate_kernel)
 
 add_subdirectory(yaml)
 
+install(TARGETS flexr_kernel ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+
