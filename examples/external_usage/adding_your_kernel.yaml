@@ -1,0 +1,10 @@
+- kernel   : TestKernel
+  id       : test_kernel
+  frequency: 60
+  logger   : [server_frame_decoder, server_frame_decoder.log]
+
+- kernel   : TTestKernell
+  id       : test_kernel2
+  frequency: 60
+  logger   : [server_frame_decoder, server_frame_decoder.log]
+

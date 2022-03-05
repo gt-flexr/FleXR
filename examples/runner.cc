@@ -32,6 +32,8 @@ int main(int argc, char **argv)
 
   // Parse YAML recipe
   flexr::yaml::YamlFleXRParser yamlParser(yamlRecipe);
+  // yamlParser.RegisterCustomKernelFuncs(std::function<bool (std::string, flexr::kernels::FleXRKernel *&)> initFunc,
+  //                                      std::function<bool (flexr::kernels::FleXRKernel *)> destroyFunc)
   yamlParser.initKernels();
   yamlParser.parseConnections();
 

@@ -40,16 +40,21 @@ namespace flexr
         std::vector<kernels::FleXRKernel*> singleKernels;
         std::vector<YamlLocalConnection> parsedConnections;
 
+        // For extension
+        std::function <bool (YAML::Node, flexr::kernels::FleXRKernel*&)> customKernelInitFunc;
+        std::function <bool (flexr::kernels::FleXRKernel*)>              customKernelDestroyFunc;
+
 
       public:
         /**
          * @brief Init parser with YAML file
-         * @param node
-         *  YAML node to parse
+         * @param yamlFile
+         *  YAML filename to parse
          */
         YamlFleXRParser(std::string yamlFile)
         {
           loadYamlFile(yamlFile);
+          ClearCustomKernelFuncs();
         }
 
 
@@ -148,6 +153,31 @@ namespace flexr
 
 
         /**
+         * @brief Register initialization and destroy functions for custom kernels
+         * @param initFunc
+         *  Instantiate a kernel by parsing the given kernels name from YAML recipe
+         * @param destroyFunc
+         *  Destroy the instantiated kernel
+         */
+        void RegisterCustomKernelFuncs(std::function<bool (YAML::Node, flexr::kernels::FleXRKernel*&)> initFunc,
+                                       std::function<bool (flexr::kernels::FleXRKernel*)> destroyFunc)
+        {
+          customKernelInitFunc    = initFunc;
+          customKernelDestroyFunc = destroyFunc;
+        }
+
+
+        /**
+         * @brief Clear the registered init and destroy funcs of custom kernels
+         */
+        void ClearCustomKernelFuncs()
+        {
+          customKernelInitFunc    = {};
+          customKernelDestroyFunc = {};
+        }
+
+
+        /**
          * @brief Destroy instantiated kernels
          */
         void destroyKernel(flexr::kernels::FleXRKernel *kernel)
@@ -202,6 +232,21 @@ namespace flexr
 #ifdef __FLEXR_KERNEL_SAMPLE_MARKER_RENDERER__
           if(kernel->getName() == "SampleMarkerRenderer") delete (flexr::kernels::SampleMarkerRenderer*) kernel;
 #endif
+
+          // custom kernel destroy
+          if(customKernelDestroyFunc)
+          {
+            bool res = customKernelDestroyFunc(kernel);
+            if(res)
+            {
+              debug_print("%s is destroyed", kernel->getName().c_str());
+            }
+            else
+            {
+              debug_print("%s is not destroyed; your destroy function is not able to handle this custom kernel",
+                          kernel->getName().c_str());
+            }
+          }
         }
 
 
@@ -234,7 +279,7 @@ namespace flexr
                 debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
 #endif
               }
-              if(doc[i]["kernel"].as<std::string>() == "CVCamera")
+              else if(doc[i]["kernel"].as<std::string>() == "CVCamera")
               {
 #ifdef __FLEXR_KERNEL_CV_CAMERA__
                 YamlCvCamera yamlCvCamera;
@@ -245,7 +290,7 @@ namespace flexr
                 debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
 #endif
               }
-              if(doc[i]["kernel"].as<std::string>() == "Keyboard")
+              else if(doc[i]["kernel"].as<std::string>() == "Keyboard")
               {
 #ifdef __FLEXR_KERNEL_KEYBOARD__
                 YamlKeyboard yamlKeyboard;
@@ -259,7 +304,7 @@ namespace flexr
 
 
               // Sink kernels
-              if(doc[i]["kernel"].as<std::string>() == "CVDisplay")
+              else if(doc[i]["kernel"].as<std::string>() == "CVDisplay")
               {
 #ifdef __FLEXR_KERNEL_CV_DISPLAY__
                 YamlCvDisplay yamlCvDisplay;
@@ -270,7 +315,7 @@ namespace flexr
                 debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
 #endif
               }
-              if(doc[i]["kernel"].as<std::string>() == "Cv2GlRgbDisplay")
+              else if(doc[i]["kernel"].as<std::string>() == "Cv2GlRgbDisplay")
               {
 #ifdef __FLEXR_KERNEL_CV2GL_RGB_DISPLAY__
                 YamlCv2GlRgbDisplay yamlCv2GlRgbDisplay;
@@ -281,7 +326,7 @@ namespace flexr
                 debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
 #endif
               }
-              if(doc[i]["kernel"].as<std::string>() == "NonDisplay")
+              else if(doc[i]["kernel"].as<std::string>() == "NonDisplay")
               {
 #ifdef __FLEXR_KERNEL_NON_DISPLAY__
                 YamlNonDisplay yamlNonDisplay;
@@ -295,7 +340,7 @@ namespace flexr
 
 
               // Intermediate kernels
-              if(doc[i]["kernel"].as<std::string>() == "FrameDecoder")
+              else if(doc[i]["kernel"].as<std::string>() == "FrameDecoder")
               {
 #ifdef __FLEXR_KERNEL_FRAME_DECODER__
                 YamlFrameDecoder yamlFrameDecoder;
@@ -306,7 +351,7 @@ namespace flexr
                 debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
 #endif
               }
-              if(doc[i]["kernel"].as<std::string>() == "FrameEncoder")
+              else if(doc[i]["kernel"].as<std::string>() == "FrameEncoder")
               {
 #ifdef __FLEXR_KERNEL_FRAME_ENCODER__
                 YamlFrameEncoder yamlFrameEncoder;
@@ -317,7 +362,7 @@ namespace flexr
                 debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
 #endif
               }
-              if(doc[i]["kernel"].as<std::string>() == "NvmpiDecoder")
+              else if(doc[i]["kernel"].as<std::string>() == "NvmpiDecoder")
               {
 #ifdef __FLEXR_KERNEL_NVMPI_DECODER__
                 YamlNvmpiDecoder yamlNvmpiDecoder;
@@ -328,7 +373,7 @@ namespace flexr
                 debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
 #endif
               }
-              if(doc[i]["kernel"].as<std::string>() == "NvmpiEncoder")
+              else if(doc[i]["kernel"].as<std::string>() == "NvmpiEncoder")
               {
 #ifdef __FLEXR_KERNEL_NVMPI_ENCODER__
                 YamlNvmpiEncoder yamlNvmpiEncoder;
@@ -340,7 +385,7 @@ namespace flexr
 #endif
               }
 
-              if(doc[i]["kernel"].as<std::string>() == "FrameConverter")
+              else if(doc[i]["kernel"].as<std::string>() == "FrameConverter")
               {
 #ifdef __FLEXR_KERNEL_FRAME_CONVERTER__
                 YamlFrameConverter yamlFrameConverter;
@@ -351,7 +396,7 @@ namespace flexr
                 debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
 #endif
               }
-              if(doc[i]["kernel"].as<std::string>() == "CudaOrbCamLocator")
+              else if(doc[i]["kernel"].as<std::string>() == "CudaOrbCamLocator")
               {
 #ifdef __FLEXR_KERNEL_CUDA_ORB_CAM_LOCATOR__
                 YamlCudaOrbCamLocator yamlCudaOrbCamLocator;
@@ -362,7 +407,7 @@ namespace flexr
                 debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
 #endif
               }
-              if(doc[i]["kernel"].as<std::string>() == "OrbCamLocator")
+              else if(doc[i]["kernel"].as<std::string>() == "OrbCamLocator")
               {
 #ifdef __FLEXR_KERNEL_ORB_CAM_LOCATOR__
                 YamlOrbCamLocator yamlOrbCamLocator;
@@ -373,7 +418,7 @@ namespace flexr
                 debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
 #endif
               }
-              if(doc[i]["kernel"].as<std::string>() == "ArUcoDetector")
+              else if(doc[i]["kernel"].as<std::string>() == "ArUcoDetector")
               {
 #ifdef __FLEXR_KERNEL_ARUCO_DETECTOR__
                 YamlArUcoDetector yamlArUcoDetector;
@@ -384,7 +429,7 @@ namespace flexr
                 debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
 #endif
               }
-              if(doc[i]["kernel"].as<std::string>() == "ArUcoCamLocator")
+              else if(doc[i]["kernel"].as<std::string>() == "ArUcoCamLocator")
               {
 #ifdef __FLEXR_KERNEL_ARUCO_CAM_LOCATOR__
                 YamlArUcoCamLocator yamlArUcoCamLocator;
@@ -395,7 +440,7 @@ namespace flexr
                 debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
 #endif
               }
-              if(doc[i]["kernel"].as<std::string>() == "SampleMarkerRenderer")
+              else if(doc[i]["kernel"].as<std::string>() == "SampleMarkerRenderer")
               {
 #ifdef __FLEXR_KERNEL_SAMPLE_MARKER_RENDERER__
                 YamlArUcoCamLocator yamlArUcoCamLocator;
@@ -406,6 +451,14 @@ namespace flexr
 #else
                 debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
 #endif
+              }
+              else if(customKernelInitFunc)
+              {
+                bool res = customKernelInitFunc(doc[i], temp);
+                if(res)
+                  debug_print("%s is found from the custom kernels", doc[i]["kernel"].as<std::string>().c_str());
+                else
+                  debug_print("%s is not registered.", doc[i]["kernel"].as<std::string>().c_str());
               }
 
               if(temp != nullptr)
