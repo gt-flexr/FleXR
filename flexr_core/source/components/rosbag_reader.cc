@@ -1,3 +1,5 @@
+#ifdef __FLEXR_USE_ROSBAG__
+
 #include <bits/stdc++.h>
 #include <flexr_core/include/components/rosbag_reader.h>
 
@@ -52,3 +54,4 @@ namespace flexr {
   }
 }
 
+#endif

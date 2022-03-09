@@ -31,8 +31,6 @@ namespace flexr
 
       portManager.sendOutput<CVCameraMsgType>("out_frame", outFrame);
 
-      freqManager.adjust();
-
       double et = getTsNow();
       if(logger.isSet()) logger.getInstance()->info("{} frame\t start\t{}\t end\t{}\t exe\t{}", seq-1, st, et, et-st);
 

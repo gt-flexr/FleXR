@@ -1,5 +1,6 @@
-#ifndef __FLEXR_CORE_COMPONENT_ROSBAG_READER__
-#define __FLEXR_CORE_COMPONENT_ROSBAG_READER__
+#pragma once
+
+#ifdef __FLEXR_USE_ROSBAG__
 
 #include <rosbag/bag.h>
 #include <rosbag/view.h>
@@ -48,5 +49,6 @@ namespace flexr {
     };
   }
 }
+
 #endif
 

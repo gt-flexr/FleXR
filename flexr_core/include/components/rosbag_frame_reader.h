@@ -1,5 +1,6 @@
-#ifndef __FLEXR_CORE_COMPONENT_ROSBAG_FRAME_READER__
-#define __FLEXR_CORE_COMPONENT_ROSBAG_FRAME_READER__
+#pragma once
+
+#ifdef __FLEXR_USE_ROSBAG__
 
 #include <rosbag/bag.h>
 #include <rosbag/view.h>
