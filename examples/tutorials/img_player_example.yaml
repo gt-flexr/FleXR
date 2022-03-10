@@ -1,12 +1,13 @@
-- kernel   : BagCamera
-  id       : bag_camera
+- kernel   : ImgPlayer
+  id       : img_player
   frequency: 60
-  logger   : [bag_camera, bag_camera.log]
+  logger   : [img_player, img_player.log]
   others   :
-    - frames_to_cache: 400
-      start_index    : 400
-      bag_path       :
-      bag_topic      : /camera/image_raw
+    - image_path    : /home/jin/mnt/Data/aruco_cam
+      filename_zeros: 6
+      num_of_images : 1000
+      iterate       : true
+      caching       : true
   output   :
     - port_name      : out_frame
       connection_type: remote

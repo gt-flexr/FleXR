@@ -1,0 +1,40 @@
+- kernel   : ImgPlayer
+  id       : img_player
+  frequency: 60
+  logger   : [img_player, img_player.log]
+  others   :
+    - image_path    : /home/jin/mnt/Data/aruco_cam
+      filename_zeros: 6
+      num_of_images : 1000
+      iterate       : true
+      caching       : true
+  output   :
+    - port_name      : out_frame
+      connection_type: local
+
+
+- kernel   : FrameEncoder
+  id       : frame_encoder
+  frequency: 60
+  logger   : [client_frame_encoder, client_frame_encoder.log]
+  others   :
+    - encoder : libx264
+      width   : 1920
+      height  : 1080
+      bitrate : 100000000
+  input    :
+    - port_name      : in_frame
+      connection_type: local
+  output   :
+    - port_name      : out_encoded_frame
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 49991]
+
+
+- local_connections:
+  - send_kernel   : img_player
+    send_port_name: out_frame
+    recv_kernel   : frame_encoder
+    recv_port_name: in_frame
+    queue_size    : 1
+

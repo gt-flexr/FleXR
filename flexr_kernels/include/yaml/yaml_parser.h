@@ -21,6 +21,7 @@
 #include "flexr_kernels/include/yaml/sink/yaml_non_display.h"
 
 #include "flexr_kernels/include/yaml/source/yaml_bag_camera.h"
+#include "flexr_kernels/include/yaml/source/yaml_img_player.h"
 #include "flexr_kernels/include/yaml/source/yaml_cv_camera.h"
 #include "flexr_kernels/include/yaml/source/yaml_keyboard.h"
 
@@ -253,6 +254,7 @@ namespace flexr
         /**
          * @brief Initialize and instantiate kernels while parsing YAML recipe
          * @see flexr::yaml::YamlBagCamera, flexr::yaml::YamlCvCamera, flexr::yaml::YamlKeyboard,
+         * flexr::yaml::YamlImgPlayer,
          * flexr::yaml::YamlFrameDecoder, flexr::yaml::YamlCvDisplay, flexr::yaml::YamlNonDisplay,
          * flexr::yaml::YamlFrameEncoder, flexr::yaml::YamlFrameConverter, flexr::yaml::YamlMarkerCtxExtractor,
          * flexr::yaml::YamlNvmpiEncoder, flexr::yamlNvmpiDecoder,
@@ -275,6 +277,17 @@ namespace flexr
                 yamlBagCamera.parseBagCamera(doc[i]);
                 yamlBagCamera.printBagCamera();
                 temp = (kernels::FleXRKernel*)yamlBagCamera.make();
+#else
+                debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
+#endif
+              }
+              if(doc[i]["kernel"].as<std::string>() == "ImgPlayer")
+              {
+#ifdef __FLEXR_KERNEL_IMG_PLAYER__
+                YamlImgPlayer yamlImgPlayer;
+                yamlImgPlayer.parseImgPlayer(doc[i]);
+                yamlImgPlayer.printImgPlayer();
+                temp = (kernels::FleXRKernel*)yamlImgPlayer.make();
 #else
                 debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
 #endif

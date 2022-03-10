@@ -26,6 +26,7 @@ add_subdirectory(flexr_core)
 # Enable kernels
 # Source
 util_flexr_option(KERNEL_BAG_CAMERA        "Use BagCamera Source kernel" OFF)
+util_flexr_option(KERNEL_IMG_PLAYER        "Use ImgPlayer Source kernel" OFF)
 util_flexr_option(KERNEL_CV_CAMERA         "Use CVCamera Source kernel"  OFF)
 util_flexr_option(KERNEL_KEYBOARD          "Use Keyboard Source kernel"  OFF)
 # Sink

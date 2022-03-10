@@ -42,3 +42,5 @@ resources/*
 compile_commands.json
 .clangd/
 bin/
+flexr_logs
+bin/flexr_logs

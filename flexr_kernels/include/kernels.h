@@ -17,6 +17,7 @@
 #include "flexr_kernels/include/sink/non_display.h"
 
 #include "flexr_kernels/include/source/bag_camera.h"
+#include "flexr_kernels/include/source/img_player.h"
 #include "flexr_kernels/include/source/cv_camera.h"
 #include "flexr_kernels/include/source/keyboard.h"
 
@@ -39,6 +40,7 @@
 #include "flexr_kernels/include/yaml/sink/yaml_non_display.h"
 
 #include "flexr_kernels/include/yaml/source/yaml_bag_camera.h"
+#include "flexr_kernels/include/yaml/source/yaml_img_player.h"
 #include "flexr_kernels/include/yaml/source/yaml_cv_camera.h"
 #include "flexr_kernels/include/yaml/source/yaml_keyboard.h"
 

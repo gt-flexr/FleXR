@@ -3,6 +3,7 @@ set(FLEXR_KERNEL_LINKER_FLAGS "")
 set(FLEXR_KERNEL_LINKER_LIBS "")
 
 include(cmake/kernels/source/bag_camera.cmake)
+include(cmake/kernels/source/img_player.cmake)
 include(cmake/kernels/source/cv_camera.cmake)
 include(cmake/kernels/source/keyboard.cmake)
 
@@ -25,6 +26,7 @@ macro(kernel_setup)
   message(STATUS "[Enabled Kernels]")
   # Source
   kernel_bag_camera()
+  kernel_img_player()
   kernel_cv_camera()
   kernel_keyboard()
 
