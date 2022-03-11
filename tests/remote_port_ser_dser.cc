@@ -201,7 +201,7 @@ TEST_CASE("flexr remote ports and ser&deser funcs", "[flexr_remote_ports_ser_des
   }
 
 
-  SECTION("send & recv of vector")
+  SECTION("Default ser/dser with boost")
   {
     flexr::types::Message<std::vector<int>> sendMsg, *recvMsg = new flexr::types::Message<std::vector<int>>;
 
@@ -209,24 +209,40 @@ TEST_CASE("flexr remote ports and ser&deser funcs", "[flexr_remote_ports_ser_des
     sendMsg.data.resize(10);
     for(int i = 0; i < 10; i++) sendMsg.data[i] = i*i;
 
-    flexr::utils::serializeVector<flexr::types::Message<std::vector<int>>>(&sendMsg, serData, serDataSize, false);
+    // defualt does not have ability to free msg.
+    flexr::utils::serializeDefault<flexr::types::Message<std::vector<int>>>(&sendMsg, serData, serDataSize, false);
     REQUIRE(sendMsg.data.size() != 0);
-
     delete serData;
     serData = nullptr;
     serDataSize = 0;
 
+    // defualt does not have ability to free msg.
+    flexr::utils::serializeDefault<flexr::types::Message<std::vector<int>>>(&sendMsg, serData, serDataSize, true);
+    REQUIRE(sendMsg.data.size() != 0);
+    delete serData;
+    serData = nullptr;
+    serDataSize = 0;
+
+
+    // vector have ability to free msg.
+    flexr::utils::serializeVector<flexr::types::Message<std::vector<int>>>(&sendMsg, serData, serDataSize, false);
+    REQUIRE(sendMsg.data.size() != 0);
+    delete serData;
+    serData = nullptr;
+    serDataSize = 0;
+
+    // vector have ability to free msg.
     flexr::utils::serializeVector<flexr::types::Message<std::vector<int>>>(&sendMsg, serData, serDataSize, true);
     REQUIRE(sendMsg.data.size() == 0);
 
-    REQUIRE(serDataSize == sizeof(flexr::types::Message<std::vector<int>>) + sizeof(int)*10);
+    debug_print("serData size: %d", serDataSize);
 
     rtpSender.send(serData, serDataSize, sendMsg.ts);
     received = rtpReceiver.receiveMsg(isBlocking, data, size);
     REQUIRE(received == true);
     if(received)
     {
-      flexr::utils::deserializeVector<flexr::types::Message<std::vector<int>>>(data, size, (void**)&recvMsg);
+      flexr::utils::deserializeDefault<flexr::types::Message<std::vector<int>>>(data, size, (void**)&recvMsg);
       REQUIRE(data == nullptr);
       REQUIRE(strcmp(recvMsg->tag, "sendVector") == 0);
       REQUIRE(recvMsg->ts == 5000);
@@ -236,5 +252,6 @@ TEST_CASE("flexr remote ports and ser&deser funcs", "[flexr_remote_ports_ser_des
       recvMsg->data.clear();
     }
   }
+
 }
 

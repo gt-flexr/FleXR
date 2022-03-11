@@ -2,6 +2,11 @@
 #define __FLEXR_CORE_TYPES__
 
 #include <bits/stdc++.h>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/iostreams/device/back_inserter.hpp>
+#include <boost/iostreams/stream.hpp>
+
 #include "flexr_core/include/defs.h"
 #include "flexr_core/include/types/frame.h"
 
@@ -30,6 +35,18 @@ namespace flexr {
         this->seq      = seq;
         this->ts       = ts;
         this->dataSize = dataSize;
+      }
+
+      private:
+      friend class boost::serialization::access;
+      template <class Archieve>
+      void serialize(Archieve &ar, const unsigned int version)
+      {
+        ar& tag;
+        ar& seq;
+        ar& ts;
+        ar& dataSize;
+        ar& data;
       }
     };
 

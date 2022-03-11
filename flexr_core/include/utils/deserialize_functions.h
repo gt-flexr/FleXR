@@ -4,9 +4,17 @@
 #include "flexr_core/include/types/types.h"
 #include "flexr_core/include/types/frame.h"
 
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/iostreams/device/back_inserter.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/iostreams/stream.hpp>
+
+
 namespace flexr {
   namespace utils {
 
+    // deserialize function of kernel ports for FleXR Frame type
     static bool deserializeRawFrame(uint8_t* &data, uint32_t &size, void** msg)
     {
       bool received = true;
@@ -32,6 +40,7 @@ namespace flexr {
     }
 
 
+    // deserialize function of kernel ports for pointer data
     static bool deserializeEncodedFrame(uint8_t* &data, uint32_t &size, void** msg)
     {
       bool received = true;
@@ -57,33 +66,21 @@ namespace flexr {
     }
 
 
+    // serialize function of kernel ports with boost::serialization
     template <typename T>
-    bool deserializeVector(uint8_t* &data, uint32_t &size, void** msg)
+    bool deserializeDefault(uint8_t* &data, uint32_t &size, void** msg)
     {
       bool received = true;
       T* castedMsg = static_cast<T*>(*msg);
-      uint32_t metaSize = sizeof(*castedMsg);
 
-      memcpy(castedMsg, data, metaSize);
-      if(size-metaSize == castedMsg->dataSize)
-      {
-        uint32_t elemSize = sizeof(decltype(castedMsg->data.back()));
-        uint32_t numElem  = (castedMsg->dataSize) / elemSize;
-
-        castedMsg->data.resize(numElem);
-        memcpy((void*)castedMsg->data.data(), data+metaSize, castedMsg->dataSize);
-      }
-      else
-      {
-        debug_print("received castedMsg->dataSize is not matched to size-metaSize: %d / %d",
-                    castedMsg->dataSize, size-metaSize);
-        received = false;
-
-      }
+      boost::iostreams::basic_array_source<char> device((const char*)data, size);
+      boost::iostreams::stream<boost::iostreams::basic_array_source<char> > dser(device);
+      boost::archive::binary_iarchive ia(dser);
+      ia >> *castedMsg;
 
       delete data;
       data = nullptr;
-      return received;
+      return true;
     }
 
   }
