@@ -18,6 +18,7 @@
 
 #include "flexr_kernels/include/source/bag_camera.h"
 #include "flexr_kernels/include/source/img_player.h"
+#include "flexr_kernels/include/source/euroc_mono_inertial_reader.h"
 #include "flexr_kernels/include/source/cv_camera.h"
 #include "flexr_kernels/include/source/keyboard.h"
 
@@ -42,6 +43,7 @@
 #include "flexr_kernels/include/yaml/source/yaml_bag_camera.h"
 #include "flexr_kernels/include/yaml/source/yaml_img_player.h"
 #include "flexr_kernels/include/yaml/source/yaml_cv_camera.h"
+#include "flexr_kernels/include/yaml/source/yaml_euroc_mono_inertial_reader.h"
 #include "flexr_kernels/include/yaml/source/yaml_keyboard.h"
 
 #endif

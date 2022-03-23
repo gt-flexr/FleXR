@@ -59,6 +59,37 @@ namespace flexr {
     };
 
 
+    class ImuPoint
+    {
+      private:
+        friend class boost::serialization::access;
+        template<class Archieve>
+          void serialize(Archieve&ar, const unsigned int version)
+          {
+            ar& a.x;
+            ar& a.y;
+            ar& a.z;
+            ar& g.x;
+            ar& g.y;
+            ar& g.z;
+            ar& t;
+          }
+
+
+      public:
+        ImuPoint(){}
+        ImuPoint(const float &acc_x, const float &acc_y, const float &acc_z,
+            const float &ang_vel_x, const float &ang_vel_y, const float &ang_vel_z,
+            const double &timestamp): a(acc_x,acc_y,acc_z), g(ang_vel_x,ang_vel_y,ang_vel_z), t(timestamp){}
+        ImuPoint(const cv::Point3f Acc, const cv::Point3f Gyro, const double &timestamp):
+          a(Acc.x,Acc.y,Acc.z), g(Gyro.x,Gyro.y,Gyro.z), t(timestamp){}
+      public:
+        cv::Point3f a;
+        cv::Point3f g;
+        double t;
+    };
+
+
     template <typename T>
     void freePrimitiveMsg(void *msg)
     {

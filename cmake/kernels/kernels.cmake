@@ -4,6 +4,7 @@ set(FLEXR_KERNEL_LINKER_LIBS "")
 
 include(cmake/kernels/source/bag_camera.cmake)
 include(cmake/kernels/source/img_player.cmake)
+include(cmake/kernels/source/euroc_mono_inertial_reader.cmake)
 include(cmake/kernels/source/cv_camera.cmake)
 include(cmake/kernels/source/keyboard.cmake)
 
@@ -28,6 +29,7 @@ macro(kernel_setup)
   kernel_bag_camera()
   kernel_img_player()
   kernel_cv_camera()
+  kernel_euroc_mono_inertial_reader()
   kernel_keyboard()
 
   # Sink

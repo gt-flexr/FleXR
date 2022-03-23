@@ -23,6 +23,7 @@
 #include "flexr_kernels/include/yaml/source/yaml_bag_camera.h"
 #include "flexr_kernels/include/yaml/source/yaml_img_player.h"
 #include "flexr_kernels/include/yaml/source/yaml_cv_camera.h"
+#include "flexr_kernels/include/yaml/source/yaml_euroc_mono_inertial_reader.h"
 #include "flexr_kernels/include/yaml/source/yaml_keyboard.h"
 
 namespace flexr
@@ -190,6 +191,12 @@ namespace flexr
 #ifdef __FLEXR_KERNEL_CV_CAMERA__
           if(kernel->getName() == "CVCamera") delete (flexr::kernels::CVCamera*) kernel;
 #endif
+#ifdef __FLEXR_KERNEL_IMG_PLAYER__
+          if(kernel->getName() == "ImgPlayer") delete (flexr::kernels::ImgPlayer*) kernel;
+#endif
+#ifdef __FLEXR_KERNEL_EUROC_MONO_INERTIAL_READER__
+          if(kernel->getName() == "EurocMonoInertialReader") delete (flexr::kernels::EurocMonoInertialReader*) kernel;
+#endif
 #ifdef __FLEXR_KERNEL_KEYBOARD__
           if(kernel->getName() == "Keyboard") delete (flexr::kernels::Keyboard*) kernel;
 #endif
@@ -254,7 +261,7 @@ namespace flexr
         /**
          * @brief Initialize and instantiate kernels while parsing YAML recipe
          * @see flexr::yaml::YamlBagCamera, flexr::yaml::YamlCvCamera, flexr::yaml::YamlKeyboard,
-         * flexr::yaml::YamlImgPlayer,
+         * flexr::yaml::YamlImgPlayer, flexr::yaml::YamlEurocMonoInertialReader,
          * flexr::yaml::YamlFrameDecoder, flexr::yaml::YamlCvDisplay, flexr::yaml::YamlNonDisplay,
          * flexr::yaml::YamlFrameEncoder, flexr::yaml::YamlFrameConverter, flexr::yaml::YamlMarkerCtxExtractor,
          * flexr::yaml::YamlNvmpiEncoder, flexr::yamlNvmpiDecoder,
@@ -299,6 +306,17 @@ namespace flexr
                 yamlCvCamera.parseCvCamera(doc[i]);
                 yamlCvCamera.printCvCamera();
                 temp = (kernels::CVCamera*)yamlCvCamera.make();
+#else
+                debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
+#endif
+              }
+              else if(doc[i]["kernel"].as<std::string>() == "EurocMonoInertialReader")
+              {
+#ifdef __FLEXR_KERNEL_EUROC_MONO_INERTIAL_READER__
+                YamlEurocMonoInertialReader yamlEurocMonoInertialReader;
+                yamlEurocMonoInertialReader.parseEurocMonoInertialReader(doc[i]);
+                yamlEurocMonoInertialReader.printEurocMonoInertialReader();
+                temp = (kernels::EurocMonoInertialReader*)yamlEurocMonoInertialReader.make();
 #else
                 debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
 #endif
