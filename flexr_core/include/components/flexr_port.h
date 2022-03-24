@@ -40,18 +40,6 @@ namespace flexr
 
 
         /**
-         * @brief Check the existence of an activated local port
-         * @return True if there is
-         */
-        bool checkLocalPort()
-        {
-          auto &port((*localPort)[tag]);
-          if(port.size() > 0) return true;
-          else return false;
-        }
-
-
-        /**
          * @brief Get input msg from internal network ports
          * @param input
          *  input message pointer to recv dst
@@ -64,8 +52,8 @@ namespace flexr
           bool isBlocking = true;
           bool received   = false;
 
-          if(dependency == PortDependency::BLOCKING) isBlocking = true;
-          else                                       isBlocking = false;
+          if(inputSemantics == PortDependency::BLOCKING) isBlocking = true;
+          else                                           isBlocking = false;
 
           if(protocol == RemoteProtocol::TCP)
           {
@@ -103,8 +91,8 @@ namespace flexr
         ZMQPort        tcpPort;
         RtpPort        rtpPort;
 
-        // Set by developer
-        PortDependency dependency;
+        PortDependency inputSemantics;
+        PortDependency outputSemantics;
 
         // Set by deployer
         PortState      state;
@@ -128,6 +116,32 @@ namespace flexr
           sendLocalCopy = 0;
           serialize     = 0;
           deserialize   = 0;
+          inputSemantics  = PortDependency::BLOCKING;
+          outputSemantics = PortDependency::BLOCKING;
+        }
+
+
+        /**
+         * @brief Check the existence of an activated local port
+         * @return True if there is
+         */
+        bool checkLocalPortEmpty()
+        {
+          auto &port((*localPort)[tag]);
+          if(port.size() > 0) return false;
+          else return true;
+        }
+
+
+        /**
+         * @brief Check the existence of an activated local port
+         * @return True if there is
+         */
+        bool checkLocalPortFull()
+        {
+          auto &port((*localPort)[tag]);
+          if(port.capacity() == port.size()) return true;
+          else return false;
         }
 
 
@@ -145,7 +159,7 @@ namespace flexr
          *  Port tag to activate as local
          */
         template <typename T>
-        void activateAsLocal(const std::string tag)
+        void activateAsLocalInput(const std::string tag)
         {
           if(activated) {
             debug_print("Port %s is already activated.", tag.c_str());
@@ -153,6 +167,26 @@ namespace flexr
           }
           localPort->addPort<T>(tag);
           state = PortState::LOCAL;
+          activated = true;
+        }
+
+
+        /**
+         * @brief Activate and instantiate a local port with the given tag
+         * @details Local activation interface is used for both input and output ports
+         * @param Tag
+         *  Port tag to activate as local
+         */
+        template <typename T>
+        void activateAsLocalOutput(const std::string tag, PortDependency semantics)
+        {
+          if(activated) {
+            debug_print("Port %s is already activated.", tag.c_str());
+            return;
+          }
+          localPort->addPort<T>(tag);
+          state = PortState::LOCAL;
+          outputSemantics = semantics;
           activated = true;
         }
 
@@ -237,12 +271,12 @@ namespace flexr
           switch(state)
           {
             case PortState::LOCAL:
-              if(dependency == PortDependency::BLOCKING) {
+              if(inputSemantics == PortDependency::BLOCKING) {
                 T &temp = (*localPort)[tag].peek<T>();
                 input = &temp;
               }
-              else if(dependency == PortDependency::NONBLOCKING) {
-                if(checkLocalPort()) {
+              else if(inputSemantics == PortDependency::NONBLOCKING) {
+                if(checkLocalPortEmpty() == false) {
                   T &temp = (*localPort)[tag].peek<T>();
                   input = &temp;
                 }
@@ -305,12 +339,20 @@ namespace flexr
           }
 
           switch(state) {
-          case PortState::LOCAL:
-            (*localPort)[tag].send();
-            break;
-          case PortState::REMOTE:
-            sendOutputToRemote(msg, true);
-            break;
+            case PortState::LOCAL:
+              if(outputSemantics == PortDependency::BLOCKING) {
+                (*localPort)[tag].send();
+              }
+              else if(outputSemantics == PortDependency::NONBLOCKING) {
+                if(checkLocalPortFull() == false)
+                {
+                  (*localPort)[tag].send();
+                }
+              }
+              break;
+            case PortState::REMOTE:
+              sendOutputToRemote(msg, true);
+              break;
           }
         }
 

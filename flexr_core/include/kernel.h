@@ -144,7 +144,25 @@ namespace flexr
         template <typename T>
         void activateOutPortAsLocal(const std::string tag)
         {
-          portManager.activateOutPortAsLocal<T>(tag);
+          portManager.activateOutPortAsLocal<T>(tag, components::PortDependency::BLOCKING);
+        }
+
+
+        /**
+         * @brief Kernel interface to activate output port as local
+         * @param tag
+         *  Tag of activating port
+         * @param semantics
+         *  blocking / nonblocking
+         * @see flexr::components::FleXRPortManager.activateOutPortAsLocal
+         */
+        template <typename T>
+        void activateOutPortAsLocal(const std::string tag, const std::string semantics)
+        {
+          if(semantics == "nonblocking")
+            portManager.activateOutPortAsLocal<T>(tag, components::PortDependency::NONBLOCKING);
+          else
+            portManager.activateOutPortAsLocal<T>(tag, components::PortDependency::BLOCKING);
         }
 
 
@@ -189,7 +207,27 @@ namespace flexr
         template <typename T>
         void duplicateOutPortAsLocal(const std::string originTag, const std::string newTag)
         {
-          portManager.duplicateOutPortAsLocal<T>(originTag, newTag);
+          portManager.duplicateOutPortAsLocal<T>(originTag, newTag, components::PortDependency::BLOCKING);
+        }
+
+
+        /**
+         * @brief Kernel interface to duplicate an activated output port to a local output port
+         * @param originTag
+         *  Tag of the original port to duplicate
+         * @param newTag
+         *  Tag of a new port
+         * @param semantics
+         *  blocking / nonblocking
+         * @see flexr::components::FleXRPortManager.duplicateOutPortAsLocal
+         */
+        template <typename T>
+        void duplicateOutPortAsLocal(const std::string originTag, const std::string newTag, const std::string semantics)
+        {
+          if(semantics == "nonblocking")
+            portManager.duplicateOutPortAsLocal<T>(originTag, newTag, components::PortDependency::NONBLOCKING);
+          else
+            portManager.duplicateOutPortAsLocal<T>(originTag, newTag, components::PortDependency::BLOCKING);
         }
 
 

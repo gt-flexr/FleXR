@@ -1,18 +1,21 @@
-- kernel   : BagCamera
-  id       : bag_camera
+- kernel   : ImgPlayer
+  id       : img_player
   frequency: 60
-  logger   : [bag_camera, bag_camera.log]
+  logger   : [img_player, img_player.log]
   others   :
-    - frames_to_cache: 400
-      start_index    : 400
-      bag_path       :
-      bag_topic      : /camera/image_raw
+    - image_path    : /home/jin/mnt/Data/aruco_cam
+      filename_zeros: 6
+      num_of_images : 100
+      iterate       : true
+      caching       : true
   output   :
     - port_name      : out_frame
       connection_type: local
+      semantics      : blocking
     - port_name      : out_frame2
       connection_type: local
       duplicated_from: out_frame
+      semantics      : nonblocking
 
 
 - kernel   : Keyboard
@@ -22,6 +25,7 @@
   output    :
     - port_name      : out_key
       connection_type: local
+      semantics      : blocking
 
 
 - kernel   : ArUcoDetector
@@ -38,6 +42,8 @@
   output    :
     - port_name      : out_marker_pose
       connection_type: local
+      semantics      : blocking
+
 
 
 - kernel   : SampleMarkerRenderer
@@ -72,7 +78,7 @@
 
 
 - local_connections:
-  - send_kernel   : bag_camera
+  - send_kernel   : img_player
     send_port_name: out_frame2
     recv_kernel   : aruco_detector
     recv_port_name: in_frame
@@ -88,7 +94,7 @@
     recv_kernel   : sample_marker_renderer
     recv_port_name: in_key
     queue_size    : 1
-  - send_kernel   : bag_camera
+  - send_kernel   : img_player
     send_port_name: out_frame
     recv_kernel   : sample_marker_renderer
     recv_port_name: in_frame

@@ -55,7 +55,7 @@ namespace flexr
                                std::function<bool (uint8_t* &, uint32_t &, void**)> deserializeFunc = 0)
         {
           inPortMap[tag]                 = new FleXRPort(inLocalPorts, tag);
-          inPortMap[tag]->dependency     = pd;
+          inPortMap[tag]->inputSemantics = pd;
           inPortMap[tag]->deserialize    = deserializeFunc;
         }
 
@@ -73,9 +73,10 @@ namespace flexr
                                 std::function<void (FleXRPort*, void*)> sendLocalCopyFunc,
                                 std::function<bool (void*, uint8_t* &, uint32_t &, bool)> serializeFunc = 0)
         {
-          outPortMap[tag]                = new FleXRPort(outLocalPorts, tag);
-          outPortMap[tag]->sendLocalCopy = sendLocalCopyFunc;
-          outPortMap[tag]->serialize     = serializeFunc;
+          outPortMap[tag]                  = new FleXRPort(outLocalPorts, tag);
+          outPortMap[tag]->sendLocalCopy   = sendLocalCopyFunc;
+          outPortMap[tag]->serialize       = serializeFunc;
+          outPortMap[tag]->outputSemantics = PortDependency::BLOCKING;
         }
 
 
@@ -125,7 +126,18 @@ namespace flexr
             switch(outPortMap[port->second]->state)
             {
             case PortState::LOCAL:
-              outPortMap[port->second]->sendLocalCopy(outPortMap[port->second], msg);
+              if(outPortMap[port->second]->outputSemantics == PortDependency::BLOCKING)
+              {
+                outPortMap[port->second]->sendLocalCopy(outPortMap[port->second], msg);
+              }
+              else if(outPortMap[port->second]->outputSemantics == PortDependency::NONBLOCKING)
+              {
+                if(outPortMap[port->second]->checkLocalPortFull() == false)
+                {
+                  outPortMap[port->second]->sendLocalCopy(outPortMap[port->second], msg);
+                }
+              }
+
               break;
             case PortState::REMOTE:
               outPortMap[port->second]->sendOutputToRemote(msg, false);
@@ -165,7 +177,7 @@ namespace flexr
         template <typename T>
         void activateInPortAsLocal(const std::string tag)
         {
-          inPortMap[tag]->activateAsLocal<T>(tag);
+          inPortMap[tag]->activateAsLocalInput<T>(tag);
         }
 
 
@@ -193,9 +205,9 @@ namespace flexr
          * @see flexr::components::FleXRPort::activateAsLocal
          */
         template <typename T>
-        void activateOutPortAsLocal(const std::string tag)
+        void activateOutPortAsLocal(const std::string tag, PortDependency semantics)
         {
-          outPortMap[tag]->activateAsLocal<T>(tag);
+          outPortMap[tag]->activateAsLocalOutput<T>(tag, semantics);
         }
 
 
@@ -227,13 +239,13 @@ namespace flexr
          * @see registerOutPortTag, activateOutPortAsLocal
          */
         template <typename T>
-        void duplicateOutPortAsLocal(const std::string originTag, const std::string newTag)
+        void duplicateOutPortAsLocal(const std::string originTag, const std::string newTag, PortDependency semantics)
         {
           duplicatedOutPortMap.insert(std::make_pair<std::string, std::string>(originTag.c_str(), newTag.c_str()));
           registerOutPortTag(newTag,
                              outPortMap[originTag]->sendLocalCopy,
                              outPortMap[originTag]->serialize);
-          activateOutPortAsLocal<T>(newTag);
+          activateOutPortAsLocal<T>(newTag, semantics);
         }
 
 

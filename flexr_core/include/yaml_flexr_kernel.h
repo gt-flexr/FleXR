@@ -63,6 +63,11 @@ namespace flexr
             outPort.portName          = node[i]["port_name"].as<std::string>();
             outPort.connectionType    = node[i]["connection_type"].as<std::string>();
 
+            if(outPort.connectionType == std::string("local") && node[i]["semantics"].IsDefined())
+            {
+              outPort.semantics = node[i]["semantics"].as<std::string>();
+            }
+
             if(outPort.connectionType == std::string("remote") && node[i]["remote_info"].IsDefined())
             {
               outPort.protocol          = node[i]["remote_info"][0].as<std::string>();

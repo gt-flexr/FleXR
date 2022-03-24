@@ -61,6 +61,7 @@ namespace flexr
       public:
         std::string portName;
         std::string connectionType;
+        std::string semantics;
         std::string protocol;
         std::string connectingAddr;
         int connectingPortNum;
@@ -71,6 +72,7 @@ namespace flexr
         {
           portName           = "";
           connectionType     = "";
+          semantics          = "";
           protocol           = "";
           connectingAddr     = "";
           connectingPortNum  = -1;
@@ -83,6 +85,10 @@ namespace flexr
           std::cout << "Outport -------- " << std::endl;
           std::cout << "\tPort Name: " << portName << std::endl;
           std::cout << "\tConnection Type: " << connectionType << std::endl;
+          if(semantics != "")
+          {
+            std::cout << "\tSemantics: " << semantics << std::endl;
+          }
           if(duplicatedFrom != "")
           {
             std::cout << "\tDuplicated From: " << duplicatedFrom << std::endl;
