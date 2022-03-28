@@ -19,17 +19,17 @@ namespace flexr {
       public:
       char     tag[FLEXR_MSG_TAG_SIZE];
       uint32_t seq;
-      uint32_t ts;
+      double   ts;
       uint32_t dataSize;
       T        data;
 
       void printHeader()
       {
         printf("Message Header: %s \n", tag);
-        printf("\tseq: %d, ts: %ld, dataSize %d\n", seq, ts, dataSize);
+        printf("\tseq: %d, ts: %f, dataSize %d\n", seq, ts, dataSize);
       }
 
-      void setHeader(std::string tag, uint32_t seq, uint32_t ts, uint32_t dataSize)
+      void setHeader(std::string tag, uint32_t seq, double ts, uint32_t dataSize)
       {
         std::strcpy(this->tag, tag.c_str());
         this->seq      = seq;
