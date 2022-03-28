@@ -147,7 +147,7 @@ namespace flexr
         }
       }
       outImus->setHeader("euroc_imus", seq, getTsNow(), sizeof(outImus->data[0])*outImus->data.size());
-      debug_print("imuTs:%f <= imgTs:%f, firstImu:%d, ImgSeq:%d", imuTs[firstImu-1], imgTs[seq], firstImu, seq);
+      //debug_print("imuTs:%f <= imgTs:%f, firstImu:%d, ImgSeq:%d", imuTs[firstImu-1], imgTs[seq], firstImu, seq);
 
       seq++;
 
