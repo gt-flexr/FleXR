@@ -14,6 +14,7 @@
 #include "flexr_kernels/include/yaml/intermediate/yaml_nvmpi_encoder.h"
 #include "flexr_kernels/include/yaml/intermediate/yaml_orb_cam_locator.h"
 #include "flexr_kernels/include/yaml/intermediate/yaml_cuda_orb_cam_locator.h"
+#include "flexr_kernels/include/yaml/intermediate/yaml_orbslam_pose_estimator.h"
 #include "flexr_kernels/include/yaml/intermediate/yaml_sample_marker_renderer.h"
 
 #include "flexr_kernels/include/yaml/sink/yaml_cv_display.h"
@@ -231,6 +232,9 @@ namespace flexr
 #ifdef __FLEXR_KERNEL_ORB_CAM_LOCATOR__
           if(kernel->getName() == "OrbCamLocator") delete (flexr::kernels::OrbCamLocator*) kernel;
 #endif
+#ifdef __FLEXR_KERNEL_ORBSLAM_POSE_ESTIMATOR__
+          if(kernel->getName() == "OrbSlamPoseEstimator") delete (flexr::kernels::OrbSlamPoseEstimator*) kernel;
+#endif
 #ifdef __FLEXR_KERNEL_ARUCO_DETECTOR__
           if(kernel->getName() == "ArUcoDetector") delete (flexr::kernels::ArUcoDetector*) kernel;
 #endif
@@ -363,7 +367,7 @@ namespace flexr
                 YamlNonDisplay yamlNonDisplay;
                 yamlNonDisplay.parseNonDisplay(doc[i]);
                 yamlNonDisplay.printNonDisplay();
-                temp = (kernels::CVDisplay*)yamlNonDisplay.make();
+                temp = (kernels::NonDisplay*)yamlNonDisplay.make();
 #else
                 debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
 #endif
@@ -449,6 +453,17 @@ namespace flexr
                 debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
 #endif
               }
+              else if(doc[i]["kernel"].as<std::string>() == "OrbSlamPoseEstimator")
+              {
+#ifdef __FLEXR_KERNEL_ORBSLAM_POSE_ESTIMATOR__
+                YamlOrbSlamPoseEstimator yamlOrbSlamPoseEstimator;
+                yamlOrbSlamPoseEstimator.parseOrbSlamPoseEstimator(doc[i]);
+                yamlOrbSlamPoseEstimator.printOrbSlamPoseEstimator();
+                temp = (kernels::OrbSlamPoseEstimator*) yamlOrbSlamPoseEstimator.make();
+#else
+                debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
+#endif
+              }
               else if(doc[i]["kernel"].as<std::string>() == "ArUcoDetector")
               {
 #ifdef __FLEXR_KERNEL_ARUCO_DETECTOR__
@@ -474,7 +489,6 @@ namespace flexr
               else if(doc[i]["kernel"].as<std::string>() == "SampleMarkerRenderer")
               {
 #ifdef __FLEXR_KERNEL_SAMPLE_MARKER_RENDERER__
-                YamlArUcoCamLocator yamlArUcoCamLocator;
                 YamlSampleMarkerRenderer yamlSampleMarkerRenderer;
                 yamlSampleMarkerRenderer.parseSampleMarkerRenderer(doc[i]);
                 yamlSampleMarkerRenderer.printSampleMarkerRenderer();

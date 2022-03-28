@@ -128,19 +128,16 @@ namespace flexr
       double st = getTsNow();
 
       cv::Mat img = cv::imread(imgFileNames[seq], cv::IMREAD_UNCHANGED);
-      double curImgTs = imgTs[seq];
       if(img.empty())
       {
         debug_print("Image load error");
         exit(1);
       }
       outFrame->data = flexr::types::Frame(img);
-      outFrame->setHeader("euroc_frame", seq, getTsNow(), outFrame->data.useAsCVMat().total()*outFrame->data.useAsCVMat().elemSize());
-      outFrame->printHeader();
+      outFrame->setHeader("euroc_frame", seq, imgTs[seq], outFrame->data.useAsCVMat().total()*outFrame->data.useAsCVMat().elemSize());
 
       if(seq > 0)
       {
-        debug_print("imuTs:%f, imgTs:%f", imuTs[firstImu], imgTs[seq]);
         while(imuTs[firstImu] <= imgTs[seq])
         {
           outImus->data.push_back(types::ImuPoint(imuAcc[firstImu].x, imuAcc[firstImu].y, imuAcc[firstImu].z,
@@ -150,7 +147,7 @@ namespace flexr
         }
       }
       outImus->setHeader("euroc_imus", seq, getTsNow(), sizeof(outImus->data[0])*outImus->data.size());
-      outImus->printHeader();
+      debug_print("imuTs:%f <= imgTs:%f, firstImu:%d, ImgSeq:%d", imuTs[firstImu-1], imgTs[seq], firstImu, seq);
 
       seq++;
 
