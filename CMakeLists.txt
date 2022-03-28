@@ -39,6 +39,7 @@ util_flexr_option(KERNEL_ARUCO_CAM_LOCATOR      "Use ArUcoCamLocator Intermediat
 util_flexr_option(KERNEL_ARUCO_DETECTOR         "Use ArUcoDetector Intermediate kernel"        OFF)
 util_flexr_option(KERNEL_ORB_CAM_LOCATOR        "Use OrbCamLocator Intermediate kernel"        OFF)
 util_flexr_option(KERNEL_CUDA_ORB_CAM_LOCATOR   "Use CudaOrbCamLocator Intermediate kernel"    OFF)
+util_flexr_option(KERNEL_ORBSLAM_POSE_ESTIMATOR "Use OrbSlamPoseEstimator Intermediate kernel" OFF)
 util_flexr_option(KERNEL_SAMPLE_MARKER_RENDERER "Use SampleMarkerRenderer Intermediate kernel" OFF)
 util_flexr_option(KERNEL_FRAME_DECODER          "Use FrameDecoder Intermediate kernel"         OFF)
 util_flexr_option(KERNEL_FRAME_ENCODER          "Use FrameEncoder Intermediate kernel"         OFF)
@@ -57,4 +58,9 @@ add_subdirectory(examples)
 
 # Installation settings
 util_set_installation()
+
+message(STATUS "[FleXR Kernel Details]")
+message("\t FLEXR_KERNEL_INCLUDE_DIRS: ${FLEXR_KERNEL_INCLUDE_DIRS}")
+message("\t FLEXR_KERNEL_CXX_FLAGS:    ${FLEXR_KERNEL_CXX_FLAGS}")
+message("\t FLEXR_KERNEL_LINKER_FLAGS: ${FLEXR_KERNEL_LINKER_FLAGS}")
 
