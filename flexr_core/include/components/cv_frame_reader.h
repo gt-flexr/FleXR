@@ -36,6 +36,18 @@ namespace flexr
       CVFrameReader(int devIdx, int width, int height);
 
 
+      /**
+       * @brief Initialize OpenCV camera
+       * @param fileName
+       *  File name to read
+       * @param width
+       *  Camera frame width
+       * @param height
+       *  Camera frame height
+       */
+      CVFrameReader(std::string fileName, int width, int height);
+
+
       ~CVFrameReader();
 
 

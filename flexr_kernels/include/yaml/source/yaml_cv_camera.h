@@ -19,6 +19,7 @@ namespace flexr
      * YAML attribute | Details
      * ---------------| ----------------------------
      * dev_index      | VideoCapture index
+     * file_name      | VideoCapture file name
      * width          | Frame width to read
      * height         | Frame height to read
      *
@@ -28,6 +29,7 @@ namespace flexr
     {
       public:
         int devIdx, width, height;
+        std::string fileName;
 
         YamlCvCamera();
 

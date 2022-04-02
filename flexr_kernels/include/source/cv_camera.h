@@ -47,6 +47,22 @@ namespace flexr
        */
       CVCamera(std::string id, int devIdx, int width, int height, int tagetFps);
 
+      /**
+       * @brief Initialize camera kernel
+       * @param id
+       *  Kernel ID
+       * @param fileName
+       *  File name
+       * @param width
+       *  Frame width
+       * @param height
+       *  Frame height
+       * @param targetFps
+       *  Target frequency to feed frames
+       * @see flexr::components::CVFrameReader
+       */
+      CVCamera(std::string id, std::string fileName, int width, int height, int tagetFps);
+
 
       ~CVCamera();
 
