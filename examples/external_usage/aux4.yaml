@@ -1,0 +1,126 @@
+- kernel   : CVCamera
+  id       : cv_camera
+  frequency: 120
+  logger   : [cv_camera, cv_camera.log]
+  others   :
+    - file_name: "/home/jin/mnt/Data/mp4_sample/270.mp4"
+      width: 480
+      height: 270
+  output   :
+    - port_name: out_frame
+      connection_type: local
+      semantics      : nonblocking
+
+
+- kernel   : FrameEncoder
+  id       : frame_encoder
+  frequency: 120
+  logger   : [client_frame_encoder, client_frame_encoder.log]
+  others   :
+    - encoder : libx264
+      width   : 480
+      height  : 270
+      bitrate : 100000000
+  input    :
+    - port_name      : in_frame
+      connection_type: local
+  output   :
+    - port_name      : out_encoded_frame
+      connection_type: local
+      semantics      : nonblocking
+    - port_name      : out_encoded_frame2
+      connection_type: local
+      duplicated_from: out_encoded_frame
+      semantics      : nonblocking
+    - port_name      : out_encoded_frame3
+      connection_type: local
+      duplicated_from: out_encoded_frame
+      semantics      : nonblocking
+    - port_name      : out_encoded_frame4
+      connection_type: local
+      duplicated_from: out_encoded_frame
+      semantics      : nonblocking
+
+
+- kernel   : Temp
+  id       : temp_kernel
+  frequency: 120
+  logger   : [temp, temp.log]
+  input    :
+    - port_name      : in_data
+      connection_type: local
+  output   :
+    - port_name      : out_data
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 49991]
+
+
+- kernel   : Temp
+  id       : temp_kernel2
+  frequency: 120
+  logger   : [temp2, temp2.log]
+  input    :
+    - port_name      : in_data
+      connection_type: local
+  output   :
+    - port_name      : out_data
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 49992]
+
+
+- kernel   : Temp
+  id       : temp_kernel3
+  frequency: 120
+  logger   : [temp3, temp3.log]
+  input    :
+    - port_name      : in_data
+      connection_type: local
+  output   :
+    - port_name      : out_data
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 49993]
+
+
+- kernel   : Temp
+  id       : temp_kernel4
+  frequency: 120
+  logger   : [temp4, temp4.log]
+  input    :
+    - port_name      : in_data
+      connection_type: local
+  output   :
+    - port_name      : out_data
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 49994]
+
+
+- local_connections:
+  - send_kernel   : cv_camera
+    send_port_name: out_frame
+    recv_kernel   : frame_encoder
+    recv_port_name: in_frame
+    queue_size    : 30
+
+  - send_kernel   : frame_encoder
+    send_port_name: out_encoded_frame
+    recv_kernel   : temp_kernel
+    recv_port_name: in_data
+    queue_size    : 30
+
+  - send_kernel   : frame_encoder
+    send_port_name: out_encoded_frame2
+    recv_kernel   : temp_kernel2
+    recv_port_name: in_data
+    queue_size    : 30
+
+  - send_kernel   : frame_encoder
+    send_port_name: out_encoded_frame3
+    recv_kernel   : temp_kernel3
+    recv_port_name: in_data
+    queue_size    : 30
+
+  - send_kernel   : frame_encoder
+    send_port_name: out_encoded_frame4
+    recv_kernel   : temp_kernel4
+    recv_port_name: in_data
+    queue_size    : 30

@@ -33,18 +33,17 @@ namespace flexr
 
     raft::kstatus CVCamera::run()
     {
-      double st = getTsNow();
+      //double st = getTsNow();
 
       CVCameraMsgType *outFrame = portManager.getOutputPlaceholder<CVCameraMsgType>("out_frame");
 
       outFrame->data = frameReader.readFrame();
       outFrame->setHeader("cvcam_frame", seq++, getTsNow(), outFrame->data.useAsCVMat().total()*outFrame->data.useAsCVMat().elemSize());
-      outFrame->printHeader();
 
       portManager.sendOutput<CVCameraMsgType>("out_frame", outFrame);
 
-      double et = getTsNow();
-      if(logger.isSet()) logger.getInstance()->info("{} frame\t start\t{}\t end\t{}\t exe\t{}", seq-1, st, et, et-st);
+      //double et = getTsNow();
+      //if(logger.isSet()) logger.getInstance()->info("{} frame\t start\t{}\t end\t{}\t exe\t{}", seq-1, st, et, et-st);
 
       freqManager.adjust();
       return raft::proceed;

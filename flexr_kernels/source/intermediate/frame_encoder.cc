@@ -103,9 +103,8 @@ namespace flexr
         portManager.freeInput("in_frame", inFrame);
         return raft::proceed;
       }
-      inFrame->printHeader();
 
-      double st = getTsNow();
+      //double st = getTsNow();
 
       cv::cvtColor(inFrame->data.useAsCVMat(), yuvFrame, cv::COLOR_RGB2YUV_YV12);
       av_image_fill_arrays(encodingFrame->data, encodingFrame->linesize, yuvFrame.data,
@@ -116,16 +115,15 @@ namespace flexr
       while (ret >= 0) {
         ret = avcodec_receive_packet(encoderContext, &encodingPacket);
         if(ret == 0) {
-          double enct = getTsNow();
+          //double enct = getTsNow();
           outEncodedFrame->data     = encodingPacket.data;
           outEncodedFrame->setHeader(inFrame->tag, inFrame->seq, inFrame->ts, encodingPacket.size);
-          outEncodedFrame->printHeader();
 
           portManager.sendOutput("out_encoded_frame", outEncodedFrame);
-          double et = getTsNow();
-          debug_print("encodeTime(%lf), sentSize(%d)", et-st, outEncodedFrame->dataSize);
-          if(logger.isSet()) logger.getInstance()->info("encodingTime/rtpSendingTime/KernelExeTime/Sent Size\t{}\t {}\t {}\t {}",
-              enct-st, et-enct, et-st, outEncodedFrame->dataSize);
+          //double et = getTsNow();
+          //debug_print("encodeTime(%lf), sentSize(%d)", et-st, outEncodedFrame->dataSize);
+          //if(logger.isSet()) logger.getInstance()->info("encodingTime/rtpSendingTime/KernelExeTime/Sent Size\t{}\t {}\t {}\t {}",
+          //    enct-st, et-enct, et-st, outEncodedFrame->dataSize);
           break;
         }
         av_packet_unref(&encodingPacket); // deleted?

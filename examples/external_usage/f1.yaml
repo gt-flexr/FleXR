@@ -1,0 +1,38 @@
+- kernel   : CVCamera
+  id       : cv_camera
+  frequency: 120
+  logger   : [cv_camera, cv_camera.log]
+  others   :
+    - file_name: "/home/jin/mnt/Data/mp4_sample/270.mp4"
+      width: 480
+      height: 270
+  output   :
+    - port_name: out_frame
+      connection_type: local
+
+
+- kernel   : FrameEncoder
+  id       : frame_encoder
+  frequency: 120
+  logger   : [client_frame_encoder, client_frame_encoder.log]
+  others   :
+    - encoder : libx264
+      width   : 480
+      height  : 270
+      bitrate : 100000000
+  input    :
+    - port_name      : in_frame
+      connection_type: local
+  output   :
+    - port_name      : out_encoded_frame
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 49991]
+
+
+- local_connections:
+  - send_kernel   : cv_camera
+    send_port_name: out_frame
+    recv_kernel   : frame_encoder
+    recv_port_name: in_frame
+    queue_size    : 30
+

@@ -1,0 +1,66 @@
+- kernel   : CVCamera
+  id       : cv_camera
+  frequency: 120
+  logger   : [cv_camera, cv_camera.log]
+  others   :
+    - file_name: "/home/jin/mnt/Data/mp4_sample/270.mp4"
+      width: 480
+      height: 270
+  output   :
+    - port_name: out_frame
+      connection_type: local
+
+
+- kernel   : FrameEncoder
+  id       : frame_encoder
+  frequency: 120
+  logger   : [client_frame_encoder, client_frame_encoder.log]
+  others   :
+    - encoder : libx264
+      width   : 480
+      height  : 270
+      bitrate : 100000000
+  input    :
+    - port_name      : in_frame
+      connection_type: local
+  output   :
+    - port_name      : out_encoded_frame
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 49991]
+    - port_name      : out_encoded_frame2
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 49992]
+      duplicated_from: out_encoded_frame
+    - port_name      : out_encoded_frame3
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 49993]
+      duplicated_from: out_encoded_frame
+    - port_name      : out_encoded_frame4
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 49994]
+      duplicated_from: out_encoded_frame
+    - port_name      : out_encoded_frame5
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 49995]
+      duplicated_from: out_encoded_frame
+    - port_name      : out_encoded_frame6
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 49996]
+      duplicated_from: out_encoded_frame
+    - port_name      : out_encoded_frame7
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 49997]
+      duplicated_from: out_encoded_frame
+    - port_name      : out_encoded_frame8
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 49998]
+      duplicated_from: out_encoded_frame
+
+
+- local_connections:
+  - send_kernel   : cv_camera
+    send_port_name: out_frame
+    recv_kernel   : frame_encoder
+    recv_port_name: in_frame
+    queue_size    : 40
+
