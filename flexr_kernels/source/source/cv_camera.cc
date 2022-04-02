@@ -16,8 +16,20 @@ namespace flexr
       freqManager.setFrequency(targetFps);
     }
 
+
+    CVCamera::CVCamera(std::string id, std::string fileName, int width, int height, int targetFps):
+      FleXRKernel(id), frameReader(fileName, width, height)
+    {
+      setName("CVCamera");
+      seq = 0;
+      portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy);
+      freqManager.setFrequency(targetFps);
+    }
+
+
     CVCamera::~CVCamera()
     { }
+
 
     raft::kstatus CVCamera::run()
     {

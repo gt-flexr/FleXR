@@ -9,7 +9,9 @@ namespace flexr
 
     YamlCvCamera::YamlCvCamera(): YamlFleXRKernel()
     {
-      devIdx = width = height = 0;
+      devIdx = -1;
+      width = height = 0;
+      fileName = "";
     }
 
 
@@ -24,7 +26,8 @@ namespace flexr
     {
       specificSet       = true;
       YAML::Node others = node["others"][0];
-      devIdx            = others["dev_index"].as<int>();
+      if(others["dev_index"].IsDefined()) devIdx = others["dev_index"].as<int>();
+      if(others["file_name"].IsDefined()) fileName = others["file_name"].as<std::string>();
       width             = others["width"].as<int>();
       height            = others["height"].as<int>();
     }
@@ -41,6 +44,7 @@ namespace flexr
     {
       std::cout << "Others --------" << std::endl;
       std::cout << "\tCamera Device Index: " << devIdx << std::endl;
+      std::cout << "\tFile Name: " << fileName << std::endl;
       std::cout << "\tFrame Resolution: " << width << " x " << height << std::endl;
     }
 
@@ -49,7 +53,11 @@ namespace flexr
     {
       if(baseSet && specificSet)
       {
-        kernels::CVCamera *temp = new kernels::CVCamera(id, devIdx, width, height, frequency);
+        kernels::CVCamera *temp = NULL;
+        if(devIdx != -1)
+          temp = new kernels::CVCamera(id, devIdx, width, height, frequency);
+        else if(fileName != "")
+          temp = new kernels::CVCamera(id, fileName, width, height, frequency);
         temp->setLogger(loggerId, loggerFileName);
 
         for(int i = 0; i < outPorts.size(); i++)
