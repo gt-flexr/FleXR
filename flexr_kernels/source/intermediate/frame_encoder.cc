@@ -113,9 +113,11 @@ namespace flexr
                            encodingFrame->width, encodingFrame->height, 1);
 
       int ret = avcodec_send_frame(encoderContext, encodingFrame);
-      while (ret >= 0) {
+      while (ret >= 0)
+      {
         ret = avcodec_receive_packet(encoderContext, &encodingPacket);
-        if(ret == 0) {
+        if(ret == 0)
+        {
           double enct = getTsNow();
           outEncodedFrame->data     = encodingPacket.data;
           outEncodedFrame->setHeader(inFrame->tag, inFrame->seq, inFrame->ts, encodingPacket.size);
@@ -127,6 +129,10 @@ namespace flexr
           if(logger.isSet()) logger.getInstance()->info("encodingTime/rtpSendingTime/KernelExeTime/Sent Size\t{}\t {}\t {}\t {}",
               enct-st, et-enct, et-st, outEncodedFrame->dataSize);
           break;
+        }
+        else
+        {
+          std::this_thread::sleep_for(std::chrono::microseconds(1));
         }
         av_packet_unref(&encodingPacket); // deleted?
       }

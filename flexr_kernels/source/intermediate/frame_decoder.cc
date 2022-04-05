@@ -89,10 +89,12 @@ namespace flexr
 
       ret = avcodec_send_packet(decoderContext, &decodingPacket);
 
-      while (ret >= 0) {
+      while (ret >= 0)
+      {
         ret = avcodec_receive_frame(decoderContext, decodingFrame);
 
-        if(ret == 0) {
+        if(ret == 0)
+        {
           av_image_copy_to_buffer(yuvFrame.data, yuvFrame.total(), decodingFrame->data, decodingFrame->linesize,
                                   static_cast<AVPixelFormat>(decodingFrame->format),
                                   decodingFrame->width, decodingFrame->height, 1);
@@ -111,6 +113,10 @@ namespace flexr
 
           portManager.sendOutput("out_frame", outFrame);
           break;
+        }
+        else
+        {
+          std::this_thread::sleep_for(std::chrono::microseconds(1));
         }
       }
 
