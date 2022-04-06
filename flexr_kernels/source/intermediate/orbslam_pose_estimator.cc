@@ -86,14 +86,18 @@ namespace flexr
       //cv::Mat img = inFrame->data.useAsCVMat().clone();
 
       cv::Mat curPose = SLAM->TrackMonocular(inFrame->data.useAsCVMat(), inFrame->ts, imus);
-      outPose->data = flexr::types::Frame(curPose);
-      outPose->setHeader("OrbCamPose", inFrame->seq, inFrame->ts, curPose.total()*curPose.elemSize());
+      if(curPose.empty() == false)
+      {
+        outPose->data = flexr::types::Frame(curPose);
+        outPose->setHeader("OrbCamPose", inFrame->seq, inFrame->ts, curPose.total()*curPose.elemSize());
 
-      double et = getTsNow();
-      if(logger.isSet()) logger.getInstance()->info("Pose Estimation\t start\t{}\t end\t{}\t exe\t{}", st, et, et-st);
-      debug_print("Pose Estimation Exe: %f", et-st);
+        double et = getTsNow();
+        if(logger.isSet()) logger.getInstance()->info("Pose Estimation\t start\t{}\t end\t{}\t exe\t{}", st, et, et-st);
+        //debug_print("Pose Estimation Exe: %f", et-st);
+        //debug_print("Mat Size: %d / %d", outPose->dataSize, outPose->data.elemSize * outPose->data.totalElem);
 
-      portManager.sendOutput<OrbSlamPoseEstimatorPoseMsgType>("out_pose", outPose);
+        portManager.sendOutput<OrbSlamPoseEstimatorPoseMsgType>("out_pose", outPose);
+      }
 
       inFrame->data.release();
       portManager.freeInput("in_frame", inFrame);

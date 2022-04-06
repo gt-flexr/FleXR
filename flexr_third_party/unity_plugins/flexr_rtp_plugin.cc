@@ -168,6 +168,39 @@ extern "C" {
   }
 
 
+  DllExport int RtpGetMatrix(int sessionIdx, bool isBlocking, int width, int height, uint8_t **destBuffer)
+  {
+    if(sessions[sessionIdx].isSet == false) return -1;
+
+    uint8_t* recvBuffer = nullptr;
+    uint32_t recvSize   = 0;
+    if( sessions[sessionIdx].receiveMsg(isBlocking, recvBuffer, recvSize) )
+    {
+      // header
+      flexr::types::Message<flexr::types::Frame> frame;
+      uint32_t msgMetaSize = sizeof(frame);
+
+      memcpy(&frame, recvBuffer, msgMetaSize);
+
+      // size check
+      if(recvSize-msgMetaSize != frame.dataSize || width*height*4 != frame.dataSize)
+      {
+        delete recvBuffer;
+        return -2;
+      }
+      else
+      {
+        memcpy(*destBuffer, recvBuffer+msgMetaSize, frame.dataSize);
+        delete recvBuffer;
+        return true;
+      }
+    }
+
+    return -3;
+  }
+
+
+
   DllExport int RtpGetObjectPose(int sessionIdx, bool isBlocking, flexr::types::ObjectPose *objectPose)
   {
     if(sessions[sessionIdx].isSet == false) return -1;
