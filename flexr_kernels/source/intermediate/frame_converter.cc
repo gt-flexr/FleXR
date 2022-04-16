@@ -12,7 +12,7 @@ namespace flexr
     {
       setName("FrameConverter");
       this->width = 0; this->height = 0;
-      portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING);
+      portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, utils::deserializeRawFrame);
       portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy);
     }
 
