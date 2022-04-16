@@ -20,12 +20,14 @@
 #include "flexr_kernels/include/yaml/sink/yaml_cv_display.h"
 #include "flexr_kernels/include/yaml/sink/yaml_cv2gl_rgb_display.h"
 #include "flexr_kernels/include/yaml/sink/yaml_non_display.h"
+#include "flexr_kernels/include/yaml/sink/yaml_rgb2rgba_app_sink.h"
 
 #include "flexr_kernels/include/yaml/source/yaml_bag_camera.h"
 #include "flexr_kernels/include/yaml/source/yaml_img_player.h"
 #include "flexr_kernels/include/yaml/source/yaml_cv_camera.h"
 #include "flexr_kernels/include/yaml/source/yaml_euroc_mono_inertial_reader.h"
 #include "flexr_kernels/include/yaml/source/yaml_keyboard.h"
+#include "flexr_kernels/include/yaml/source/yaml_rgba2rgb_app_source.h"
 
 namespace flexr
 {
@@ -201,6 +203,9 @@ namespace flexr
 #ifdef __FLEXR_KERNEL_KEYBOARD__
           if(kernel->getName() == "Keyboard") delete (flexr::kernels::Keyboard*) kernel;
 #endif
+#ifdef __FLEXR_KERNEL_RGBA2RGB_APP_SOURCE__
+          if(kernel->getName() == "Rgba2RgbAppSource") delete (flexr::kernels::Rgba2RgbAppSource*) kernel;
+#endif
 
           // Sink kernels
 #ifdef __FLEXR_KERNEL_CV_DISPLAY__
@@ -208,6 +213,9 @@ namespace flexr
 #endif
 #ifdef __FLEXR_KERNEL_NON_DISPLAY__
           if(kernel->getName() == "NonDisplay") delete (flexr::kernels::NonDisplay*) kernel;
+#endif
+#ifdef __FLEXR_KERNEL_RGB2RGBA_APP_SINK__
+          if(kernel->getName() == "Rgb2RgbaAppSink") delete (flexr::kernels::Rgb2RgbaAppSink*) kernel;
 #endif
 
           // Intermediate kernels
@@ -336,6 +344,17 @@ namespace flexr
                 debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
 #endif
               }
+              else if(doc[i]["kernel"].as<std::string>() == "Rgba2RgbAppSource")
+              {
+#ifdef __FLEXR_KERNEL_RGBA2RGB_APP_SOURCE__
+                YamlRgba2RgbAppSource yamlRgba2RgbAppSource;
+                yamlRgba2RgbAppSource.parseRgba2RgbAppSource(doc[i]);
+                yamlRgba2RgbAppSource.printRgba2RgbAppSource();
+                temp = (kernels::Rgba2RgbAppSource*)yamlRgba2RgbAppSource.make();
+#else
+                debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
+#endif
+              }
 
 
               // Sink kernels
@@ -368,6 +387,17 @@ namespace flexr
                 yamlNonDisplay.parseNonDisplay(doc[i]);
                 yamlNonDisplay.printNonDisplay();
                 temp = (kernels::NonDisplay*)yamlNonDisplay.make();
+#else
+                debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
+#endif
+              }
+              else if(doc[i]["kernel"].as<std::string>() == "Rgb2RgbaAppSink")
+              {
+#ifdef __FLEXR_KERNEL_RGB2RGBA_APP_SINK__
+                YamlRgb2RgbaAppSink yamlRgb2RgbaAppSink;
+                yamlRgb2RgbaAppSink.parseRgb2RgbaAppSink(doc[i]);
+                yamlRgb2RgbaAppSink.printRgb2RgbaAppSink();
+                temp = (kernels::Rgb2RgbaAppSink*)yamlRgb2RgbaAppSink.make();
 #else
                 debug_print("%s is not enabled at the build time.", doc[i]["kernel"].as<std::string>().c_str());
 #endif
