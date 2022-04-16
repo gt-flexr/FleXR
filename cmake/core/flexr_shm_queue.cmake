@@ -1,0 +1,15 @@
+macro(core_use_shmq)
+  pkg_search_module(SHMQ REQUIRED flexr_shmq)
+  if(SHMQ_FOUND)
+    message(STATUS "FlexrShmQueue Details")
+    message("\t SHMQ_INCLUDE_DIRS: ${SHMQ_INCLUDE_DIRS}")
+    message("\t SHMQ_CXX_FLAGS: ${SHMQ_CXX_FLAGS}")
+    message("\t SHMQ_LDFLAGS: ${SHMQ_LDFLAGS}")
+
+    include_directories(${SHMQ_INCLUDE_DIRS})
+    list(APPEND FLEXR_CORE_CXX_FLAGS ${SHMQ_CXX_FLAGS})
+    list(APPEND FLEXR_CORE_INCLUDE_DIRS -I${SHMQ_INCLUDE_DIRS})
+    list(APPEND FLEXR_CORE_LINKER_FLAGS ${SHMQ_LDFLAGS})
+  endif(SHMQ_FOUND)
+endmacro()
+

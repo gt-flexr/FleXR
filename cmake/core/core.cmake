@@ -15,6 +15,8 @@ include(cmake/core/yaml-cpp.cmake)
 include(cmake/core/rosbag.cmake)
 include(cmake/core/catch2.cmake)
 include(cmake/core/boost.cmake)
+include(cmake/core/flexr_shm_queue.cmake)
+
 
 macro(core_setup_dependencies)
   core_use_ffmpeg()
@@ -28,5 +30,6 @@ macro(core_setup_dependencies)
   core_use_yaml_cpp()
   core_use_catch2()
   core_use_boost()
+  core_use_shmq()
 endmacro()
 
