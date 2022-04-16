@@ -7,10 +7,12 @@ include(cmake/kernels/source/img_player.cmake)
 include(cmake/kernels/source/euroc_mono_inertial_reader.cmake)
 include(cmake/kernels/source/cv_camera.cmake)
 include(cmake/kernels/source/keyboard.cmake)
+include(cmake/kernels/source/rgba2rgb_app_source.cmake)
 
 include(cmake/kernels/sink/cv_display.cmake)
 include(cmake/kernels/sink/cv2gl_rgb_display.cmake)
 include(cmake/kernels/sink/non_display.cmake)
+include(cmake/kernels/sink/rgb2rgba_app_sink.cmake)
 
 include(cmake/kernels/intermediate/aruco_cam_locator.cmake)
 include(cmake/kernels/intermediate/aruco_detector.cmake)
@@ -32,11 +34,13 @@ macro(kernel_setup)
   kernel_cv_camera()
   kernel_euroc_mono_inertial_reader()
   kernel_keyboard()
+  kernel_rgba2rgb_app_source()
 
   # Sink
   kernel_cv_display()
   kernel_cv2gl_rgb_display()
   kernel_non_display()
+  kernel_rgb2rgba_app_sink()
 
   # Intermediate
   kernel_aruco_cam_locator()

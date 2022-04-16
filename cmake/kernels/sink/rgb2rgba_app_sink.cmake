@@ -1,0 +1,12 @@
+macro(kernel_rgb2rgba_app_sink)
+  if(${KERNEL_RGB2RGBA_APP_SINK})
+    if(${USE_SHMQ})
+      add_definitions(-D__FLEXR_KERNEL_RGB2RGBA_APP_SINK__)
+      list(APPEND FLEXR_KERNEL_CXX_FLAGS -D__FLEXR_KERNEL_RGB2RGBA_APP_SINK__)
+      message("\t [Sink] Rgb2RgbaAppSink")
+    else()
+      message(WARNING "Rgb2RgbaAppSink is not enabled without USE_SHMQ")
+    endif()
+  endif()
+endmacro()
+

@@ -1,0 +1,12 @@
+macro(kernel_rgba2rgb_app_source)
+  if(${KERNEL_RGBA2RGB_APP_SOURCE})
+    if(${USE_SHMQ})
+      add_definitions(-D__FLEXR_KERNEL_RGBA2RGB_APP_SOURCE__)
+      list(APPEND FLEXR_KERNEL_CXX_FLAGS -D__FLEXR_KERNEL_RGBA2RGB_APP_SOURCE__)
+      message("\t [Source] Rgba2RgbAppSource")
+    else()
+      message(WARNING "Rgba2RgbAppSource is not enabled without USE_SHMQ")
+    endif()
+  endif()
+endmacro()
+
