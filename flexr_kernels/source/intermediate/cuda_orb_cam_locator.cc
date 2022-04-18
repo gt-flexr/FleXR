@@ -21,6 +21,9 @@ namespace flexr
       minInlierThresh = 20;
       detectionThresh = 0.6f;
 
+      width  = camWidth;
+      height = camHeight;
+
       cv::Mat tempIntrinsic(3, 3, CV_64FC1);
       cv::Mat tempDistCoeffs(4, 1, CV_64FC1, {0, 0, 0, 0});
       tempIntrinsic.at<double>(0, 0) = width;
@@ -32,7 +35,6 @@ namespace flexr
       tempIntrinsic.at<double>(2, 0) = 0;
       tempIntrinsic.at<double>(2, 1) = 0;
       tempIntrinsic.at<double>(2, 2) = 1;
-      width = camWidth; height = camHeight;
       camIntrinsic = tempIntrinsic.clone();
       camDistCoeffs = tempDistCoeffs.clone();
 
@@ -150,8 +152,7 @@ namespace flexr
           outCamPose->data.rx = rx;
           outCamPose->data.ry = ry;
           outCamPose->data.rz = rz;
-          double et = getTsNow();
-          if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}", st, et, et-st);
+
           portManager.sendOutput("out_cam_pose", outCamPose);
         }
         else
@@ -160,6 +161,9 @@ namespace flexr
                      (float)objMatch.size()/(float)markerKps.size(), detectionThresh);
         }
       }
+
+      double et = getTsNow();
+      if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}", st, et, et-st);
 
       inFrame->data.release();
       portManager.freeInput("in_frame", inFrame);
