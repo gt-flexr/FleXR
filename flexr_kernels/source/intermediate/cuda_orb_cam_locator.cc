@@ -19,7 +19,7 @@ namespace flexr
       knnParam = 3;
       ransacThresh = 5.0f;
       minInlierThresh = 20;
-      detectionThresh = 0.6f;
+      detectionThresh = 0.2f;
 
       width  = camWidth;
       height = camHeight;

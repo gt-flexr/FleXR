@@ -20,7 +20,7 @@
   frequency: 60
   logger   : [server_frame_encoder, server_frame_encoder.log]
   others   :
-    - encoder : libx264
+    - encoder : h264_nvenc
       width   : 1920
       height  : 1080
       bitrate : 10000000
@@ -30,7 +30,7 @@
   output   :
     - port_name      : out_encoded_frame
       connection_type: remote
-      remote_info    : [RTP, 127.0.0.1, 49992]
+      remote_info    : [RTP, 192.168.0.9, 49992]
 
 
 - local_connections:

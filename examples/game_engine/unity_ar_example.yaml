@@ -1,11 +1,11 @@
 - kernel   : BagCamera
   id       : bag_camera
-  frequency: 15
+  frequency: 30
   logger   : [bag_camera, bag_camera.log]
   others   :
     - frames_to_cache: 400
       start_index    : 400
-      bag_path       :
+      bag_path       : /home/jin/mnt/aruco/aruco.bag
       bag_topic      : /camera/image_raw
   output   :
     - port_name      : out_frame
@@ -18,7 +18,7 @@
 
 - kernel   : Keyboard
   id       : keyboard
-  frequency: 120
+  frequency: 30
   logger   : [keyboard, keyboard.log]
   output   :
     - port_name      : out_key
@@ -29,7 +29,7 @@
 
 - kernel   : ArUcoCamLocator
   id       : aruco_cam_locator
-  frequency: 60
+  frequency: 30
   logger   : [aruco_cam_locator, aruco_cam_locator.log]
   others   :
     - marker_dict: DICT_6X6_250

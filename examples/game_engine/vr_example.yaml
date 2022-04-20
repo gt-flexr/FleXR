@@ -15,6 +15,17 @@
       connection_type: local
 
 
+- kernel   : Keyboard
+  id       : keyboard
+  frequency: 30
+  logger   : [keyboard, keyboard.log]
+  output   :
+    - port_name      : out_key
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 49993]
+  single   : true
+
+
 - kernel   : OrbSlamPoseEstimator
   id       : orbslam_pose_estimator
   frequency: 300
@@ -31,17 +42,22 @@
       connection_type: local
   output    :
     - port_name      : out_pose
-      connection_type: local
-      semantics      : nonblocking
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 49995]
 
 
-- kernel   : NonDisplay
-  id       : non_display
+- kernel   : Cv2GlRgbDisplay
+  id       : cv2gl_rgb_display
   frequency: 60
-  logger   : [non_display, non_display.log]
+  logger   : [cv2gl_rgb_display, cv2gl_rgb_display.log]
+  others   :
+    - width  : 1920
+      height : 1080
   input    :
     - port_name      : in_frame
-      connection_type: local
+      connection_type: remote
+      remote_info    : [RTP, 49997]
+  single   : true
 
 
 - local_connections:
@@ -56,11 +72,5 @@
     send_port_name: out_imus
     recv_kernel: orbslam_pose_estimator
     recv_port_name: in_imus
-    queue_size: 1
-
-  - send_kernel: orbslam_pose_estimator
-    send_port_name: out_pose
-    recv_kernel: non_display
-    recv_port_name: in_frame
     queue_size: 1
 

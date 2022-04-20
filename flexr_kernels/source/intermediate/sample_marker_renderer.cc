@@ -13,7 +13,7 @@ namespace flexr
     {
       setName("SampleMarkerRenderer");
       portManager.registerInPortTag("in_frame", components::PortDependency::BLOCKING, utils::deserializeRawFrame);
-      portManager.registerInPortTag("in_cam_pose", components::PortDependency::BLOCKING);
+      portManager.registerInPortTag("in_cam_pose", components::PortDependency::NONBLOCKING);
       portManager.registerInPortTag("in_key", components::PortDependency::NONBLOCKING);
       portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, utils::serializeRawFrame);
 

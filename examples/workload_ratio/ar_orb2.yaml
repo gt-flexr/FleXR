@@ -1,0 +1,108 @@
+- kernel   : ImgPlayer
+  id       : img_player
+  frequency: 30
+  logger   : [img_player, img_player.log]
+  others   :
+    - image_path    : /home/jin/mnt/Data/aruco_cam
+      filename_zeros: 6
+      num_of_images : 400
+      iterate       : true
+      caching       : true
+  output   :
+    - port_name      : out_frame
+      connection_type: local
+      semantics      : blocking
+    - port_name      : out_frame2
+      connection_type: local
+      duplicated_from: out_frame
+      semantics      : nonblocking
+
+
+- kernel   : Keyboard
+  id       : keyboard
+  frequency: 30
+  logger   : [keyboard, keyboard.log]
+  output    :
+    - port_name      : out_key
+      connection_type: local
+      semantics      : blocking
+
+
+
+- kernel   : CudaOrbCamLocator
+  id       : cuda_orb_cam_locator
+  frequency: 30
+  logger   : [cuda_orb_cam_locator, cuda_orb_cam_locator.log]
+  others   :
+    - marker_image: /home/jin/mnt/aruco/0.png
+      width       : 1920
+      height      : 1080
+  input    :
+    - port_name      : in_frame
+      connection_type: local
+  output    :
+    - port_name      : out_cam_pose
+      connection_type: local
+      semantics      : blocking
+
+
+- kernel   : SampleMarkerRenderer
+  id       : sample_marker_renderer
+  frequency: 30
+  logger   : [sample_marker_renderer, sample_marker_renderer.log]
+  others   :
+    - width : 1920
+      height: 1080
+  input    :
+    - port_name      : in_frame
+      connection_type: local
+    - port_name      : in_key
+      connection_type: local
+    - port_name      : in_cam_pose
+      connection_type: local
+  output    :
+    - port_name      : out_frame
+      connection_type: local
+
+
+- kernel   : Cv2GlRgbDisplay
+  id       : cv2gl_rgb_display
+  frequency: 60
+  logger   : [cv2gl_rgb_display, cv2gl_rgb_display.log]
+  others   :
+    - width  : 1920
+      height : 1080
+  input    :
+    - port_name      : in_frame
+      connection_type: local
+
+
+- local_connections:
+  - send_kernel   : img_player
+    send_port_name: out_frame2
+    recv_kernel   : cuda_orb_cam_locator
+    recv_port_name: in_frame
+    queue_size    : 1
+
+  - send_kernel   : cuda_orb_cam_locator
+    send_port_name: out_cam_pose
+    recv_kernel   : sample_marker_renderer
+    recv_port_name: in_cam_pose
+    queue_size    : 1
+  - send_kernel   : keyboard
+    send_port_name: out_key
+    recv_kernel   : sample_marker_renderer
+    recv_port_name: in_key
+    queue_size    : 1
+  - send_kernel   : img_player
+    send_port_name: out_frame
+    recv_kernel   : sample_marker_renderer
+    recv_port_name: in_frame
+    queue_size    : 1
+
+  - send_kernel   : sample_marker_renderer
+    send_port_name: out_frame
+    recv_kernel   : cv2gl_rgb_display
+    recv_port_name: in_frame
+    queue_size    : 1
+
