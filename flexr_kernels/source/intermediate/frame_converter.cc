@@ -29,7 +29,7 @@ namespace flexr
       this->width = width;
       this->height = height;
 
-      setInFormat();
+      setFormats();
     }
 
 
@@ -38,8 +38,10 @@ namespace flexr
       if(conv == "RGB2RGBA") this->conv = Conversion::RGB2RGBA;
       else if(conv == "RGBA2RGB") this->conv = Conversion::RGBA2RGB;
       else if(conv == "BGRA2RGB") this->conv = Conversion::BGRA2RGB;
+      else if(conv == "GRAY2RGB") this->conv = Conversion::GRAY2RGB;
+      else if(conv == "RGB2GRAY") this->conv = Conversion::RGB2GRAY;
 
-      setInFormat();
+      setFormats();
     }
 
 
@@ -47,41 +49,52 @@ namespace flexr
     {
       this->conv = conv;
 
-      setInFormat();
+      setFormats();
     }
 
 
-    void FrameConverter::setInFormat()
+    void FrameConverter::setFormats()
     {
       switch(conv) {
         case Conversion::RGB2RGBA:
-          inFormat = cv::Mat(height, width, CV_8UC3);
+          inFormat  = cv::Mat(height, width, CV_8UC3);
+          outFormat = cv::Mat(height, width, CV_8UC4);
           break;
         case Conversion::RGBA2RGB:
         case Conversion::BGRA2RGB:
-          inFormat = cv::Mat(height, width, CV_8UC4);
+          inFormat  = cv::Mat(height, width, CV_8UC4);
+          outFormat = cv::Mat(height, width, CV_8UC3);
+          break;
+        case Conversion::RGB2GRAY:
+          inFormat  = cv::Mat(height, width, CV_8UC3);
+          outFormat = cv::Mat(height, width, CV_8UC1);
+          break;
+        case Conversion::GRAY2RGB:
+          inFormat  = cv::Mat(height, width, CV_8UC1);
+          outFormat = cv::Mat(height, width, CV_8UC3);
           break;
         default:
           debug_print("Conversion type is not specified");
           break;
       }
-      inFrameSize = inFormat.elemSize() * inFormat.total();
+      inFrameSize  = inFormat.elemSize() * inFormat.total();
+      outFrameSize = outFormat.elemSize() * outFormat.total();
     }
 
 
     raft::kstatus FrameConverter::run()
     {
+      cv::Mat temp = outFormat.clone();
+
       Message<Frame> *inFrame  = portManager.getInput<Message<Frame>>("in_frame");
       inFrame->data.setFrameAttribFromCVMat(inFormat);
       inFrame->dataSize = inFrame->data.dataSize;
-      if(conv == Conversion::RGBA2RGB) debug_print("received Data Size: %d/%d", inFrame->dataSize, inFrameSize);
 
       Message<Frame> *outFrame = portManager.getOutputPlaceholder<Message<Frame>>("out_frame");
       outFrame->ts = inFrame->ts;
       strcpy(outFrame->tag, inFrame->tag);
       outFrame->seq = inFrame->seq;
 
-      cv::Mat temp;
       switch(conv) {
       case Conversion::RGB2RGBA:
         cv::cvtColor(inFrame->data.useAsCVMat(), temp, cv::COLOR_RGB2RGBA); break;
@@ -89,6 +102,10 @@ namespace flexr
         cv::cvtColor(inFrame->data.useAsCVMat(), temp, cv::COLOR_RGBA2RGB); break;
       case Conversion::BGRA2RGB:
         cv::cvtColor(inFrame->data.useAsCVMat(), temp, cv::COLOR_BGRA2RGB); break;
+      case Conversion::GRAY2RGB:
+        cv::cvtColor(inFrame->data.useAsCVMat(), temp, cv::COLOR_GRAY2RGB); break;
+      case Conversion::RGB2GRAY:
+        cv::cvtColor(inFrame->data.useAsCVMat(), temp, cv::COLOR_RGB2GRAY); break;
       default:
         break;
       }
