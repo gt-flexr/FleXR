@@ -1,0 +1,43 @@
+- kernel   : FrameDecoder
+  id       : frameDecoder1
+  frequency: 60
+  logger   : [client_frame_decoder, client_frame_decoder.log]
+  others   :
+    - decoder: h264_cuvid
+      width  : 1920
+      height : 1080
+  input    :
+    - port_name      : in_encoded_frame
+      connection_type: remote
+      remote_info    : [RTP, 49991]
+  output   :
+    - port_name      : out_frame
+      connection_type: local
+
+- kernel   : OrbSlamPoseEstimator
+  id       : orbslam_pose_estimator
+  frequency: 60
+  logger   : [orbslam_pose_estimator, orbslam_pose_estimator.log]
+  others   :
+    - voca_path       : /home/jin/mnt/Data/EuRoC/ORBvoc.txt
+      slam_config_path: /home/jin/mnt/Data/EuRoC/EuRoC.yaml
+      sensor          : mono_inertial
+      viewer          : false
+  input    :
+    - port_name      : in_frame
+      connection_type: local
+    - port_name      : in_imus
+      connection_type: remote
+      remote_info    : [RTP, 49993]
+  output    :
+    - port_name      : out_pose
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 49995]
+
+- local_connections:
+  - send_kernel   : frameDecoder1
+    send_port_name: out_frame
+    recv_kernel   : orbslam_pose_estimator
+    recv_port_name: in_frame
+    queue_size    : 1
+

@@ -1,0 +1,39 @@
+- kernel   : FrameDecoder
+  id       : frameDecoder1
+  frequency: 60
+  logger   : [client_frame_decoder, client_frame_decoder.log]
+  others   :
+    - decoder: h264_cuvid
+      width  : 1920
+      height : 1080
+  input    :
+    - port_name      : in_encoded_frame
+      connection_type: remote
+      remote_info    : [RTP, 49991]
+  output   :
+    - port_name      : out_frame
+      connection_type: local
+
+- kernel   : ArUcoCamLocator
+  id       : aruco_cam_locator
+  frequency: 60
+  logger   : [aruco_cam_locator, aruco_cam_locator.log]
+  others   :
+    - marker_dict: DICT_6X6_250
+      width       : 1920
+      height      : 1080
+  input    :
+    - port_name      : in_frame
+      connection_type: local
+  output    :
+    - port_name      : out_cam_pose
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 49995]
+
+- local_connections:
+  - send_kernel   : frameDecoder1
+    send_port_name: out_frame
+    recv_kernel   : aruco_cam_locator
+    recv_port_name: in_frame
+    queue_size    : 1
+
