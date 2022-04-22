@@ -28,7 +28,9 @@ namespace flexr
       public:
         enum Conversion { RGB2RGBA,
                           RGBA2RGB,
-                          BGRA2RGB };
+                          BGRA2RGB,
+                          GRAY2RGB,
+                          RGB2GRAY};
 
 
       /**
@@ -87,9 +89,11 @@ namespace flexr
         Conversion conv;
 
         cv::Mat inFormat;
+        cv::Mat outFormat;
         int inFrameSize;
+        int outFrameSize;
 
-        void setInFormat();
+        void setFormats();
     };
 
   }   // namespace kernels
