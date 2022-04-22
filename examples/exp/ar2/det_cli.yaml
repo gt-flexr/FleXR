@@ -13,18 +13,7 @@
     - port_name      : out_frame2
       connection_type: local
       duplicated_from: out_frame
-- kernel   : Rgba2RgbAppSource
-  id       : rgba2rgb_app_source
-  frequency: 60
-  logger   : [rgba2rgb_app_source, rgba2rgb_app_source.log]
-  others   :
-    - shmq_name: "flexr_capture_sink"
-      max_shmq_elem: 2
-      width  : 1920
-      height : 1080
-  output    :
-    - port_name      : out_frame
-      connection_type: local
+
 - kernel   : NvmpiEncoder
   id       : nvmpiEncoder1
   frequency: 60
@@ -44,6 +33,19 @@
       connection_type: remote
       remote_info    : [RTP, 192.168.0.14, 49991]
 
+- kernel   : Rgb2RgbaAppSink
+  id       : rgb2rgba_app_sink
+  frequency: 60
+  logger   : [rgb2rgba_app_sink, rgb2rgba_app_sink.log]
+  others   :
+    - shmq_name: "flexr_camera_source"
+      max_shmq_elem: 2
+      width  : 1920
+      height : 1080
+  input    :
+    - port_name      : in_frame
+      connection_type: local
+
 - local_connections:
   - send_kernel   : bag_camera
     send_port_name: out_frame
@@ -52,7 +54,7 @@
     queue_size    : 1
   - send_kernel   : bag_camera
     send_port_name: out_frame2
-    recv_kernel   : rgba2rgb_app_source
+    recv_kernel   : rgb2rgba_app_sink
     recv_port_name: in_frame
     queue_size    : 1
 

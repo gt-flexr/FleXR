@@ -14,6 +14,21 @@
     - port_name      : out_frame
       connection_type: local
 
+- kernel   : FrameConverter
+  id       : frameConverter
+  frequency: 60
+  logger   : [frameConverter, frameConverter.log]
+  others   :
+    - width          : 752
+      height         : 480
+      conversion_type: RGB2GRAY
+  input    :
+    - port_name: in_frame
+      connection_type: local
+  output   :
+    - port_name      : out_frame
+      connection_type: local
+
 - kernel   : OrbSlamPoseEstimator
   id       : orbslam_pose_estimator
   frequency: 60
@@ -36,6 +51,11 @@
 
 - local_connections:
   - send_kernel   : frameDecoder1
+    send_port_name: out_frame
+    recv_kernel   : frameConverter
+    recv_port_name: in_frame
+    queue_size    : 1
+  - send_kernel   : frameConverter
     send_port_name: out_frame
     recv_kernel   : orbslam_pose_estimator
     recv_port_name: in_frame

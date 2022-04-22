@@ -16,6 +16,22 @@
       connection_type: remote
       remote_info    : [RTP, 192.168.0.14, 49993]
 
+- kernel   : FrameConverter
+  id       : frameConverter
+  frequency: 60
+  logger   : [frameConverter, frameConverter.log]
+  others   :
+    - width          : 752
+      height         : 480
+      conversion_type: GRAY2RGB
+  input    :
+    - port_name: in_frame
+      connection_type: local
+  output   :
+    - port_name      : out_frame
+      connection_type: local
+
+
 - kernel   : NvmpiEncoder
   id       : nvmpiEncoder1
   frequency: 60
@@ -38,6 +54,11 @@
 
 - local_connections:
   - send_kernel: euroc_monoiner_reader
+    send_port_name: out_frame
+    recv_kernel: frameConverter
+    recv_port_name: in_frame
+    queue_size: 1
+  - send_kernel: frameConverter
     send_port_name: out_frame
     recv_kernel: nvmpiEncoder1
     recv_port_name: in_frame
