@@ -21,17 +21,17 @@ namespace flexr
     raft::kstatus Rgb2RgbaAppSink::run()
     {
       types::Message<types::Frame> *inFrame = portManager.getInput<types::Message<types::Frame>>("in_frame");
-      double st = getTsNow();
 
+      double st = getTsNow();
       if(shmQueue.isFull() == false)
       {
         cv::Mat rgba;
         cv::cvtColor(inFrame->data.useAsCVMat(), rgba, cv::COLOR_RGB2RGBA);
+        double et = getTsNow();
         bool res = shmQueue.enqueueElem(rgba.data, rgba.elemSize()*rgba.total());
         if(res)
         {
-          double et = getTsNow();
-          if(logger.isSet()) logger.getInstance()->info("{}frame\t E2E latency\t{}", inFrame->seq, et - inFrame->ts);
+          if(logger.isSet()) logger.getInstance()->info("{}frame\t rgb2rgba\t{}", inFrame->seq, et - st);
         }
       }
 
