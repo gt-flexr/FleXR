@@ -1,0 +1,84 @@
+- kernel   : BagCamera
+  id       : bag_camera
+  frequency: 30
+  logger   : [bag_camera, bag_camera.log]
+  others   :
+    - frames_to_cache: 400
+      start_index    : 400
+      bag_path       : /home/jin/mnt/aruco/aruco.bag
+      bag_topic      : /camera/image_raw
+  output   :
+    - port_name      : out_frame
+      connection_type: local
+    - port_name      : out_frame2
+      connection_type: local
+      duplicated_from: out_frame
+
+- kernel   : NvmpiEncoder
+  id       : nvmpiEncoder1
+  frequency: 60
+  logger   : [client_nvmpi_encoder, client_nvmpi_encoder.log]
+  others   :
+    - encoder : h264_nvmpi
+      width   : 1920
+      height  : 1080
+      bitrate : 100000000
+      fps     : 60
+      qp      : 0
+  input    :
+    - port_name: in_frame
+      connection_type: local
+  output   :
+    - port_name      : out_encoded_frame
+      connection_type: remote
+      remote_info    : [RTP, 192.168.0.14, 49991]
+
+- kernel   : SampleMarkerRenderer
+  id       : sample_marker_renderer
+  frequency: 60
+  logger   : [sample_marker_renderer, sample_marker_renderer.log]
+  others   :
+    - width : 1920
+      height: 1080
+  input    :
+    - port_name      : in_frame
+      connection_type: local
+    - port_name      : in_key
+      connection_type: remote
+      remote_info    : [RTP, 49997]
+    - port_name      : in_cam_pose
+      connection_type: remote
+      remote_info    : [RTP, 49995]
+  output    :
+    - port_name      : out_frame
+      connection_type: local
+
+- kernel   : Cv2GlRgbDisplay
+  id       : cv2gl_rgb_display
+  frequency: 60
+  logger   : [cv2gl_rgb_display, cv2gl_rgb_display.log]
+  others   :
+    - width  : 1920
+      height : 1080
+  input    :
+    - port_name      : in_frame
+      connection_type: local
+
+
+- local_connections:
+  - send_kernel   : bag_camera
+    send_port_name: out_frame
+    recv_kernel   : nvmpiEncoder1
+    recv_port_name: in_frame
+    queue_size    : 1
+  - send_kernel   : bag_camera
+    send_port_name: out_frame2
+    recv_kernel   : sample_marker_renderer
+    recv_port_name: in_frame
+    queue_size    : 1
+  - send_kernel   : sample_marker_renderer
+    send_port_name: out_frame
+    recv_kernel   : cv2gl_rgb_display
+    recv_port_name: in_frame
+    queue_size    : 1
+

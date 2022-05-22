@@ -1,40 +1,31 @@
 - kernel   : EurocMonoInertialReader
   id       : euroc_monoiner_reader
-  frequency: 25
+  frequency: 30
   logger   : [euroc_monoiner_reader, euroc_monoiner_reader.log]
   others   :
-    - img_path: /home/mnt/Data/EuRoC/V101/mav0/cam0/data
-      img_ts_path: /home/mnt/Data/EuRoC/V101/V101.txt
+    - img_path: /home/jin/mnt/Data/EuRoC/V101/mav0/cam0/data
+      img_ts_path: /home/jin/mnt/Data/EuRoC/V101/V101.txt
       img_total: 2912
-      imu_path: /home/mnt/Data/EuRoC/V101/mav0/imu0/data.csv
+      imu_path: /home/jin/mnt/Data/EuRoC/V101/mav0/imu0/data.csv
       imu_total: 29120
   output    :
     - port_name      : out_frame
       connection_type: local
+      semantics      : blocking
     - port_name      : out_imus
       connection_type: local
-
-
-- kernel   : Keyboard
-  id       : keyboard
-  frequency: 30
-  logger   : [keyboard, keyboard.log]
-  output   :
-    - port_name      : out_key
-      connection_type: remote
-      remote_info    : [RTP, 127.0.0.1, 49993]
-  single   : true
+      semantics      : blocking
 
 
 - kernel   : OrbSlamPoseEstimator
   id       : orbslam_pose_estimator
-  frequency: 300
+  frequency: 60
   logger   : [orbslam_pose_estimator, orbslam_pose_estimator.log]
   others   :
     - voca_path       : /home/jin/mnt/Data/EuRoC/ORBvoc.txt
       slam_config_path: /home/jin/mnt/Data/EuRoC/EuRoC.yaml
       sensor          : mono_inertial
-      viewer          : true
+      viewer          : false
   input    :
     - port_name      : in_frame
       connection_type: local
@@ -46,22 +37,7 @@
       remote_info    : [RTP, 127.0.0.1, 49995]
 
 
-- kernel   : Cv2GlRgbDisplay
-  id       : cv2gl_rgb_display
-  frequency: 60
-  logger   : [cv2gl_rgb_display, cv2gl_rgb_display.log]
-  others   :
-    - width  : 1920
-      height : 1080
-  input    :
-    - port_name      : in_frame
-      connection_type: remote
-      remote_info    : [RTP, 49997]
-  single   : true
-
-
 - local_connections:
-
   - send_kernel: euroc_monoiner_reader
     send_port_name: out_frame
     recv_kernel: orbslam_pose_estimator

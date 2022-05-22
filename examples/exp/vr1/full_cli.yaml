@@ -1,0 +1,99 @@
+- kernel   : EurocMonoInertialReader
+  id       : euroc_monoiner_reader
+  frequency: 30
+  logger   : [euroc_monoiner_reader, euroc_monoiner_reader.log]
+  others   :
+    - img_path: /home/jin/mnt/Data/EuRoC/V101/mav0/cam0/data
+      img_ts_path: /home/jin/mnt/Data/EuRoC/V101/V101.txt
+      img_total: 2912
+      imu_path: /home/jin/mnt/Data/EuRoC/V101/mav0/imu0/data.csv
+      imu_total: 29120
+  output    :
+    - port_name      : out_frame
+      connection_type: local
+      semantics      : blocking
+    - port_name      : out_imus
+      connection_type: remote
+      remote_info    : [RTP, 192.168.0.14, 49993]
+
+- kernel   : FrameConverter
+  id       : frameConverter
+  frequency: 60
+  logger   : [frameConverter, frameConverter.log]
+  others   :
+    - width          : 752
+      height         : 480
+      conversion_type: GRAY2RGB
+  input    :
+    - port_name: in_frame
+      connection_type: local
+  output   :
+    - port_name      : out_frame
+      connection_type: local
+
+- kernel   : NvmpiEncoder
+  id       : nvmpiEncoder1
+  frequency: 60
+  logger   : [client_nvmpi_encoder, client_nvmpi_encoder.log]
+  others   :
+    - encoder : h264_nvmpi
+      width   : 752
+      height  : 480
+      bitrate : 10000000
+      fps     : 60
+      qp      : 0
+  input    :
+    - port_name: in_frame
+      connection_type: local
+  output   :
+    - port_name      : out_encoded_frame
+      connection_type: remote
+      remote_info    : [RTP, 192.168.0.14, 49991]
+
+
+- kernel   : NvmpiDecoder
+  id       : nvmpiDecoder1
+  frequency: 60
+  logger   : [client_nvmpi_decoder, client_nvmpi_decoder.log]
+  others   :
+    - decoder: h264_nvmpi
+      width  : 1920
+      height : 1080
+  input    :
+    - port_name      : in_encoded_frame
+      connection_type: remote
+      remote_info    : [RTP, 49995]
+  output   :
+    - port_name      : out_frame
+      connection_type: local
+
+
+- kernel   : Cv2GlRgbDisplay
+  id       : cv2gl_rgb_display
+  frequency: 60
+  logger   : [cv2gl_rgb_display, cv2gl_rgb_display.log]
+  others   :
+    - width  : 1920
+      height : 1080
+  input    :
+    - port_name      : in_frame
+      connection_type: local
+
+
+- local_connections:
+  - send_kernel   : euroc_monoiner_reader
+    send_port_name: out_frame
+    recv_kernel   : frameConverter
+    recv_port_name: in_frame
+    queue_size    : 1
+  - send_kernel   : frameConverter
+    send_port_name: out_frame
+    recv_kernel   : nvmpiEncoder1
+    recv_port_name: in_frame
+    queue_size    : 1
+  - send_kernel   : nvmpiDecoder1
+    send_port_name: out_frame
+    recv_kernel   : cv2gl_rgb_display
+    recv_port_name: in_frame
+    queue_size    : 1
+
