@@ -62,12 +62,9 @@ namespace flexr
           if(outPorts[i].portName == "out_frame")
           {
             if(outPorts[i].connectionType == "local")
-              temp->activateOutPortAsLocal<types::Message<types::Frame>>(outPorts[i].portName);
+              temp->activateOutPortAsLocal<types::Message<types::Frame>>(outPorts[i]);
             else if(outPorts[i].connectionType == "remote")
-              temp->activateOutPortAsRemote<types::Message<types::Frame>>(outPorts[i].portName,
-                                                                          outPorts[i].protocol,
-                                                                          outPorts[i].connectingAddr,
-                                                                          outPorts[i].connectingPortNum);
+              temp->activateOutPortAsRemote<types::Message<types::Frame>>(outPorts[i]);
           }
           else
           {
@@ -75,12 +72,9 @@ namespace flexr
             if(outPorts[i].duplicatedFrom == "out_frame")
             {
               if(outPorts[i].connectionType == "local")
-                temp->duplicateOutPortAsLocal<types::Message<types::Frame>>(outPorts[i].duplicatedFrom,
-                                                                            outPorts[i].portName);
+                temp->duplicateOutPortAsLocal<types::Message<types::Frame>>(outPorts[i]);
               else if(outPorts[i].connectionType == "remote")
-                temp->duplicateOutPortAsRemote<types::Message<types::Frame>>(
-                    outPorts[i].duplicatedFrom, outPorts[i].portName,
-                    outPorts[i].protocol, outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
+                temp->duplicateOutPortAsRemote<types::Message<types::Frame>>(outPorts[i]);
             }
             else debug_print("invalid output port_name %s for Rgba2RgbAppSource", outPorts[i].portName.c_str());
           }

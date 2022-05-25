@@ -64,11 +64,9 @@ namespace flexr
           if(inPorts[i].portName == "in_frame")
           {
             if(inPorts[i].connectionType == "local")
-              temp->activateInPortAsLocal<kernels::EncoderInFrameType>(inPorts[i].portName);
+              temp->activateInPortAsLocal<kernels::EncoderInFrameType>(inPorts[i]);
             else if(inPorts[i].connectionType == "remote")
-              temp->activateInPortAsRemote<kernels::EncoderInFrameType>(inPorts[i].portName,
-                                                                        inPorts[i].protocol,
-                                                                        inPorts[i].bindingPortNum);
+              temp->activateInPortAsRemote<kernels::EncoderInFrameType>(inPorts[i]);
           }
           else debug_print("invalid input port_name %s for NvmpiEncoder", inPorts[i].portName.c_str());
         }
@@ -79,12 +77,9 @@ namespace flexr
           if(outPorts[i].portName == "out_encoded_frame")
           {
             if(outPorts[i].connectionType == "local")
-              temp->activateOutPortAsLocal<kernels::EncoderOutEncodedFrameType>(outPorts[i].portName);
+              temp->activateOutPortAsLocal<kernels::EncoderOutEncodedFrameType>(outPorts[i]);
             else if(outPorts[i].connectionType == "remote")
-              temp->activateOutPortAsRemote<kernels::EncoderInFrameType>(outPorts[i].portName,
-                                                                         outPorts[i].protocol,
-                                                                         outPorts[i].connectingAddr,
-                                                                         outPorts[i].connectingPortNum);
+              temp->activateOutPortAsRemote<kernels::EncoderInFrameType>(outPorts[i]);
           }
           else
           {
@@ -92,14 +87,9 @@ namespace flexr
             if(outPorts[i].duplicatedFrom == "out_encoded_frame")
             {
               if(outPorts[i].connectionType == "local")
-                temp->duplicateOutPortAsLocal<kernels::EncoderOutEncodedFrameType>(outPorts[i].duplicatedFrom,
-                                                                                   outPorts[i].portName);
+                temp->duplicateOutPortAsLocal<kernels::EncoderOutEncodedFrameType>(outPorts[i]);
               else if(outPorts[i].connectionType == "remote")
-                temp->duplicateOutPortAsRemote<kernels::EncoderOutEncodedFrameType>(outPorts[i].duplicatedFrom,
-                                                                                    outPorts[i].portName,
-                                                                                    outPorts[i].protocol,
-                                                                                    outPorts[i].connectingAddr,
-                                                                                    outPorts[i].connectingPortNum);
+                temp->duplicateOutPortAsRemote<kernels::EncoderOutEncodedFrameType>(outPorts[i]);
             }
             else debug_print("invalid output port_name %s for NvmpiEncoder", outPorts[i].portName.c_str());
           }

@@ -38,12 +38,9 @@ namespace flexr
           if(outPorts[i].portName == "out_key")
           {
             if(outPorts[i].connectionType == "local")
-              temp->activateOutPortAsLocal<kernels::KeyboardMsgType>(outPorts[i].portName);
+              temp->activateOutPortAsLocal<kernels::KeyboardMsgType>(outPorts[i]);
             else if(outPorts[i].connectionType == "remote")
-              temp->activateOutPortAsRemote<kernels::KeyboardMsgType>(outPorts[i].portName,
-                                                                      outPorts[i].protocol,
-                                                                      outPorts[i].connectingAddr,
-                                                                      outPorts[i].connectingPortNum);
+              temp->activateOutPortAsRemote<kernels::KeyboardMsgType>(outPorts[i]);
           }
           else
           {
@@ -51,12 +48,9 @@ namespace flexr
             if(outPorts[i].duplicatedFrom == "out_key")
             {
               if(outPorts[i].connectionType == "local")
-                temp->duplicateOutPortAsLocal<kernels::KeyboardMsgType>(outPorts[i].duplicatedFrom,
-                                                                        outPorts[i].portName);
+                temp->duplicateOutPortAsLocal<kernels::KeyboardMsgType>(outPorts[i]);
               else if(outPorts[i].connectionType == "remote")
-                temp->duplicateOutPortAsRemote<kernels::KeyboardMsgType>(
-                    outPorts[i].duplicatedFrom, outPorts[i].portName,
-                    outPorts[i].protocol, outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
+                temp->duplicateOutPortAsRemote<kernels::KeyboardMsgType>(outPorts[i]);
             }
             else debug_print("invalid output port_name %s for Keyboard", outPorts[i].portName.c_str());
           }

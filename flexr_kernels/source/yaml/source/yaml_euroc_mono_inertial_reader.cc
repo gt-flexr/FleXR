@@ -64,22 +64,16 @@ namespace flexr
           if(outPorts[i].portName == "out_frame")
           {
             if(outPorts[i].connectionType == "local")
-              temp->activateOutPortAsLocal<kernels::EurocImgMsgType>(outPorts[i].portName);
+              temp->activateOutPortAsLocal<kernels::EurocImgMsgType>(outPorts[i]);
             else if(outPorts[i].connectionType == "remote")
-              temp->activateOutPortAsRemote<kernels::EurocImgMsgType>(outPorts[i].portName,
-                  outPorts[i].protocol,
-                  outPorts[i].connectingAddr,
-                  outPorts[i].connectingPortNum);
+              temp->activateOutPortAsRemote<kernels::EurocImgMsgType>(outPorts[i]);
           }
           else if(outPorts[i].portName == "out_imus")
           {
             if(outPorts[i].connectionType == "local")
-              temp->activateOutPortAsLocal<kernels::EurocImusMsgType>(outPorts[i].portName);
+              temp->activateOutPortAsLocal<kernels::EurocImusMsgType>(outPorts[i]);
             else if(outPorts[i].connectionType == "remote")
-              temp->activateOutPortAsRemote<kernels::EurocImusMsgType>(outPorts[i].portName,
-                  outPorts[i].protocol,
-                  outPorts[i].connectingAddr,
-                  outPorts[i].connectingPortNum);
+              temp->activateOutPortAsRemote<kernels::EurocImusMsgType>(outPorts[i]);
           }
           else
           {
@@ -87,22 +81,16 @@ namespace flexr
             if(outPorts[i].duplicatedFrom == "out_frame")
             {
               if(outPorts[i].connectionType == "local")
-                temp->duplicateOutPortAsLocal<kernels::EurocImgMsgType>(outPorts[i].duplicatedFrom,
-                    outPorts[i].portName);
+                temp->duplicateOutPortAsLocal<kernels::EurocImgMsgType>(outPorts[i]);
               else if(outPorts[i].connectionType == "remote")
-                temp->duplicateOutPortAsRemote<kernels::EurocImgMsgType>(
-                    outPorts[i].duplicatedFrom, outPorts[i].portName,
-                    outPorts[i].protocol, outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
+                temp->duplicateOutPortAsRemote<kernels::EurocImgMsgType>(outPorts[i]);
             }
             else if(outPorts[i].duplicatedFrom == "out_imus")
             {
               if(outPorts[i].connectionType == "local")
-                temp->duplicateOutPortAsLocal<kernels::EurocImusMsgType>(outPorts[i].duplicatedFrom,
-                    outPorts[i].portName);
+                temp->duplicateOutPortAsLocal<kernels::EurocImusMsgType>(outPorts[i]);
               else if(outPorts[i].connectionType == "remote")
-                temp->duplicateOutPortAsRemote<kernels::EurocImusMsgType>(
-                    outPorts[i].duplicatedFrom, outPorts[i].portName,
-                    outPorts[i].protocol, outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
+                temp->duplicateOutPortAsRemote<kernels::EurocImusMsgType>(outPorts[i]);
             }
             else debug_print("invalid output port_name %s for EurocMonoInertialReader", outPorts[i].portName.c_str());
           }

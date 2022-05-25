@@ -57,39 +57,33 @@ namespace flexr
           {
             if(inPorts[i].connectionType == "local")
             {
-              temp->activateInPortAsLocal<kernels::SamMarRendFrame>(inPorts[i].portName);
+              temp->activateInPortAsLocal<kernels::SamMarRendFrame>(inPorts[i]);
             }
             else if(inPorts[i].connectionType == "remote")
             {
-              temp->activateInPortAsRemote<kernels::SamMarRendFrame>(inPorts[i].portName,
-                                                                     inPorts[i].protocol,
-                                                                     inPorts[i].bindingPortNum);
+              temp->activateInPortAsRemote<kernels::SamMarRendFrame>(inPorts[i]);
             }
           }
           else if(inPorts[i].portName == "in_key")
           {
             if(inPorts[i].connectionType == "local")
             {
-              temp->activateInPortAsLocal<kernels::SamMarRendInKey>(inPorts[i].portName);
+              temp->activateInPortAsLocal<kernels::SamMarRendInKey>(inPorts[i]);
             }
             else if(inPorts[i].connectionType == "remote")
             {
-              temp->activateInPortAsRemote<kernels::SamMarRendInKey>(inPorts[i].portName,
-                                                                     inPorts[i].protocol,
-                                                                     inPorts[i].bindingPortNum);
+              temp->activateInPortAsRemote<kernels::SamMarRendInKey>(inPorts[i]);
             }
           }
           else if(inPorts[i].portName == "in_cam_pose")
           {
             if(inPorts[i].connectionType == "local")
             {
-              temp->activateInPortAsLocal<kernels::SamMarRendInCamPose>(inPorts[i].portName);
+              temp->activateInPortAsLocal<kernels::SamMarRendInCamPose>(inPorts[i]);
             }
             else if(inPorts[i].connectionType == "remote")
             {
-              temp->activateInPortAsRemote<kernels::SamMarRendInCamPose>(inPorts[i].portName,
-                                                                         inPorts[i].protocol,
-                                                                         inPorts[i].bindingPortNum);
+              temp->activateInPortAsRemote<kernels::SamMarRendInCamPose>(inPorts[i]);
             }
           }
           else debug_print("invalid input port_name %s for SampleMarkerRenderer", inPorts[i].portName.c_str());
@@ -101,12 +95,9 @@ namespace flexr
           if(outPorts[i].portName == "out_frame")
           {
             if(outPorts[i].connectionType == "local")
-              temp->activateOutPortAsLocal<kernels::SamMarRendFrame>(outPorts[i].portName);
+              temp->activateOutPortAsLocal<kernels::SamMarRendFrame>(outPorts[i]);
             else if(outPorts[i].connectionType == "remote")
-              temp->activateOutPortAsRemote<kernels::SamMarRendFrame>(outPorts[i].portName,
-                                                                      outPorts[i].protocol,
-                                                                      outPorts[i].connectingAddr,
-                                                                      outPorts[i].connectingPortNum);
+              temp->activateOutPortAsRemote<kernels::SamMarRendFrame>(outPorts[i]);
           }
           else
           {
@@ -114,12 +105,9 @@ namespace flexr
             if(outPorts[i].duplicatedFrom == "out_frame")
             {
               if(outPorts[i].connectionType == "local")
-                temp->duplicateOutPortAsLocal<kernels::SamMarRendFrame>(outPorts[i].duplicatedFrom,
-                                                                        outPorts[i].portName);
+                temp->duplicateOutPortAsLocal<kernels::SamMarRendFrame>(outPorts[i]);
               else if(outPorts[i].connectionType == "remote")
-                temp->duplicateOutPortAsRemote<kernels::SamMarRendFrame>(
-                    outPorts[i].duplicatedFrom, outPorts[i].portName,
-                    outPorts[i].protocol, outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
+                temp->duplicateOutPortAsRemote<kernels::SamMarRendFrame>(outPorts[i]);
             }
             else debug_print("invalid output port_name %s for SampleMarkerRenderer", outPorts[i].portName.c_str());
           }

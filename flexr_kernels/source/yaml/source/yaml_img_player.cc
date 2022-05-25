@@ -62,12 +62,9 @@ namespace flexr
           if(outPorts[i].portName == "out_frame")
           {
             if(outPorts[i].connectionType == "local")
-              temp->activateOutPortAsLocal<kernels::ImgPlayerMsgType>(outPorts[i].portName);
+              temp->activateOutPortAsLocal<kernels::ImgPlayerMsgType>(outPorts[i]);
             else if(outPorts[i].connectionType == "remote")
-              temp->activateOutPortAsRemote<kernels::ImgPlayerMsgType>(outPorts[i].portName,
-                                                                       outPorts[i].protocol,
-                                                                       outPorts[i].connectingAddr,
-                                                                       outPorts[i].connectingPortNum);
+              temp->activateOutPortAsRemote<kernels::ImgPlayerMsgType>(outPorts[i]);
           }
           else
           {
@@ -75,12 +72,9 @@ namespace flexr
             if(outPorts[i].duplicatedFrom == "out_frame")
             {
               if(outPorts[i].connectionType == "local")
-                temp->duplicateOutPortAsLocal<kernels::ImgPlayerMsgType>(outPorts[i].duplicatedFrom,
-                                                                         outPorts[i].portName);
+                temp->duplicateOutPortAsLocal<kernels::ImgPlayerMsgType>(outPorts[i]);
               else if(outPorts[i].connectionType == "remote")
-                temp->duplicateOutPortAsRemote<kernels::ImgPlayerMsgType>(
-                    outPorts[i].duplicatedFrom, outPorts[i].portName,
-                    outPorts[i].protocol, outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
+                temp->duplicateOutPortAsRemote<kernels::ImgPlayerMsgType>(outPorts[i]);
             }
             else debug_print("invalid output port_name %s for ImgPlayer", outPorts[i].portName.c_str());
           }

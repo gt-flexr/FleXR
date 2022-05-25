@@ -64,12 +64,9 @@ namespace flexr
           if(outPorts[i].portName == "out_frame")
           {
             if(outPorts[i].connectionType == "local")
-              temp->activateOutPortAsLocal<kernels::BagCameraMsgType>(outPorts[i].portName);
+              temp->activateOutPortAsLocal<kernels::BagCameraMsgType>(outPorts[i]);
             else if(outPorts[i].connectionType == "remote")
-              temp->activateOutPortAsRemote<kernels::BagCameraMsgType>(outPorts[i].portName,
-                                                                       outPorts[i].protocol,
-                                                                       outPorts[i].connectingAddr,
-                                                                       outPorts[i].connectingPortNum);
+              temp->activateOutPortAsRemote<kernels::BagCameraMsgType>(outPorts[i]);
           }
           else
           {
@@ -77,12 +74,9 @@ namespace flexr
             if(outPorts[i].duplicatedFrom == "out_frame")
             {
               if(outPorts[i].connectionType == "local")
-                temp->duplicateOutPortAsLocal<kernels::BagCameraMsgType>(outPorts[i].duplicatedFrom,
-                                                                         outPorts[i].portName);
+                temp->duplicateOutPortAsLocal<kernels::BagCameraMsgType>(outPorts[i]);
               else if(outPorts[i].connectionType == "remote")
-                temp->duplicateOutPortAsRemote<kernels::BagCameraMsgType>(
-                    outPorts[i].duplicatedFrom, outPorts[i].portName,
-                    outPorts[i].protocol, outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
+                temp->duplicateOutPortAsRemote<kernels::BagCameraMsgType>(outPorts[i]);
             }
             else debug_print("invalid output port_name %s for BagCamera", outPorts[i].portName.c_str());
           }

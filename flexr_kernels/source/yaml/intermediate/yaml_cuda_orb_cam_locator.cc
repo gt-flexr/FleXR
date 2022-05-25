@@ -60,13 +60,11 @@ namespace flexr
           {
             if(inPorts[i].connectionType == "local")
             {
-              temp->activateInPortAsLocal<kernels::CudaOrbCamLocatorInFrame>(inPorts[i].portName);
+              temp->activateInPortAsLocal<kernels::CudaOrbCamLocatorInFrame>(inPorts[i]);
             }
             else if(inPorts[i].connectionType == "remote")
             {
-              temp->activateInPortAsRemote<kernels::CudaOrbCamLocatorInFrame>(inPorts[i].portName,
-                                                                              inPorts[i].protocol,
-                                                                              inPorts[i].bindingPortNum);
+              temp->activateInPortAsRemote<kernels::CudaOrbCamLocatorInFrame>(inPorts[i]);
             }
           }
           else debug_print("invalid input port_name %s for CudaOrbCamLocator", inPorts[i].portName.c_str());
@@ -78,12 +76,9 @@ namespace flexr
           if(outPorts[i].portName == "out_cam_pose")
           {
             if(outPorts[i].connectionType == "local")
-              temp->activateOutPortAsLocal<kernels::CudaOrbCamLocatorOutPose>(outPorts[i].portName);
+              temp->activateOutPortAsLocal<kernels::CudaOrbCamLocatorOutPose>(outPorts[i]);
             else if(outPorts[i].connectionType == "remote")
-              temp->activateOutPortAsRemote<kernels::CudaOrbCamLocatorOutPose>(outPorts[i].portName,
-                                                                               outPorts[i].protocol,
-                                                                               outPorts[i].connectingAddr,
-                                                                               outPorts[i].connectingPortNum);
+              temp->activateOutPortAsRemote<kernels::CudaOrbCamLocatorOutPose>(outPorts[i]);
           }
           else
           {
@@ -91,12 +86,9 @@ namespace flexr
             if(outPorts[i].duplicatedFrom == "out_cam_pose")
             {
               if(outPorts[i].connectionType == "local")
-                temp->duplicateOutPortAsLocal<kernels::CudaOrbCamLocatorOutPose>(outPorts[i].duplicatedFrom,
-                                                                                 outPorts[i].portName);
+                temp->duplicateOutPortAsLocal<kernels::CudaOrbCamLocatorOutPose>(outPorts[i]);
               else if(outPorts[i].connectionType == "remote")
-                temp->duplicateOutPortAsRemote<kernels::CudaOrbCamLocatorOutPose>(
-                    outPorts[i].duplicatedFrom, outPorts[i].portName,
-                    outPorts[i].protocol, outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
+                temp->duplicateOutPortAsRemote<kernels::CudaOrbCamLocatorOutPose>(outPorts[i]);
             }
             else debug_print("invalid output port_name %s for CudaOrbCamLocator", outPorts[i].portName.c_str());
           }

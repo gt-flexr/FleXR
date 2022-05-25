@@ -63,31 +63,10 @@ namespace flexr
         for(int i = 0; i < outPorts.size(); i++)
         {
           // Kernel specified ports
-          if(outPorts[i].portName == "out_frame")
-          {
-            if(outPorts[i].connectionType == "local")
-              temp->activateOutPortAsLocal<kernels::CVCameraMsgType>(outPorts[i].portName);
-            else if(outPorts[i].connectionType == "remote")
-              temp->activateOutPortAsRemote<kernels::CVCameraMsgType>(outPorts[i].portName,
-                                                                      outPorts[i].protocol,
-                                                                      outPorts[i].connectingAddr,
-                                                                      outPorts[i].connectingPortNum);
-          }
-          else
-          {
-            // Duplicated ports (non-specified)
-            if(outPorts[i].duplicatedFrom == "out_frame")
-            {
-              if(outPorts[i].connectionType == "local")
-                temp->duplicateOutPortAsLocal<kernels::CVCameraMsgType>(outPorts[i].duplicatedFrom,
-                                                                        outPorts[i].portName);
-              else if(outPorts[i].connectionType == "remote")
-                temp->duplicateOutPortAsRemote<kernels::CVCameraMsgType>(
-                    outPorts[i].duplicatedFrom, outPorts[i].portName,
-                    outPorts[i].protocol, outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
-            }
-            else debug_print("invalid output port_name %s for CVCamera", outPorts[i].portName.c_str());
-          }
+          if(outPorts[i].connectionType == "local")
+            temp->activateOutPortAsLocal<kernels::CVCameraMsgType>(outPorts[i]);
+          else if(outPorts[i].connectionType == "remote")
+            temp->activateOutPortAsRemote<kernels::CVCameraMsgType>(outPorts[i]);
         }
         return temp;
       }

@@ -60,13 +60,11 @@ namespace flexr
           {
             if(inPorts[i].connectionType == "local")
             {
-              temp->activateInPortAsLocal<kernels::OrbCamLocatorInFrame>(inPorts[i].portName);
+              temp->activateInPortAsLocal<kernels::OrbCamLocatorInFrame>(inPorts[i]);
             }
             else if(inPorts[i].connectionType == "remote")
             {
-              temp->activateInPortAsRemote<kernels::OrbCamLocatorInFrame>(inPorts[i].portName,
-                                                                          inPorts[i].protocol,
-                                                                          inPorts[i].bindingPortNum);
+              temp->activateInPortAsRemote<kernels::OrbCamLocatorInFrame>(inPorts[i]);
             }
           }
           else debug_print("invalid input port_name %s for OrbCamLocator", inPorts[i].portName.c_str());
@@ -78,12 +76,9 @@ namespace flexr
           if(outPorts[i].portName == "out_cam_pose")
           {
             if(outPorts[i].connectionType == "local")
-              temp->activateOutPortAsLocal<kernels::OrbCamLocatorOutPose>(outPorts[i].portName);
+              temp->activateOutPortAsLocal<kernels::OrbCamLocatorOutPose>(outPorts[i]);
             else if(outPorts[i].connectionType == "remote")
-              temp->activateOutPortAsRemote<kernels::OrbCamLocatorOutPose>(outPorts[i].portName,
-                                                                           outPorts[i].protocol,
-                                                                           outPorts[i].connectingAddr,
-                                                                           outPorts[i].connectingPortNum);
+              temp->activateOutPortAsRemote<kernels::OrbCamLocatorOutPose>(outPorts[i]);
           }
           else
           {
@@ -91,12 +86,9 @@ namespace flexr
             if(outPorts[i].duplicatedFrom == "out_cam_pose")
             {
               if(outPorts[i].connectionType == "local")
-                temp->duplicateOutPortAsLocal<kernels::OrbCamLocatorOutPose>(outPorts[i].duplicatedFrom,
-                                                                             outPorts[i].portName);
+                temp->duplicateOutPortAsLocal<kernels::OrbCamLocatorOutPose>(outPorts[i]);
               else if(outPorts[i].connectionType == "remote")
-                temp->duplicateOutPortAsRemote<kernels::OrbCamLocatorOutPose>(
-                    outPorts[i].duplicatedFrom, outPorts[i].portName,
-                    outPorts[i].protocol, outPorts[i].connectingAddr, outPorts[i].connectingPortNum);
+                temp->duplicateOutPortAsRemote<kernels::OrbCamLocatorOutPose>(outPorts[i]);
             }
             else debug_print("invalid output port_name %s for OrbCamLocator", outPorts[i].portName.c_str());
           }

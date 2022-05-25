@@ -60,11 +60,9 @@ namespace flexr
           if(inPorts[i].portName == "in_frame")
           {
             if(inPorts[i].connectionType == "local")
-              temp->activateInPortAsLocal<types::Message<types::Frame>>(inPorts[i].portName);
+              temp->activateInPortAsLocal<types::Message<types::Frame>>(inPorts[i]);
             else
-              temp->activateInPortAsRemote<types::Message<types::Frame>>(inPorts[i].portName,
-                                                                         inPorts[i].protocol,
-                                                                         inPorts[i].bindingPortNum);
+              temp->activateInPortAsRemote<types::Message<types::Frame>>(inPorts[i]);
           }
           else debug_print("invalid input port_name %s for Rgb2RgbaAppSink", inPorts[i].portName.c_str());
         }
