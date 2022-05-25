@@ -11,51 +11,49 @@ namespace flexr
   namespace yaml
   {
 
-    /**
-     * @brief Yaml FleXR kernel
-     *
-     * YAML attribute | Details
-     * ---------------| ----------------------------
-     * kernel         | Kernel class
-     * id             | ID for a kernel instance
-     * frequency      | Target frequency of kernel
-     * logger         | Logger info [id, log_file.log]
-     * input          | @see flexr::yaml::YamlInPort
-     * output         | @see flexr::yaml::YamlOutPort
-     * others         | each kernel's yaml class specifics
-     * @see flexr::kernels::FleXRKernel
-     */
     class YamlFleXRKernel
     {
       protected:
         bool baseSet, specificSet;
 
-        /**
-         * @brief Parse input ports info of the base kernel
-         * @param node
-         *  YAML node to parse
-         */
+
         void parseInPorts(const YAML::Node &node)
         {
           for(int i = 0; i < node.size(); i++) {
             YamlInPort inPort;
+
             inPort.portName       = node[i]["port_name"].as<std::string>();
             inPort.connectionType = node[i]["connection_type"].as<std::string>();
+
+            // Connection Type -- remote
             if(inPort.connectionType == std::string("remote") && node[i]["remote_info"].IsDefined())
             {
               inPort.protocol       = node[i]["remote_info"][0].as<std::string>();
               inPort.bindingPortNum = node[i]["remote_info"][1].as<int>();
+            }
+            // Connection Type -- local
+            else if(inPort.connectionType == std::string("local"))
+            {
+              inPort.localChannel = "raftlib"; // default -- raftlib
+
+              if(node[i]["local_channel"].IsDefined() && node[i]["local_channel"][0].IsDefined())
+              {
+                // TODO: node checks
+                // shm -- [shm, SHM_ID, SHM_SIZE, SHM_ELEM_SIZE]
+                if(node[i]["local_channel"][0].as<std::string>() == std::string("shm"))
+                {
+                  inPort.localChannel = node[i]["local_channel"][0].as<std::string>();
+                  inPort.shmId        = node[i]["local_channel"][1].as<std::string>();
+                  inPort.shmSize      = node[i]["local_channel"][2].as<int>();
+                  inPort.shmElemSize  = node[i]["local_channel"][3].as<int>();
+                }
+              }
             }
             inPorts.push_back(inPort);
           }
         }
 
 
-        /**
-         * @brief Parse output ports info of the base kernel
-         * @param node
-         *  YAML node to parse
-         */
         void parseOutPorts(const YAML::Node &node)
         {
           for(int i = 0; i < node.size(); i++) {
@@ -63,18 +61,39 @@ namespace flexr
             outPort.portName          = node[i]["port_name"].as<std::string>();
             outPort.connectionType    = node[i]["connection_type"].as<std::string>();
 
+            // OutPort Semantics -- blocking or nonblocking
             if(outPort.connectionType == std::string("local") && node[i]["semantics"].IsDefined())
             {
               outPort.semantics = node[i]["semantics"].as<std::string>();
             }
 
+            // Connection Type -- remote
             if(outPort.connectionType == std::string("remote") && node[i]["remote_info"].IsDefined())
             {
               outPort.protocol          = node[i]["remote_info"][0].as<std::string>();
               outPort.connectingAddr    = node[i]["remote_info"][1].as<std::string>();
               outPort.connectingPortNum = node[i]["remote_info"][2].as<int>();
             }
+            // Connection Type -- local
+            else if(outPort.connectionType == std::string("local"))
+            {
+              outPort.localChannel = "raftlib"; // default -- raftlib
 
+              if(node[i]["local_channel"].IsDefined() && node[i]["local_channel"][0].IsDefined())
+              {
+                // TODO: node checks
+                // shm -- [shm, SHM_ID, SHM_SIZE, SHM_ELEM_SIZE]
+                if(node[i]["local_channel"][0].as<std::string>() == std::string("shm"))
+                {
+                  outPort.localChannel = node[i]["local_channel"][0].as<std::string>();
+                  outPort.shmId        = node[i]["local_channel"][1].as<std::string>();
+                  outPort.shmSize      = node[i]["local_channel"][2].as<int>();
+                  outPort.shmElemSize  = node[i]["local_channel"][3].as<int>();
+                }
+              }
+            }
+
+            // OutPort Duplication
             if(node[i]["duplicated_from"].IsDefined())
             {
               outPort.duplicatedFrom = node[i]["duplicated_from"].as<std::string>();
@@ -100,9 +119,6 @@ namespace flexr
         }
 
 
-        /**
-         * @brief Print base kernel info
-         */
         void printBase()
         {
           std::cout << "FleXR Kernel Base -------- " << std::endl;
@@ -122,13 +138,6 @@ namespace flexr
         }
 
 
-
-
-        /**
-         * @brief Parse base kernel info
-         * @param node
-         *  YAML node to parse
-         */
         void parseBase(const YAML::Node &node)
         {
           baseSet        = true;
@@ -150,11 +159,6 @@ namespace flexr
         }
 
 
-
-        /**
-         * @brief Make kernel instance with parsed yaml recipe
-         * @return Pointer to the kernel instance
-         */
         virtual void* make() {return nullptr;};
     };
   }
