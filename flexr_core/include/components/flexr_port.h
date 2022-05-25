@@ -2,6 +2,7 @@
 
 #include <bits/stdc++.h>
 #include <raftinc/port.hpp>
+#include <flexr_shmq.h>
 
 #include "flexr_core/include/components/zmq_port.h"
 #include "flexr_core/include/components/rtp_port.h"
@@ -24,26 +25,24 @@ namespace flexr
     };
 
 
+    enum LocalChannel {
+      RAFTLIB,
+      SHM
+    };
+
+
     enum RemoteProtocol {
       TCP,
       RTP
     };
 
 
-    /**
-     * @brief Component for remote and local communications of kernels
-     */
     class FleXRPort
     {
       protected:
         bool activated;
 
 
-        /**
-         * @brief Get input msg from internal network ports
-         * @param input
-         *  input message pointer to recv dst
-         */
         template <typename T>
         bool getInputFromRemote(T* &inputMsg)
         {
@@ -84,121 +83,172 @@ namespace flexr
         }
 
 
+        template <typename T>
+        bool getInputFromShm(T* &inputMsg)
+        {
+          uint8_t *recvBuf   = nullptr;
+          bool isBlocking = true;
+          bool received   = false;
+
+          if(inputSemantics == PortDependency::BLOCKING) isBlocking = true;
+          else                                           isBlocking = false;
+
+          recvBuf = new uint8_t[shmPort.elemSize];
+          received = shmPort.dequeueElem(recvBuf, shmPort.elemSize, isBlocking);
+
+          if(deserialize != 0 && received)  // deserialize need to set output->data properly & free data
+          {
+            inputMsg = new T;
+            received = deserialize(recvBuf, shmPort.elemSize, (void**)&inputMsg);
+          }
+          else if(deserialize == 0 && received && shmPort.elemSize == sizeof(T)) // primitive msg (no need deser)
+          {
+            inputMsg = (T*)recvBuf;
+            recvBuf = nullptr;
+          }
+          else
+          {
+            debug_print("received failed...");
+          }
+
+          if(recvBuf != nullptr) delete recvBuf;
+          return received;
+        }
+
+
       public:
         std::string tag;
 
-        Port           *localPort;
-        ZMQPort        tcpPort;
-        RtpPort        rtpPort;
+        Port              *raftlibPort;
+        FlexrShmQueueMeta shmPort;
+        ZMQPort           tcpPort;
+        RtpPort           rtpPort;
+
+        // Set by deployer
+        PortState      state;
+        LocalChannel   localChannel;
+        RemoteProtocol protocol;
 
         PortDependency inputSemantics;
         PortDependency outputSemantics;
 
-        // Set by deployer
-        PortState      state;
-        RemoteProtocol protocol;
-
         std::function<void (FleXRPort*, void*)> sendLocalCopy;
 
         std::function<bool (void*,      uint8_t* &, uint32_t &, bool)> serialize;
-        std::function<bool (uint8_t* &, uint32_t &, void**)> deserialize;
+        std::function<bool (uint8_t* &, uint32_t &, void**)>           deserialize;
 
 
-        /**
-         * @brief Check the existence of an activated local port
-         * @param localPort
-         *  Local port array of Raftlib kernel
-         * @param tag
-         *  Tag of this port
-         */
-        FleXRPort(Port* localPort, std::string tag): localPort(localPort), tag(tag), activated(false)
+        FleXRPort(Port* raftlibPort, std::string tag): raftlibPort(raftlibPort), tag(tag), activated(false)
         {
+          // Default Settings -- Local
+          state         = PortState::LOCAL;
+          localChannel  = LocalChannel::RAFTLIB;
+          inputSemantics  = PortDependency::BLOCKING;
+          outputSemantics = PortDependency::BLOCKING;
+
+          // Default Setting -- remote
+          protocol = RemoteProtocol::TCP;
+
           sendLocalCopy = 0;
           serialize     = 0;
           deserialize   = 0;
-          inputSemantics  = PortDependency::BLOCKING;
-          outputSemantics = PortDependency::BLOCKING;
         }
 
 
-        /**
-         * @brief Check the existence of an activated local port
-         * @return True if there is
-         */
         bool checkLocalPortEmpty()
         {
-          auto &port((*localPort)[tag]);
-          if(port.size() > 0) return false;
-          else return true;
+          if(localChannel == LocalChannel::RAFTLIB)
+          {
+            auto &port((*raftlibPort)[tag]);
+            if(port.size() > 0) return false;
+            else return true;
+          }
+          if(localChannel == LocalChannel::RAFTLIB)
+          {
+            return shmPort.isEmpty();
+          }
+          return false;
         }
 
 
-        /**
-         * @brief Check the existence of an activated local port
-         * @return True if there is
-         */
         bool checkLocalPortFull()
         {
-          auto &port((*localPort)[tag]);
-          if(port.capacity() == port.size()) return true;
-          else return false;
+          if(localChannel == LocalChannel::RAFTLIB)
+          {
+            auto &port((*raftlibPort)[tag]);
+            if(port.capacity() == port.size()) return true;
+            else return false;
+
+          }
+          if(localChannel == LocalChannel::RAFTLIB)
+          {
+            return shmPort.isFull();
+          }
+          return false;
         }
 
 
-        /**
-         * @brief Check the activation of the port
-         * @return True if the port is activated
-         */
         bool isActivated() { return activated; }
 
 
-        /**
-         * @brief Activate and instantiate a local port with the given tag
-         * @details Local activation interface is used for both input and output ports
-         * @param Tag
-         *  Port tag to activate as local
-         */
+        /*************** Local Activation  *************/
         template <typename T>
-        void activateAsLocalInput(const std::string tag)
+        void activateLocalRaftLibPort(const std::string tag)
         {
-          if(activated) {
+          if(activated)
+          {
             debug_print("Port %s is already activated.", tag.c_str());
             return;
           }
-          localPort->addPort<T>(tag);
+          raftlibPort->addPort<T>(tag);
           state = PortState::LOCAL;
+          localChannel = LocalChannel::RAFTLIB;
           activated = true;
         }
 
 
-        /**
-         * @brief Activate and instantiate a local port with the given tag
-         * @details Local activation interface is used for both input and output ports
-         * @param Tag
-         *  Port tag to activate as local
-         */
-        template <typename T>
-        void activateAsLocalOutput(const std::string tag, PortDependency semantics)
+        void activateLocalShmPort(const std::string tag, const std::string shmId, int shmSize, int shmElemSize)
         {
           if(activated) {
             debug_print("Port %s is already activated.", tag.c_str());
             return;
           }
-          localPort->addPort<T>(tag);
+          shmPort.initQueue(shmId.c_str(), shmSize, shmElemSize);
           state = PortState::LOCAL;
+          localChannel = LocalChannel::SHM;
+          activated = true;
+        }
+
+
+        template <typename T>
+        void activateAsLocalRaftLibInput(const std::string tag)
+        {
+          activateLocalRaftLibPort<T>(tag);
+        }
+
+
+        void activateAsLocalShmInput(const std::string tag, const std::string shmId, int shmSize, int shmElemSize)
+        {
+          activateLocalShmPort(tag, shmId, shmSize, shmElemSize);
+        }
+
+
+        template <typename T>
+        void activateAsLocalRaftLibOutput(const std::string tag, PortDependency semantics)
+        {
+          activateLocalRaftLibPort<T>(tag);
           outputSemantics = semantics;
-          activated = true;
         }
 
 
-        /**
-         * @brief Activate an input port as remote and bind to a port
-         * @param p
-         *  Protocol to use
-         * @param portNumber
-         *  Port number to bind (listen)
-         */
-        template <typename T>
+        void activateAsLocalShmOutput(const std::string tag, const std::string shmId, int shmSize, int shmElemSize, PortDependency semantics)
+        {
+          activateLocalShmPort(tag, shmId, shmSize, shmElemSize);
+          outputSemantics = semantics;
+        }
+
+
+        /*************** Remote Activation  *************/
         void activateAsRemoteInput(RemoteProtocol p,  int portNumber)
         {
           if(activated) {
@@ -222,16 +272,6 @@ namespace flexr
         }
 
 
-        /**
-         * @brief Activate an output port as remote and connect to remote node
-         * @param p
-         *  Protocol to use
-         * @param addr
-         *  IP address to connect
-         * @param portNumber
-         *  Port number to connect
-         */
-        template <typename T>
         void activateAsRemoteOutput(RemoteProtocol p, const std::string addr, int portNumber)
         {
           if(activated) {
@@ -255,10 +295,6 @@ namespace flexr
         }
 
 
-        /**
-         * @brief Get input message
-         * @return Pointer to the input message
-         */
         template <typename T>
         T* getInput()
         {
@@ -270,19 +306,36 @@ namespace flexr
           T* input = nullptr;
           switch(state)
           {
+            // getInput -- Local
             case PortState::LOCAL:
-              if(inputSemantics == PortDependency::BLOCKING) {
-                T &temp = (*localPort)[tag].peek<T>();
-                input = &temp;
-              }
-              else if(inputSemantics == PortDependency::NONBLOCKING) {
-                if(checkLocalPortEmpty() == false) {
-                  T &temp = (*localPort)[tag].peek<T>();
+              // RAFTLIB
+              if(localChannel == LocalChannel::RAFTLIB)
+              {
+                if(inputSemantics == PortDependency::BLOCKING) {
+                  T &temp = (*raftlibPort)[tag].peek<T>();
                   input = &temp;
                 }
+                else if(inputSemantics == PortDependency::NONBLOCKING) {
+                  if(checkLocalPortEmpty() == false) {
+                    T &temp = (*raftlibPort)[tag].peek<T>();
+                    input = &temp;
+                  }
+                }
               }
+              // SHM
+              else if(localChannel == LocalChannel::SHM)
+              {
+                bool received = getInputFromShm(input);
+                if(received == false && input != nullptr)
+                {
+                  delete input;
+                  input = nullptr;
+                }
+              }
+
               break;
 
+            // getInput -- Remote
             case PortState::REMOTE:
               bool received = getInputFromRemote(input);
               if(received == false && input != nullptr) // for failure
@@ -297,10 +350,6 @@ namespace flexr
         }
 
 
-        /**
-         * @brief Get the placeholder of an output message
-         * @return Pointer to the output message placeholder
-         */
         template <typename T>
         T* getOutputPlaceholder()
         {
@@ -311,11 +360,22 @@ namespace flexr
 
           T *outputPlaceholder = nullptr;
 
+          // getOutputPlaceholder -- local
           if(state == PortState::LOCAL)
           {
-            T &temp = (*localPort)[tag].allocate<T>();
-            outputPlaceholder = &temp;
+            // RaftLib
+            if(localChannel == LocalChannel::RAFTLIB)
+            {
+              T &temp = (*raftlibPort)[tag].allocate<T>();
+              outputPlaceholder = &temp;
+            }
+            // Shm
+            else if(localChannel == LocalChannel::SHM)
+            {
+              outputPlaceholder = new T; // TODO ?!?!?
+            }
           }
+          // getOutputPlaceholder -- remote
           else if(state == PortState::REMOTE)
           {
             outputPlaceholder = new T;
@@ -325,11 +385,6 @@ namespace flexr
         }
 
 
-        /**
-         * @brief Send the output message of the placeholder
-         * @param msg
-         *  Pointer to the output message to send
-         */
         template <typename T>
         void sendOutput(T* msg)
         {
@@ -339,17 +394,28 @@ namespace flexr
           }
 
           switch(state) {
+            // sendOutput -- local
             case PortState::LOCAL:
-              if(outputSemantics == PortDependency::BLOCKING) {
-                (*localPort)[tag].send();
-              }
-              else if(outputSemantics == PortDependency::NONBLOCKING) {
-                if(checkLocalPortFull() == false)
-                {
-                  (*localPort)[tag].send();
+              // RaftLib
+              if(localChannel == LocalChannel::RAFTLIB)
+              {
+                if(outputSemantics == PortDependency::BLOCKING) {
+                  (*raftlibPort)[tag].send();
+                }
+                else if(outputSemantics == PortDependency::NONBLOCKING) {
+                  if(checkLocalPortFull() == false)
+                  {
+                    (*raftlibPort)[tag].send();
+                  }
                 }
               }
+              // Shm
+              else if(localChannel == LocalChannel::SHM)
+              {
+                sendOutputToShm(msg, true);
+              }
               break;
+            // sendOutput -- remote
             case PortState::REMOTE:
               sendOutputToRemote(msg, true);
               break;
@@ -357,11 +423,39 @@ namespace flexr
         }
 
 
-        /**
-         * @brief Send output msg via internal network ports
-         * @param output
-         *  output message pointer to send src
-         */
+        template <typename T>
+        void sendOutputToShm(T* outputMsg, bool freeMsg)
+        {
+          uint8_t *sendBuf  = nullptr;
+          uint32_t sendSize = 0;
+
+          if(serialize != 0)
+          {
+            // serialize need to free output->data when freeMsgData==true
+            bool freeMsgData = freeMsg;
+            serialize((void*)outputMsg, sendBuf, sendSize, freeMsgData);
+          }
+          else
+          {
+            // static msg: ex) T = Message<int>, Message<int[100]> ...
+            sendBuf  = (uint8_t*)outputMsg;
+            sendSize = sizeof(T);
+          }
+
+          if(sendSize != shmPort.elemSize)
+          {
+            debug_print("shm elemSize is not matched to msg sendSize.");
+            if(serialize && sendBuf != nullptr) delete sendBuf;
+            if(freeMsg && outputMsg != nullptr) delete outputMsg;
+            return;
+          }
+
+          shmPort.enqueueElem(sendBuf, sendSize);
+          if(serialize && sendBuf != nullptr) delete sendBuf;
+          if(freeMsg && outputMsg != nullptr) delete outputMsg;
+        }
+
+
         template <typename T>
         void sendOutputToRemote(T *outputMsg, bool freeMsg)
         {
@@ -398,11 +492,6 @@ namespace flexr
         }
 
 
-        /**
-         * @brief Free the memory of an input message
-         * @param msg
-         *  Pointer to the input message to free
-         */
         template <typename T>
         void freeInput(T* msg)
         {
@@ -415,7 +504,8 @@ namespace flexr
 
           switch(state) {
           case PortState::LOCAL:
-            (*localPort)[tag].recycle();
+            if(localChannel == LocalChannel::RAFTLIB) (*raftlibPort)[tag].recycle();
+            if(localChannel == LocalChannel::SHM) delete msg; // TODO
             break;
           case PortState::REMOTE:
             delete msg;
