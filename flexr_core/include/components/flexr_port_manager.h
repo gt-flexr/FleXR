@@ -70,11 +70,12 @@ namespace flexr
           {
             if(inPort.shmSize < 0) inPort.shmSize = 1;
 
+            debug_print("inPort.shmElemSize - before: %d", inPort.shmElemSize);
             if(inPort.shmElemSize < 0)
               inPort.shmElemSize = sizeof(T); // TODO: message<T>
             else
               inPort.shmElemSize += sizeof(T); // TODO: ex) 1280x720 frame + message header
-
+            debug_print("inPort.shmElemSize - after: %d, sizeof(T): %d", inPort.shmElemSize, sizeof(T));
             inPortMap[inPort.portName]->activateAsLocalShmInput(inPort.portName, inPort.shmId, inPort.shmSize, inPort.shmElemSize);
           }
         }
@@ -114,6 +115,14 @@ namespace flexr
           // Shm Activation
           else if(outPort.localChannel == "shm")
           {
+            if(outPort.shmSize < 0) outPort.shmSize = 1;
+
+            debug_print("outPort.shmElemSize - before: %d", outPort.shmElemSize);
+            if(outPort.shmElemSize < 0)
+              outPort.shmElemSize = sizeof(T); // TODO: message<T>
+            else
+              outPort.shmElemSize += sizeof(T); // TODO: ex) 1280x720 frame + message header
+            debug_print("inPort.shmElemSize - after: %d, sizeof(T): %d", outPort.shmElemSize, sizeof(T));
             outPortMap[outPort.portName]->activateAsLocalShmOutput(outPort.portName, outPort.shmId, outPort.shmSize, outPort.shmElemSize, pd);
           }
         }

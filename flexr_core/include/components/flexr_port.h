@@ -444,13 +444,14 @@ namespace flexr
 
           if(sendSize != shmPort.elemSize)
           {
-            debug_print("shm elemSize is not matched to msg sendSize.");
+            debug_print("shm elemSize (%d) is not matched to msg sendSize (%d).", shmPort.elemSize, sendSize);
             if(serialize && sendBuf != nullptr) delete sendBuf;
             if(freeMsg && outputMsg != nullptr) delete outputMsg;
             return;
           }
 
-          shmPort.enqueueElem(sendBuf, sendSize);
+          if(outputSemantics == PortDependency::BLOCKING) shmPort.enqueueElem(sendBuf, sendSize, true);
+          else                                            shmPort.enqueueElem(sendBuf, sendSize, false);
           if(serialize && sendBuf != nullptr) delete sendBuf;
           if(freeMsg && outputMsg != nullptr) delete outputMsg;
         }
