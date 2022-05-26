@@ -54,21 +54,24 @@ namespace flexr
           if(inputSemantics == PortDependency::BLOCKING) isBlocking = true;
           else                                           isBlocking = false;
 
-          if(protocol == RemoteProtocol::TCP)
+          switch(protocol)
           {
-            received = tcpPort.receiveMsg(isBlocking, recvBuf, recvSize);
-          }
-          if(protocol == RemoteProtocol::RTP)
-          {
-            received = rtpPort.receiveMsg(isBlocking, recvBuf, recvSize);
+            case RemoteProtocol::TCP:
+              received = tcpPort.receiveMsg(isBlocking, recvBuf, recvSize);
+              break;
+            case RemoteProtocol::RTP:
+              received = rtpPort.receiveMsg(isBlocking, recvBuf, recvSize);
+              break;
           }
 
-          if(deserialize != 0 && received)  // deserialize need to set output->data properly & free data
+          // deserialize need to set inputMsg->data properly & free recvBuf
+          if(deserialize != 0 && received)
           {
             inputMsg = new T;
             received = deserialize(recvBuf, recvSize, (void**)&inputMsg);
           }
-          else if(deserialize == 0 && received && recvSize == sizeof(T)) // primitive msg (no need deser)
+          // primitive msg (no need deser)
+          else if(deserialize == 0 && received && recvSize == sizeof(T))
           {
             inputMsg = (T*)recvBuf;
             recvBuf = nullptr;
@@ -94,14 +97,18 @@ namespace flexr
           else                                           isBlocking = false;
 
           recvBuf = new uint8_t[shmPort.elemSize];
-          received = shmPort.dequeueElem(recvBuf, shmPort.elemSize, isBlocking);
+          uint32_t bufSize = shmPort.elemSize;
+          uint32_t recvSize = 0;
+          received = shmPort.dequeueElem(recvBuf, recvSize, bufSize, isBlocking);
 
-          if(deserialize != 0 && received)  // deserialize need to set output->data properly & free data
+          // deserialize need to set inputMsg->data properly & free recvBuf
+          if(deserialize != 0 && received)
           {
             inputMsg = new T;
-            received = deserialize(recvBuf, shmPort.elemSize, (void**)&inputMsg);
+            received = deserialize(recvBuf, recvSize, (void**)&inputMsg);
           }
-          else if(deserialize == 0 && received && shmPort.elemSize == sizeof(T)) // primitive msg (no need deser)
+          // primitive msg (no need deser)
+          else if(deserialize == 0 && received && recvSize == sizeof(T))
           {
             inputMsg = (T*)recvBuf;
             recvBuf = nullptr;
@@ -207,13 +214,13 @@ namespace flexr
         }
 
 
-        void activateLocalShmPort(const std::string tag, const std::string shmId, int shmSize, int shmElemSize)
+        void activateLocalShmPort(const std::string tag, const std::string shmId, int shmSize, int shmMaxElemSize)
         {
           if(activated) {
             debug_print("Port %s is already activated.", tag.c_str());
             return;
           }
-          shmPort.initQueue(shmId.c_str(), shmSize, shmElemSize);
+          shmPort.initQueue(shmId.c_str(), shmSize, shmMaxElemSize);
           state = PortState::LOCAL;
           localChannel = LocalChannel::SHM;
           activated = true;
@@ -227,9 +234,9 @@ namespace flexr
         }
 
 
-        void activateAsLocalShmInput(const std::string tag, const std::string shmId, int shmSize, int shmElemSize)
+        void activateAsLocalShmInput(const std::string tag, const std::string shmId, int shmSize, int shmMaxElemSize)
         {
-          activateLocalShmPort(tag, shmId, shmSize, shmElemSize);
+          activateLocalShmPort(tag, shmId, shmSize, shmMaxElemSize);
         }
 
 
@@ -241,9 +248,9 @@ namespace flexr
         }
 
 
-        void activateAsLocalShmOutput(const std::string tag, const std::string shmId, int shmSize, int shmElemSize, PortDependency semantics)
+        void activateAsLocalShmOutput(const std::string tag, const std::string shmId, int shmSize, int shmMaxElemSize, PortDependency semantics)
         {
-          activateLocalShmPort(tag, shmId, shmSize, shmElemSize);
+          activateLocalShmPort(tag, shmId, shmSize, shmMaxElemSize);
           outputSemantics = semantics;
         }
 
@@ -442,9 +449,9 @@ namespace flexr
             sendSize = sizeof(T);
           }
 
-          if(sendSize != shmPort.elemSize)
+          if(sendSize > shmPort.elemSize)
           {
-            debug_print("shm elemSize (%d) is not matched to msg sendSize (%d).", shmPort.elemSize, sendSize);
+            debug_print("shm maxElemSize (%d) is less than msg sendSize (%d).", shmPort.elemSize, sendSize);
             if(serialize && sendBuf != nullptr) delete sendBuf;
             if(freeMsg && outputMsg != nullptr) delete outputMsg;
             return;

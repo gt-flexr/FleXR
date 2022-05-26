@@ -70,13 +70,13 @@ namespace flexr
           {
             if(inPort.shmSize < 0) inPort.shmSize = 1;
 
-            debug_print("inPort.shmElemSize - before: %d", inPort.shmElemSize);
-            if(inPort.shmElemSize < 0)
-              inPort.shmElemSize = sizeof(T); // TODO: message<T>
-            else
-              inPort.shmElemSize += sizeof(T); // TODO: ex) 1280x720 frame + message header
-            debug_print("inPort.shmElemSize - after: %d, sizeof(T): %d", inPort.shmElemSize, sizeof(T));
-            inPortMap[inPort.portName]->activateAsLocalShmInput(inPort.portName, inPort.shmId, inPort.shmSize, inPort.shmElemSize);
+            if(inPort.shmMaxElemSize < sizeof(T))
+            {
+              debug_print("shmMaxElemSize (%d) is less than the size of primitive type (%d)", inPort.shmMaxElemSize, sizeof(T));
+              exit(1);
+            }
+
+            inPortMap[inPort.portName]->activateAsLocalShmInput(inPort.portName, inPort.shmId, inPort.shmSize, inPort.shmMaxElemSize);
           }
         }
 
@@ -117,13 +117,14 @@ namespace flexr
           {
             if(outPort.shmSize < 0) outPort.shmSize = 1;
 
-            debug_print("outPort.shmElemSize - before: %d", outPort.shmElemSize);
-            if(outPort.shmElemSize < 0)
-              outPort.shmElemSize = sizeof(T); // TODO: message<T>
-            else
-              outPort.shmElemSize += sizeof(T); // TODO: ex) 1280x720 frame + message header
-            debug_print("inPort.shmElemSize - after: %d, sizeof(T): %d", outPort.shmElemSize, sizeof(T));
-            outPortMap[outPort.portName]->activateAsLocalShmOutput(outPort.portName, outPort.shmId, outPort.shmSize, outPort.shmElemSize, pd);
+            debug_print("outPort.shmMaxElemSize - before: %d", outPort.shmMaxElemSize);
+            if(outPort.shmMaxElemSize < sizeof(T))
+            {
+              debug_print("shmMaxElemSize (%d) is less than the size of primitive type (%d)", outPort.shmMaxElemSize, sizeof(T));
+              exit(1);
+            }
+
+            outPortMap[outPort.portName]->activateAsLocalShmOutput(outPort.portName, outPort.shmId, outPort.shmSize, outPort.shmMaxElemSize, pd);
           }
         }
 
@@ -192,7 +193,9 @@ namespace flexr
           {
             switch(outPortMap[port->second]->state)
             {
+            // sendOutput -- local
             case PortState::LOCAL:
+              // RaftLib Port
               if(outPortMap[port->second]->localChannel == LocalChannel::RAFTLIB)
               {
                 if(outPortMap[port->second]->outputSemantics == PortDependency::BLOCKING)
@@ -207,12 +210,14 @@ namespace flexr
                   }
                 }
               }
+              // Shm Port
               else if(outPortMap[port->second]->localChannel == LocalChannel::SHM)
               {
                 outPortMap[port->second]->sendOutputToShm(msg, false);
               }
               break;
 
+            // sendOutput -- remote
             case PortState::REMOTE:
               outPortMap[port->second]->sendOutputToRemote(msg, false);
               break;

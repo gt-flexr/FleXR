@@ -26,7 +26,8 @@ namespace flexr
       if(shmQueue.isEmpty() == false)
       {
         cv::Mat rgba(height, width, CV_8UC4);
-        bool res = shmQueue.dequeueElem(rgba.data, rgba.elemSize()*rgba.total());
+        int occupiedSize = 0;
+        bool res = shmQueue.dequeueElem(rgba.data, occupiedSize, rgba.elemSize()*rgba.total());
 
         if(res == true)
         {

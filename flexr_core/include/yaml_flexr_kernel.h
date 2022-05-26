@@ -42,10 +42,12 @@ namespace flexr
                 // shm -- [shm, SHM_ID, SHM_SIZE, SHM_ELEM_SIZE]
                 if(node[i]["local_channel"][0].as<std::string>() == std::string("shm"))
                 {
-                  inPort.localChannel = node[i]["local_channel"][0].as<std::string>();
-                  inPort.shmId        = node[i]["local_channel"][1].as<std::string>();
-                  inPort.shmSize      = node[i]["local_channel"][2].as<int>();
-                  inPort.shmElemSize  = node[i]["local_channel"][3].as<int>();
+                  inPort.localChannel   = node[i]["local_channel"][0].as<std::string>();
+                  inPort.shmId          = node[i]["local_channel"][1].as<std::string>();
+
+                  // shmSize & shmMaxElemSize -- optional
+                  if(node[i]["local_channel"][2].IsDefined()) inPort.shmSize        = node[i]["local_channel"][2].as<int>();
+                  if(node[i]["local_channel"][3].IsDefined()) inPort.shmMaxElemSize = node[i]["local_channel"][3].as<int>();
                 }
               }
             }
@@ -85,10 +87,12 @@ namespace flexr
                 // shm -- [shm, SHM_ID, SHM_SIZE, SHM_ELEM_SIZE]
                 if(node[i]["local_channel"][0].as<std::string>() == std::string("shm"))
                 {
-                  outPort.localChannel = node[i]["local_channel"][0].as<std::string>();
-                  outPort.shmId        = node[i]["local_channel"][1].as<std::string>();
-                  outPort.shmSize      = node[i]["local_channel"][2].as<int>();
-                  outPort.shmElemSize  = node[i]["local_channel"][3].as<int>();
+                  outPort.localChannel   = node[i]["local_channel"][0].as<std::string>();
+                  outPort.shmId          = node[i]["local_channel"][1].as<std::string>();
+
+                  // shmSize & shmMaxElemSize -- optional
+                  if(node[i]["local_channel"][2].IsDefined()) outPort.shmSize        = node[i]["local_channel"][2].as<int>();
+                  if(node[i]["local_channel"][3].IsDefined()) outPort.shmMaxElemSize = node[i]["local_channel"][3].as<int>();
                 }
               }
             }

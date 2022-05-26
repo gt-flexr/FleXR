@@ -18,7 +18,7 @@ namespace flexr
       std::string localChannel;    // localChannel
       std::string shmId;           // shmPort ID
       int shmSize;                 // shmPort queue size
-      int shmElemSize;             // shmPort elem size
+      int shmMaxElemSize;             // shmPort elem size
 
       // remote
       std::string protocol;
@@ -31,8 +31,9 @@ namespace flexr
         // local
         localChannel   = "";
         shmId          = "";
-        shmSize        = -1;
-        shmElemSize    = -1;
+        // shmDefault size (1), maxElemSize (512 bytes)
+        shmSize        = 1;
+        shmMaxElemSize = 512;
 
         // remote
         protocol       = "";
@@ -50,7 +51,7 @@ namespace flexr
           {
             std::cout << "\tShmID:       " << shmId       << std::endl;
             std::cout << "\tShmSize:     " << shmSize     << std::endl;
-            std::cout << "\tShmElemSize: " << shmElemSize << std::endl;
+            std::cout << "\tShmMaxElemSize: " << shmMaxElemSize << std::endl;
           }
         }
         if(connectionType == std::string("remote"))

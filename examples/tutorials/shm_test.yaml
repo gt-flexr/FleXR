@@ -12,7 +12,7 @@
     - port_name      : out_frame
       connection_type: local
       semantics      : blocking
-      local_channel  : [shm, shm_test, 1, 6220800]
+      local_channel  : [shm, shm_test, 1, 6300000]
   single   : true
 
 - kernel   : Cv2GlRgbDisplay
@@ -25,6 +25,6 @@
   input    :
     - port_name      : in_frame
       connection_type: local
-      local_channel  : [shm, shm_test, 1, 6220800]
+      local_channel  : [shm, shm_test, 1, 6300000]
   single   : true
 
