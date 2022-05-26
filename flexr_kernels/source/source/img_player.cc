@@ -62,7 +62,7 @@ namespace flexr
       curImg = imgs[seq++];
 
       outFrame->data = flexr::types::Frame(curImg);
-      outFrame->setHeader("ImgPlayer", seq++, getTsNow(), outFrame->data.useAsCVMat().total()*outFrame->data.useAsCVMat().elemSize());
+      outFrame->setHeader("ImgPlayer", seq, getTsNow(), outFrame->data.useAsCVMat().total()*outFrame->data.useAsCVMat().elemSize());
       portManager.sendOutput<ImgPlayerMsgType>("out_frame", outFrame);
 
       double et = getTsNow();
