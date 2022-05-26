@@ -1,0 +1,30 @@
+- kernel   : ImgPlayer
+  id       : img_player
+  frequency: 60
+  logger   : [img_player, img_player.log]
+  others   :
+    - image_path    : /home/jin/mnt/Data/aruco_cam
+      filename_zeros: 6
+      num_of_images : 100
+      iterate       : true
+      caching       : true
+  output   :
+    - port_name      : out_frame
+      connection_type: local
+      semantics      : blocking
+      local_channel  : [shm, shm_test, 1, 6220800]
+  single   : true
+
+- kernel   : Cv2GlRgbDisplay
+  id       : cv2gl_rgb_display
+  frequency: 60
+  logger   : [cv2gl_rgb_display, cv2gl_rgb_display.log]
+  others   :
+    - width  : 1920
+      height : 1080
+  input    :
+    - port_name      : in_frame
+      connection_type: local
+      local_channel  : [shm, shm_test, 1, 6220800]
+  single   : true
+
