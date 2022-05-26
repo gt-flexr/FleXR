@@ -57,6 +57,7 @@ namespace flexr
       if(baseSet && specificSet)
       {
         kernels::NvmpiEncoder *temp = new kernels::NvmpiEncoder(id, encoder, width, height, bitrate, fps, qp);
+        temp->setFrequency(frequency);
         temp->setLogger(loggerId, loggerFileName);
 
         for(int i = 0; i < inPorts.size(); i++)

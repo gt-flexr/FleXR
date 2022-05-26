@@ -55,6 +55,8 @@ namespace flexr
       if(baseSet && specificSet)
       {
         kernels::ImgPlayer *temp = new kernels::ImgPlayer(id, imgPath, fnZeros, frequency, nImgs, iterate, caching);
+        temp->setFrequency(frequency);
+        temp->setLogger(loggerId, loggerFileName);
 
         for(int i = 0; i < outPorts.size(); i++)
         {

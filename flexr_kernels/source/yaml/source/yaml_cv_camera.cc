@@ -59,6 +59,7 @@ namespace flexr
         else if(fileName != "")
           temp = new kernels::CVCamera(id, fileName, width, height, frequency);
         temp->setLogger(loggerId, loggerFileName);
+        temp->setFrequency(frequency);
 
         for(int i = 0; i < outPorts.size(); i++)
         {

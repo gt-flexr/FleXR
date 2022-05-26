@@ -53,6 +53,7 @@ namespace flexr
       if(baseSet && specificSet)
       {
         kernels::FrameEncoder *temp = new kernels::FrameEncoder(id, encoder, width, height, bitrate, frequency);
+        temp->setFrequency(frequency);
         temp->setLogger(loggerId, loggerFileName);
 
         for(int i = 0; i < inPorts.size(); i++)

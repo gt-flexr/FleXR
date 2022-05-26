@@ -48,6 +48,7 @@ namespace flexr
       if(baseSet && specificSet)
       {
         kernels::Cv2GlRgbDisplay *temp = new kernels::Cv2GlRgbDisplay(id, width, height);
+        temp->setFrequency(frequency);
         temp->setLogger(loggerId, loggerFileName);
 
 

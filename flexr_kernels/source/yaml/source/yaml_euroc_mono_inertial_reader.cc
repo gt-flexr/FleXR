@@ -56,6 +56,7 @@ namespace flexr
       if(baseSet && specificSet)
       {
         kernels::EurocMonoInertialReader *temp = new kernels::EurocMonoInertialReader(id, frequency, imgPath, imgTsPath, imgTotal, imuPath, imuTotal);
+        temp->setFrequency(frequency);
         temp->setLogger(loggerId, loggerFileName);
 
         for(int i = 0; i < outPorts.size(); i++)

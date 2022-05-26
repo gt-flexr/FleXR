@@ -31,8 +31,8 @@ namespace flexr
       if(baseSet && specificSet)
       {
         kernels::NonDisplay *temp = new kernels::NonDisplay(id);
+        temp->setFrequency(frequency);
         temp->setLogger(loggerId, loggerFileName);
-
 
         for(int i = 0; i < inPorts.size(); i++)
         {

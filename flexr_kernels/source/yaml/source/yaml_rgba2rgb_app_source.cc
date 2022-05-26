@@ -54,6 +54,7 @@ namespace flexr
       if(baseSet && specificSet)
       {
         kernels::Rgba2RgbAppSource *temp = new kernels::Rgba2RgbAppSource(id, shmqName, maxShmqElem, width, height, frequency);
+        temp->setFrequency(frequency);
         temp->setLogger(loggerId, loggerFileName);
 
         for(int i = 0; i < outPorts.size(); i++)

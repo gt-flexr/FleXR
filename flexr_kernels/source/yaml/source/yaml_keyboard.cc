@@ -30,6 +30,7 @@ namespace flexr
       if(baseSet && specificSet)
       {
         kernels::Keyboard *temp = new kernels::Keyboard(id, frequency);
+        temp->setFrequency(frequency);
         temp->setLogger(loggerId, loggerFileName);
 
         for(int i = 0; i < outPorts.size(); i++)
