@@ -42,7 +42,10 @@ namespace flexr
       double st, et;
 
       st = getTsMs();
-      cv::aruco::detectMarkers(inFrame->data.useAsCVMat(), markerDict, corners, ids);
+
+      if(inFrame->data.useAsCVMat().empty() == false)
+        cv::aruco::detectMarkers(inFrame->data.useAsCVMat(), markerDict, corners, ids);
+
       if(ids.size() > 0)
       {
         std::vector<cv::Vec3d> rvecs, tvecs;

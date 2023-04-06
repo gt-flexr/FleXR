@@ -11,7 +11,7 @@ namespace flexr
     ImgPlayer::ImgPlayer(std::string id, std::string imgPath, int fnZeros, int fps, int nImgs, bool iterate, bool caching):
       FleXRKernel(id), imgPath(imgPath), fnZeros(fnZeros), nImgs(nImgs), iterate(iterate), caching(caching)
     {
-      setName("BagCamera");
+      setName("ImgPlayer");
       seq = 0;
       freqManager.setFrequency(fps);
       portManager.registerOutPortTag("out_frame", utils::sendLocalFrameCopy, utils::serializeRawFrame);
@@ -22,8 +22,9 @@ namespace flexr
         for(int i = 0; i < nImgs; i++)
         {
           os << std::setw(fnZeros) << std::setfill('0') << i;
-          std::string fn = imgPath + "/" + os.str() + ".png";
+          std::string fn = imgPath + "/" + os.str() + ".jpg";
           os.str(""); os.clear();
+          debug_print("FN: %s", fn.c_str());
           imgs[i] = cv::imread(fn, cv::IMREAD_UNCHANGED);
         }
       }
@@ -40,7 +41,7 @@ namespace flexr
       if(!caching && seq < nImgs)
       {
         os << std::setw(fnZeros) << std::setfill('0') << seq;
-        std::string fn = imgPath + "/" + os.str() + ".png";
+        std::string fn = imgPath + "/" + os.str() + ".jpg";
         os.str(""); os.clear();
         debug_print("File: %s", fn.c_str());
         imgs[seq] = cv::imread(fn, cv::IMREAD_UNCHANGED);

@@ -44,26 +44,30 @@ namespace flexr
 
       if(inFrame != nullptr)
       {
-        SamMarRendFrame *outFrame  = portManager.getOutputPlaceholder<SamMarRendFrame>("out_frame");
-
-
-        st = getTsMs();
-        outFrame->setHeader(inFrame->tag, inFrame->seq, inFrame->ts, inFrame->dataSize);
-        outFrame->data = inFrame->data;
-
-        cv::Vec3d rvec, tvec;
-        if(inCamPose != nullptr)
+        if (inFrame->data.useAsCVMat().empty() == false)
         {
-          rvec = cv::Vec3d(inCamPose->data.rx, inCamPose->data.ry, inCamPose->data.rz);
-          tvec = cv::Vec3d(inCamPose->data.tx, inCamPose->data.ty, inCamPose->data.tz);
-          debug_print("Marker Rotation: %f / %f / %f", inCamPose->data.rx, inCamPose->data.ry, inCamPose->data.rz);
-          cv::aruco::drawAxis(outFrame->data.useAsCVMat(), camIntrinsic, camDistCoeffs, rvec, tvec, 0.05);
+
+          SamMarRendFrame *outFrame = portManager.getOutputPlaceholder<SamMarRendFrame>("out_frame");
+
+          st = getTsMs();
+          outFrame->setHeader(inFrame->tag, inFrame->seq, inFrame->ts, inFrame->dataSize);
+          outFrame->data = inFrame->data;
+
+          cv::Vec3d rvec, tvec;
+          if (inCamPose != nullptr)
+          {
+            rvec = cv::Vec3d(inCamPose->data.rx, inCamPose->data.ry, inCamPose->data.rz);
+            tvec = cv::Vec3d(inCamPose->data.tx, inCamPose->data.ty, inCamPose->data.tz);
+            debug_print("Marker Rotation: %f / %f / %f", inCamPose->data.rx, inCamPose->data.ry, inCamPose->data.rz);
+            cv::aruco::drawAxis(outFrame->data.useAsCVMat(), camIntrinsic, camDistCoeffs, rvec, tvec, 0.05);
+          }
+
+          et = getTsMs();
+
+          portManager.sendOutput("out_frame", outFrame);
+          if (logger.isSet())
+            logger.getInstance()->info("{}\t {}\t {}", st, et, et - st);
         }
-
-        et = getTsMs();
-
-        portManager.sendOutput("out_frame", outFrame);
-        if(logger.isSet()) logger.getInstance()->info("{}\t {}\t {}", st, et, et-st);
       }
       else
       {

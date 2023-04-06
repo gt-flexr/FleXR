@@ -1,9 +1,9 @@
 - kernel   : ImgPlayer
   id       : img_player
-  frequency: 60
+  frequency: 30
   logger   : [img_player, img_player.log]
   others   :
-    - image_path    : /home/jin/mnt/Data/aruco_cam
+    - image_path    : /home/user/aruco_sample
       filename_zeros: 6
       num_of_images : 100
       iterate       : true
