@@ -1,0 +1,93 @@
+- kernel   : ImgPlayer
+  id       : img_player
+  frequency: 30
+  logger   : [img_player, img_player.log]
+  others   :
+    - image_path    : /home/user/aruco_sample
+      filename_zeros: 6
+      num_of_images : 500
+      iterate       : true
+      caching       : true
+  output   :
+    - port_name      : out_frame
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 4444]
+    - port_name      : out_frame2
+      connection_type: remote
+      duplicated_from: out_frame
+      remote_info    : [RTP, 127.0.0.1, 4446]
+  single   : true
+
+
+- kernel   : Keyboard
+  id       : keyboard
+  frequency: 60
+  logger   : [keyboard, keyboard.log]
+  output   :
+    - port_name      : out_key
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 4448]
+  single   : true
+
+
+- kernel   : ArUcoDetector
+  id       : aruco_detector
+  frequency: 60
+  logger   : [aruco_detector, aruco_detector.log]
+  others   :
+    - marker_dict: DICT_6X6_250
+      width       : 1920
+      height      : 1080
+  input    :
+    - port_name      : in_frame
+      connection_type: remote
+      remote_info    : [RTP, 4444]
+  output    :
+    - port_name      : out_marker_pose
+      connection_type: local
+      semantics      : blocking
+
+
+- kernel   : SampleMarkerRenderer
+  id       : sample_marker_renderer
+  frequency: 60
+  logger   : [sample_marker_renderer, sample_marker_renderer.log]
+  others   :
+    - width : 1920
+      height: 1080
+  input    :
+    - port_name      : in_frame
+      connection_type: remote
+      remote_info    : [RTP, 4446]
+    - port_name      : in_key
+      connection_type: remote
+      remote_info    : [RTP, 4448]
+    - port_name      : in_cam_pose
+      connection_type: local
+  output    :
+    - port_name      : out_frame
+      connection_type: remote
+      remote_info    : [RTP, 127.0.0.1, 4452]
+
+
+
+- kernel   : Cv2GlRgbDisplay
+  id       : cv2gl_rgb_display
+  frequency: 30
+  logger   : [cv2gl_rgb_display, cv2gl_rgb_display.log]
+  others   :
+    - width  : 1920
+      height : 1080
+  input    :
+    - port_name      : in_frame
+      connection_type: remote
+      remote_info    : [RTP, 4452]
+  single   : true
+
+
+- local_connections:
+  - send_kernel   : aruco_detector
+    send_port_name: out_marker_pose
+    recv_kernel   : sample_marker_renderer
+    recv_port_name: in_cam_pose
+    queue_size    : 1

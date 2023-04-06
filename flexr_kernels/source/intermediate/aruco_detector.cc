@@ -51,20 +51,31 @@ namespace flexr
         std::vector<cv::Vec3d> rvecs, tvecs;
         cv::aruco::estimatePoseSingleMarkers(corners, 0.05, camIntrinsic, camDistCoeffs, rvecs, tvecs);
 
-        cv::Mat R;
-        cv::Rodrigues(rvecs[0], R);
-
-        double roll  = atan2(R.at<double>(2, 1), R.at<double>(2, 2)) * (180/PI);
-        double pitch = asin(R.at<double>(2, 0)) * (180/PI);
-        double yaw   = atan2(-R.at<double>(1, 0), R.at<double>(0, 0)) * (180/PI);
-
-        debug_print("Marker Rotation: %f / %f / %f", roll, pitch, yaw);
+        // debug_print("RVECS");
+        // for(auto vec : rvecs)
+        //   std::cout << vec << std::endl;
+        //
+        // debug_print("TVECS");
+        // for(auto vec : tvecs)
+        //   std::cout << vec << std::endl;
+        //
+        // cv::Mat Rt, R;
+        // cv::Rodrigues(rvecs[0], Rt);
+        // cv::transpose(Rt, R);
+        //
+        // double roll  = atan2(R.at<double>(2, 1), R.at<double>(2, 2)) * (180/PI);
+        // double pitch = asin(R.at<double>(2, 0)) * (180/PI);
+        // double yaw   = atan2(-R.at<double>(1, 0), R.at<double>(0, 0)) * (180/PI);
 
         outMarkerPose->setHeader("marker pose", inFrame->seq, inFrame->ts, sizeof(outMarkerPose->data));
 
-        outMarkerPose->data.rx = roll;
-        outMarkerPose->data.ry = pitch;
-        outMarkerPose->data.rz = yaw;
+        // outMarkerPose->data.rx = roll;
+        // outMarkerPose->data.ry = pitch;
+        // outMarkerPose->data.rz = yaw;
+        outMarkerPose->data.rx = rvecs[0][0];
+        outMarkerPose->data.ry = rvecs[0][1];
+        outMarkerPose->data.rz = rvecs[0][2];
+
 
         outMarkerPose->data.tx = tvecs[0][0];
         outMarkerPose->data.ty = tvecs[0][1];
