@@ -29,6 +29,7 @@ namespace flexr
     class SampleMarkerRenderer : public FleXRKernel
     {
       private:
+        float x, y, z;
         int width, height;
         cv::Mat camIntrinsic, camDistCoeffs;
         SamMarRendFrame cachedFrame;

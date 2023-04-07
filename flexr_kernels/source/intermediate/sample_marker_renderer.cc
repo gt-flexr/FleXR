@@ -29,6 +29,8 @@ namespace flexr
       camIntrinsic.at<double>(2, 1) = 0;
       camIntrinsic.at<double>(2, 2) = 1;
       camDistCoeffs = cv::Mat(4, 1, CV_64FC1, {0, 0, 0, 0});
+
+      this->x = this->y = this->z = 0;
     }
 
 
@@ -40,7 +42,17 @@ namespace flexr
       SamMarRendInKey     *inKey     = portManager.getInput<SamMarRendInKey>("in_key");
 
       if(inKey != nullptr)
-        if(inKey->data != 0) debug_print("input key: %c", inKey->data);
+      {
+        if(inKey->data != 0)
+        {
+          if(inKey->data == 'r' || inKey->data == 'R') {this->x = 0; this->y = 0; this->z = 0;}
+          if(inKey->data == 'w' || inKey->data == 'W') this->y+=0.01;
+          if(inKey->data == 's' || inKey->data == 'S') this->y-=0.01;
+          if(inKey->data == 'a' || inKey->data == 'A') this->x-=0.01;
+          if(inKey->data == 'd' || inKey->data == 'D') this->x+=0.01;
+          if(inKey->data == 'q' || inKey->data == 'Q') this->z-=0.01;
+          if(inKey->data == 'e' || inKey->data == 'E') this->z+=0.01;        }
+      }
 
       if(inFrame != nullptr)
       {
@@ -57,8 +69,9 @@ namespace flexr
           if (inCamPose != nullptr)
           {
             rvec = cv::Vec3d(inCamPose->data.rx, inCamPose->data.ry, inCamPose->data.rz);
-            tvec = cv::Vec3d(inCamPose->data.tx, inCamPose->data.ty, inCamPose->data.tz);
+            tvec = cv::Vec3d(inCamPose->data.tx+this->x, inCamPose->data.ty+this->y, inCamPose->data.tz);
             debug_print("Marker Rotation: %f / %f / %f", inCamPose->data.rx, inCamPose->data.ry, inCamPose->data.rz);
+            debug_print("Marker Location: %f / %f / %f", inCamPose->data.tx+this->x, inCamPose->data.ty+this->y, inCamPose->data.tz);
             cv::aruco::drawAxis(outFrame->data.useAsCVMat(), camIntrinsic, camDistCoeffs, rvec, tvec, 0.05);
           }
 
