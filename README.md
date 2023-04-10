@@ -1,5 +1,7 @@
 # FleXR: A System Enabling Flexibly Distributed Extended Reality
 
+<img src="https://github.com/gt-flexr/FleXR_Page/blob/main/figs/ar1.gif?raw=true" width="200"><img src="https://github.com/gt-flexr/FleXR_Page/blob/main/figs/simplear.gif?raw=true" width="200"><img src="https://github.com/gt-flexr/FleXR_Page/blob/main/figs/ar2.gif?raw=true" width="200"><img src="https://github.com/gt-flexr/FleXR_Page/blob/main/figs/ar3.gif?raw=true" width="200"><img src="https://github.com/gt-flexr/FleXR_Page/blob/main/figs/vr.gif?raw=true" width="200">
+
 ## Introduction
 
 **FleXR** is a fully open-source, flexibly configurable, and high-performance distributed stream processing system (DSPS) for distributed XR.
