@@ -27,8 +27,18 @@ Please check [this instruction](https://github.com/gt-flexr/FleXR/wiki/Get-Start
 
 
 ## Paper
+Heo, J., Bhardwaj, K., & Gavrilovska, A. (2023, June). [FleXR: A System Enabling Flexibly Distributed Extended Reality](https://dl.acm.org/doi/abs/10.1145/3587819.3590966). In Proceedings of the 14th Conference on ACM Multimedia Systems (pp. 1-13).
 
-To be updated
+BibTex
+```
+@inproceedings{heo2023flexr,
+  title={FleXR: A System Enabling Flexibly Distributed Extended Reality},
+  author={Heo, Jin and Bhardwaj, Ketan and Gavrilovska, Ada},
+  booktitle={Proceedings of the 14th Conference on ACM Multimedia Systems},
+  pages={1--13},
+  year={2023}
+}
+```
 
 
 ## Contact
